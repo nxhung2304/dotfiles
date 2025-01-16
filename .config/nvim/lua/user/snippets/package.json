@@ -1,0 +1,29 @@
+{
+  "name": "namiez-snippets",
+   "engines": {
+    "vscode": "^1.11.0"
+  },
+  "contributes": {
+    "snippets": [
+      {
+        "language": "all",
+        "path": "./all.json"
+      },
+      {
+        "language": [
+          "javascript",
+          "vue"
+        ],
+        "path": "./javascript.json"
+      },
+      {
+        "language": "ruby",
+        "path": "./ruby/ruby.json"
+      },
+      {
+        "language": ["eruby", "erb"],
+        "path": "./ruby/eruby.json"
+      }
+    ]
+  }
+}
