@@ -27,7 +27,9 @@ HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
 
+# Envs
 export PATH=$HOME/bin:/usr/local/bin:$PATH
+export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
 
 # Hook Asdf
 . "$HOME/.asdf/asdf.sh"
