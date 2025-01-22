@@ -33,3 +33,6 @@ export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
 
 # Hook Asdf
 . "$HOME/.asdf/asdf.sh"
+
+# Hook direnv: https://direnv.net
+eval "$(direnv hook zsh)"
