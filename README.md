@@ -14,4 +14,11 @@ chmod +x script.sh
 ./script.sh
 ```
 
+- Setup env secret:
+Copy .env.sample to ~/.env and setup env variables
+```
+cp .env.sample ~/.env
+vi ~/.env
+```
+
 ## Troubleshooting
