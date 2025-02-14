@@ -1,4 +1,5 @@
 ## Requiments
+
 - nvim 0.11
 - tmux
 - wezterm
