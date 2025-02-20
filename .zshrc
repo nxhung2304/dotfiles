@@ -39,6 +39,13 @@ alias rights="cd ~/Dev/rights"
 alias personal="cd ~/Dev/personal"
 alias n="nvim"
 
+## docker 
+alias dcd="docker-compose down"
+alias dcu="docker-compose up -d"
+alias dclw="docker-compose logs -f web"
+alias dcew="docker-compose exec web"
+alias dcrw="docker-compose run web"
+
 alias noti='send_slack_notification'
 send_slack_notification ()
 {
