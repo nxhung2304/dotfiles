@@ -40,8 +40,10 @@ alias personal="cd ~/Dev/personal"
 alias n="nvim"
 
 ## docker 
+alias dcb="docker-compose build"
 alias dcd="docker-compose down"
 alias dcu="docker-compose up -d"
+
 alias dclw="docker-compose logs -f web"
 alias dcew="docker-compose exec web"
 alias dcrw="docker-compose run web"
