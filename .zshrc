@@ -22,6 +22,7 @@ setopt appendhistory
 # Envs
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
+export PATH="$HOME/flutter/bin:$PATH"
 
 # Hook Asdf
 . "$HOME/.asdf/asdf.sh"
