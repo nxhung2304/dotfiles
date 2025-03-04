@@ -49,7 +49,6 @@ return {
 				"emmet_ls",
 				"vuels",
 				"lua_ls",
-				"dartls",
 				"pyright",
 				"tailwindcss",
 				"sourcekit",

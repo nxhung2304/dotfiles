@@ -1,11 +1,9 @@
 return {
-	"akinsho/flutter-tools.nvim",
-	ft = "dart",
-	opts = {
-		lsp = {
-			settings = {
-				analysisExcludedFolders = { "vim.fn.expand('$HOME/flutter/.pub-cache')" },
-			},
-		},
+	"nvim-flutter/flutter-tools.nvim",
+	lazy = false,
+	dependencies = {
+		"nvim-lua/plenary.nvim",
+		"stevearc/dressing.nvim",
 	},
+	config = true,
 }
