@@ -71,3 +71,11 @@ send_slack_notification ()
     echo "failure: $(echo "$response" | jq -r '.error')"
   fi
 }
+
+export PATH="$HOME/.asdf/shims:$PATH"
+
+## [Completion]
+## Completion scripts setup. Remove the following line to uninstall
+[[ -f /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh ]] && . /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh || true
+## [/Completion]
+
