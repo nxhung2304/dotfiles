@@ -57,6 +57,7 @@ pipx install pymobiledevice3
 - swiftformat: `brew install swiftformat`
 - prettier: `npm install --save-dev --save-exact prettier`
 - styluad: `brew install stylua`
+- kolit: `brew install kotlin-language-server`
 
 ## 📂 File Structure
 

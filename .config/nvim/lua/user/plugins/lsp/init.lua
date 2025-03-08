@@ -53,6 +53,7 @@ return {
 				"tailwindcss",
 				"sourcekit",
 				"cssls",
+				"kotlin_language_server"
 			}
 
 			local lspconfig = require("lspconfig")
