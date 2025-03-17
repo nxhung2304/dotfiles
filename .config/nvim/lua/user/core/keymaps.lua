@@ -34,33 +34,35 @@ keymap(
 	{ desc = "Find folders in ~/Dev" }
 )
 
-keymap("n", "<leader>cc", "<cmd>Cppath<cr>", { desc = "Copy relative filepath" })
+keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
+keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
+
 keymap("t", "<Esc>", "<C-\\><C-n>")
 
 keymap("v", ">", ">gv", { desc = "Indent in" })
 keymap("v", "<", "<gv", { desc = "Indent out" })
 
-function CopyCurrentDiagnostic()
-	local diagnostics = vim.diagnostic.get(0)
-	local line = vim.api.nvim_win_get_cursor(0)[1] - 1
-	local current_diagnostic = nil
+-- function CopyCurrentDiagnostic()
+-- 	local diagnostics = vim.diagnostic.get(0)
+-- 	local line = vim.api.nvim_win_get_cursor(0)[1] - 1
+-- 	local current_diagnostic = nil
+--
+-- 	for _, diag in ipairs(diagnostics) do
+-- 		if diag.lnum == line then
+-- 			current_diagnostic = diag.message
+-- 			break
+-- 		end
+-- 	end
+--
+-- 	if current_diagnostic then
+-- 		vim.fn.setreg("+", current_diagnostic)
+-- 		print("Copy diagnostics to clipboard!")
+-- 	else
+-- 		print("Not found diagnostics at current cursor")
+-- 	end
+-- end
 
-	for _, diag in ipairs(diagnostics) do
-		if diag.lnum == line then
-			current_diagnostic = diag.message
-			break
-		end
-	end
-
-	if current_diagnostic then
-		vim.fn.setreg("+", current_diagnostic)
-		print("Copy diagnostics to clipboard!")
-	else
-		print("Not found diagnostics at current cursor")
-	end
-end
-
-vim.keymap.set("n", "<leader>cd", "<cmd>lua CopyCurrentDiagnostic()<cr>", { desc = "Copy current diagnostic" })
+vim.keymap.set("n", "<leader>cd", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Copy current diagnostic" })
 
 -- Xcode
 vim.keymap.set("n", "<leader>xb", "<cmd>XcodebuildBuild<cr>", { desc = "Build Project" })
@@ -72,3 +74,17 @@ vim.keymap.set("n", "<leader>xq", "<cmd>Telescope quickfix<cr>", { desc = "Show 
 vim.keymap.set("n", "<leader>xx", "<cmd>XcodebuildQuickfixLine<cr>", { desc = "Quickfix Line" })
 vim.keymap.set("n", "<leader>xa", "<cmd>XcodebuildCodeActions<cr>", { desc = "Show Code Actions" })
 
+-- Diagnostics
+keymap("n", "]e", function()
+	vim.diagnostic.goto_next({
+		severity = vim.diagnostic.severity.ERROR,
+		float = { border = "rounded" },
+	})
+end)
+
+keymap("n", "[e", function()
+	vim.diagnostic.goto_prev({
+		severity = vim.diagnostic.severity.ERROR,
+		float = { border = "rounded" },
+	})
+end)
