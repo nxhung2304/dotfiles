@@ -49,6 +49,14 @@ alias dclw="docker-compose logs -f web"
 alias dcew="docker-compose exec web"
 alias dcrw="docker-compose run web"
 
+ipad="00008112-000C283836F9401E" # iPad Pro 11 inch
+hiporn="00008120-000915DA2EE9A01E" # Huy's iPhone 15
+ipse="62FC2A6B-A549-47B9-9E2C-6437FAD39F64" # iPhone SE Simulator
+
+alias ffr_ipad="fvm flutter run -d $ipad"
+alias ffr_ipse="fvm flutter run -d $ipse"
+alias ffr_hiporn="fvm flutter run -d $hiporn"
+
 alias noti='send_slack_notification'
 send_slack_notification ()
 {
