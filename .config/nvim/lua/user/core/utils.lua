@@ -36,25 +36,35 @@ function M.on_load(name, fn)
 	end
 end
 
-function M.get_relative_path()
-	local path = vim.fn.expand("%:~:.")
-	return path ~= "" and path or "[No Name]"
-end
-
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-	local blueColor = "#00afef"
-	vim.api.nvim_set_hl(0, "NavicHighlight", { fg = blueColor, bold = true })
+
+	local aquaColor = "#83a598"
+	local orangeColor = "#d65d0e"
+
+	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
+	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
 
 	if require("nvim-navic").is_available() then
 		local data = require("nvim-navic").get_data()
 		if data and #data > 0 then
+			local context_string = ""
+
 			local first_context = data[1]
-			local context_name = first_context.name
+			local first_name = first_context.name
+			local highlighted_first = "%#NavicHighlight1#" .. first_name .. "%*"
 
-			local highlighted_context = "%#NavicHighlight#" .. context_name .. "%*"
+			context_string = highlighted_first
 
-			return filepath .. " > " .. highlighted_context
+			if #data >= 2 then
+				local second_context = data[2]
+				local second_name = second_context.name
+				local highlighted_second = "%#NavicHighlight2#" .. second_name .. "%*"
+
+				context_string = context_string .. " > " .. highlighted_second
+			end
+
+			return filepath .. " > " .. context_string
 		end
 	end
 

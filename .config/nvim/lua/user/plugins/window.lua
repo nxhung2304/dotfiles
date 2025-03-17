@@ -6,6 +6,9 @@ return {
 		vim.opt.splitkeep = "screen"
 	end,
 	opts = {
+		animate = {
+			enabled = false,
+		},
 		right = {
 			{
 				title = "Outline symbols",
@@ -15,9 +18,16 @@ return {
 				title = "Log",
 				ft = "log",
 				size = {
-					width = 0.3
-				}
+					width = 0.3,
+				},
 			},
 		},
+		left = { {
+			title = "File Explorer",
+			ft = "NvimTree",
+			size = {
+				width = 0.3,
+			},
+		} },
 	},
 }
