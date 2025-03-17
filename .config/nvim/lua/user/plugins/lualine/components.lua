@@ -9,10 +9,10 @@ function M.branch()
 end
 
 function M.filename()
-	local _filename = vim.fn.expand('%')
+	local _filename = vim.fn.expand("%")
 
 	return {
-		_filename
+		_filename,
 	}
 end
 
@@ -51,14 +51,6 @@ function M.progress()
 	return {
 		"progress",
 		padding = 0,
-	}
-end
-
-function M.outline()
-	return {
-		"navic",
-		color_correction = nil,
-		navic_opts = nil,
 	}
 end
 

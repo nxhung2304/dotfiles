@@ -5,11 +5,70 @@ return {
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
-			{ "SmiteshP/nvim-navic" },
+			{
+				"SmiteshP/nvim-navic",
+				opts = {
+					-- icons = {
+					-- 	File = "󰈙 ",
+					-- 	Module = " ",
+					-- 	Namespace = "󰌗 ",
+					-- 	Package = " ",
+					-- 	Class = "󰌗 ",
+					-- 	Method = "󰆧 ",
+					-- 	Property = " ",
+					-- 	Field = " ",
+					-- 	Constructor = " ",
+					-- 	Enum = "󰕘",
+					-- 	Interface = "󰕘",
+					-- 	Function = "󰊕 ",
+					-- 	Variable = "󰆧 ",
+					-- 	Constant = "󰏿 ",
+					-- 	String = "󰀬 ",
+					-- 	Number = "󰎠 ",
+					-- 	Boolean = "◩ ",
+					-- 	Array = "󰅪 ",
+					-- 	Object = "󰅩 ",
+					-- 	Key = "󰌋 ",
+					-- 	Null = "󰟢 ",
+					-- 	EnumMember = " ",
+					-- 	Struct = "󰌗 ",
+					-- 	Event = " ",
+					-- 	Operator = "󰆕 ",
+					-- 	TypeParameter = "󰊄 ",
+					-- },
+					icons = {
+						File = "",
+						Module = "",
+						Namespace = "",
+						Package = "",
+						Class = "",
+						Method = "",
+						Property = "",
+						Field = "",
+						Constructor = "",
+						Enum = "",
+						Interface = "",
+						Function = "",
+						Variable = "",
+						Constant = "",
+						String = "",
+						Number = "",
+						Boolean = "",
+						Array = "",
+						Object = "",
+						Key = "",
+						Null = "",
+						EnumMember = "",
+						Struct = "",
+						Event = "",
+						Operator = "",
+						TypeParameter = "",
+					},
+					highlight = true,
+				},
+			},
 		},
 		opts = function()
-			vim.opt.winbar = "%{%v:lua.require'user.core.utils'.get_winbar()%}"
-
 			return {
 				diagnostics = {
 					-- disable virtual text
@@ -53,12 +112,14 @@ return {
 				"tailwindcss",
 				"sourcekit",
 				"cssls",
-				"kotlin_language_server"
+				"kotlin_language_server",
 			}
 
 			local lspconfig = require("lspconfig")
 			local navic = require("nvim-navic")
 			local keymap = require("user.core.utils").keymap
+
+			vim.o.winbar = "%{%v:lua.require('user.core.utils').get_filepath_with_navic()%}"
 
 			for _, server in pairs(servers) do
 				local opts = {
@@ -68,9 +129,9 @@ return {
 						keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>")
 						keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>")
 
-						-- if client.server_capabilities.documentSymbolProvider then
-						-- 	navic.attach(client, buffer)
-						-- end
+						if client.server_capabilities.documentSymbolProvider then
+							navic.attach(client, buffer)
+						end
 					end,
 				}
 				local has_custom_opts, server_custom_opts = pcall(require, "user.plugins.lsp.settings." .. server)

@@ -28,11 +28,7 @@ return {
 			},
 			lualine_z = {},
 		},
-		winbar = {
-			lualine_c = {
-				lualine_components.outline(),
-			},
-		},
+		winbar = {},
 		inactive_sections = {
 			lualine_a = {},
 			lualine_b = {},

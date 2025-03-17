@@ -41,15 +41,24 @@ function M.get_relative_path()
 	return path ~= "" and path or "[No Name]"
 end
 
-M.get_winbar = function()
-	local navic = require("nvim-navic")
-	local relative_path = M.get_relative_path()
-	local navic_location = navic.is_available() and navic.get_location() or ""
+M.get_filepath_with_navic = function()
+	local filepath = vim.fn.expand("%:~:.")
+	local blueColor = "#00afef"
+	vim.api.nvim_set_hl(0, "NavicHighlight", { fg = blueColor, bold = true })
 
-	if navic_location ~= "" then
-		return relative_path .. " > " .. navic_location
+	if require("nvim-navic").is_available() then
+		local data = require("nvim-navic").get_data()
+		if data and #data > 0 then
+			local first_context = data[1]
+			local context_name = first_context.name
+
+			local highlighted_context = "%#NavicHighlight#" .. context_name .. "%*"
+
+			return filepath .. " > " .. highlighted_context
+		end
 	end
-	return relative_path
+
+	return filepath
 end
 
 return M
