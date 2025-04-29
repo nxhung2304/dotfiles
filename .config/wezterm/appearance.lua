@@ -14,6 +14,8 @@ function M.setup(config)
 		brightness = 0.8,
 	}
 
+	config.window_background_opacity = 0.8
+
 	config.window_padding = {
 		left = 0,
 		right = 0,

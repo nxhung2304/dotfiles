@@ -9,7 +9,7 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
-source ~/.env
+#source ~/.env
 
 export LANG=en_US.UTF-8
 export EDITOR='vim'
@@ -25,7 +25,7 @@ export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
 export PATH="$HOME/flutter/bin:$PATH"
 
 # Hook Asdf
-. "$HOME/.asdf/asdf.sh"
+# . "$HOME/.asdf/asdf.sh"
 
 # Hook direnv: https://direnv.net
 eval "$(direnv hook zsh)"
