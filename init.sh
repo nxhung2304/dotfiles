@@ -46,3 +46,9 @@ asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 
 echo "Installing asdf ruby"
 asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
+
+## Setup tmux
+echo "Setup tmux"
+
+mkdir -p ~/.local/bin/scripts
+mv scripts/tmux-sessionizer ~/.local/bin/scripts/tmux-sessionizer
