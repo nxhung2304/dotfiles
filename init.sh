@@ -20,6 +20,11 @@ for file in "$DOTFILES_DIR"/*; do
     fi
 done
 
+for dir in ~/dotfiles/.config/*/; do
+    dir_name=$(basename "$dir")
+    ln -sf "$dir" ~/.config/"$dir_name"
+done
+
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
     https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
