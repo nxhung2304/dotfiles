@@ -71,4 +71,19 @@ M.get_filepath_with_navic = function()
 	return filepath
 end
 
+
+M.lsp_on_attach = function(client, bufnr)
+	local keymap = M.keymap
+  local navic = require("nvim-navic")
+
+	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr })
+	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr })
+	keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", { buffer = bufnr })
+	keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>", { buffer = bufnr })
+
+	if client.server_capabilities.documentSymbolProvider then
+		navic.attach(client, bufnr)
+	end
+end
+
 return M

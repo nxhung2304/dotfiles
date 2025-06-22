@@ -8,34 +8,6 @@ return {
 			{
 				"SmiteshP/nvim-navic",
 				opts = {
-					-- icons = {
-					-- 	File = "󰈙 ",
-					-- 	Module = " ",
-					-- 	Namespace = "󰌗 ",
-					-- 	Package = " ",
-					-- 	Class = "󰌗 ",
-					-- 	Method = "󰆧 ",
-					-- 	Property = " ",
-					-- 	Field = " ",
-					-- 	Constructor = " ",
-					-- 	Enum = "󰕘",
-					-- 	Interface = "󰕘",
-					-- 	Function = "󰊕 ",
-					-- 	Variable = "󰆧 ",
-					-- 	Constant = "󰏿 ",
-					-- 	String = "󰀬 ",
-					-- 	Number = "󰎠 ",
-					-- 	Boolean = "◩ ",
-					-- 	Array = "󰅪 ",
-					-- 	Object = "󰅩 ",
-					-- 	Key = "󰌋 ",
-					-- 	Null = "󰟢 ",
-					-- 	EnumMember = " ",
-					-- 	Struct = "󰌗 ",
-					-- 	Event = " ",
-					-- 	Operator = "󰆕 ",
-					-- 	TypeParameter = "󰊄 ",
-					-- },
 					icons = {
 						File = "",
 						Module = "",
@@ -118,21 +90,13 @@ return {
 			local lspconfig = require("lspconfig")
 			local navic = require("nvim-navic")
 			local keymap = require("user.core.utils").keymap
+			local utils = require("user.core.utils")
 
 			vim.o.winbar = "%{%v:lua.require('user.core.utils').get_filepath_with_navic()%}"
 
 			for _, server in pairs(servers) do
 				local opts = {
-					on_attach = function(client, buffer)
-						keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>")
-						keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>")
-						keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>")
-						keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>")
-
-						if client.server_capabilities.documentSymbolProvider then
-							navic.attach(client, buffer)
-						end
-					end,
+					on_attach = utils.lsp_on_attach
 				}
 				local has_custom_opts, server_custom_opts = pcall(require, "user.plugins.lsp.settings." .. server)
 				if has_custom_opts then

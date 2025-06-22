@@ -1,3 +1,4 @@
+local utils = require("user.core.utils")
 return {
 	"nvim-flutter/flutter-tools.nvim",
 	lazy = false,
@@ -7,6 +8,7 @@ return {
 	},
 	opts = {
 		lsp = {
+			on_attach = utils.lsp_on_attach,
 			settings = {
 				analysisExcludedFolders = {
 					vim.fn.expand("$HOME/snap/flutter/common/flutter"),
