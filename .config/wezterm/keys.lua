@@ -7,13 +7,6 @@ M.keys = {
 		mods = "CMD",
 		action = wezterm.action.ToggleFullScreen,
 	},
-	{
-		key = 'f',
-		mods = 'CTRL|SHIFT',
-		action = wezterm.action.SpawnCommandInNewTab {
-			args = { '~/.local/bin/scripts/tmux-sessionizer' },
-		},
-	},
 }
 
 function M.setup(config)
