@@ -170,22 +170,7 @@ return {
 			PATH = "prepend",
 		},
 	},
-	{
-		"nvimtools/none-ls.nvim",
-		event = { "BufReadPre", "BufNewFile" },
-		opts = function()
-			local null_ls = require("null-ls")
-			local formatting = null_ls.builtins.formatting
-
-			return {
-				debug = false,
-				sources = {
-					formatting.prettier.with({ extra_args = { "--no-semi", "--single-quote", "--jsx-single-quote" } }),
-					formatting.black.with({ extra_args = { "--fast" } }),
-				},
-			}
-		end,
-	},
+	{"mfussenegger/nvim-lint"},
 	{ "williamboman/mason-lspconfig.nvim", event = { "BufReadPre", "BufNewFile" } },
 	{
 		"onsails/lspkind.nvim",
