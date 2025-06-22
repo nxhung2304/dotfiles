@@ -13,11 +13,11 @@ return {
 			"                                                     ",
 		}
 		dashboard.section.buttons.val = {
-			dashboard.button("f", "  Find file", ":TeleSmartOpen<cr>"),
-			dashboard.button("r", "  Frecency files", ":Telescope oldfiles<CR>"),
-			dashboard.button("t", "  Find text", ":Telescope live_grep<CR>"),
-			dashboard.button("l", "󰒲 " .. " Lazy", ":Lazy<CR>"),
-			dashboard.button("q", " " .. " Quit", ":qa<CR>"),
+			dashboard.button("f", "📁 Find file", ":TeleSmartOpen<cr>"),
+			dashboard.button("r", "📄 Frecency files", ":Telescope oldfiles<CR>"),
+			dashboard.button("t", "🔍 Find text", ":Telescope live_grep<CR>"),
+			dashboard.button("l", "󰒲 Lazy", ":Lazy<CR>"),
+			dashboard.button("q", "❌ Quit", ":qa<CR>"),
 		}
 
 		dashboard.section.footer.opts.hl = "Type"
