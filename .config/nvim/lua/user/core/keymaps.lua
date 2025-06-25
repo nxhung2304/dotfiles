@@ -88,3 +88,5 @@ keymap("n", "[e", function()
 		float = { border = "rounded" },
 	})
 end)
+
+keymap("n", "<leader>Ut", "<cmd>TransparentToggle<cr>", { desc = "Toogle background transparent" })

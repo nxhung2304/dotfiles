@@ -18,6 +18,7 @@ return {
 			{ "<leader>s", desc = "Search" },
 			{ "<leader>x", desc = "Xcode" },
 			{ "<leader>D", desc = "Flutter" },
+			{ "<leader>U", desc = "UI" },
 		})
 		wk.setup(opts)
 	end,
