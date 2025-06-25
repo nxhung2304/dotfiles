@@ -7,6 +7,8 @@ function M.setup(config)
 	-- config.window_decorations = "NONE"
 	config.window_decorations = "RESIZE | TITLE"
 
+	config.window_background_opacity = 0.95
+
 	config.enable_tab_bar = false
 
 	config.inactive_pane_hsb = {
