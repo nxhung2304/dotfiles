@@ -27,3 +27,12 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
 		}, true, {})
 	end,
 })
+
+vim.api.nvim_create_autocmd("FileType", {
+	desc = "Open help page in horizontal",
+  pattern = "help",
+  callback = function()
+    vim.cmd("wincmd L")
+    vim.cmd("vertical resize 80")
+  end,
+})
