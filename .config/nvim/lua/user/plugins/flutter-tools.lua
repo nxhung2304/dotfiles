@@ -1,26 +1,43 @@
 local utils = require("user.core.utils")
 
 return {
-	"nvim-flutter/flutter-tools.nvim",
-	-- lazy = false,
+	'akinsho/flutter-tools.nvim',
 	ft = {
-		"dart"
+		'dart'
 	},
 	dependencies = {
-		"nvim-lua/plenary.nvim",
-		"stevearc/dressing.nvim",
+		'nvim-lua/plenary.nvim',
+		'stevearc/dressing.nvim',
 	},
-	opts = {
-		lsp = {
-			on_attach = utils.lsp_on_attach,
-			settings = {
-				analysisExcludedFolders = {
-					vim.fn.expand("$HOME/snap/flutter/common/flutter"),
-					vim.fn.expand("$HOME/.pub-cache"),
+	config = function()
+		require('flutter-tools').setup({
+			flutter_path = vim.fn.system("which flutter"):gsub("\n", ""),
+
+			root_patterns = { ".git", "pubspec.yaml" },
+
+			lsp = {
+				color = {
+					enabled = true,
+					background = false,
+					virtual_text = false,
 				},
-				showTodos = false,
-				maxFileSize = 50000,
+
+				flags = {
+					debounce_text_changes = 150,
+				},
+
+				on_attach = utils.lsp_on_attach
 			},
-		},
-	},
+
+			dev_log = {
+				enabled = false,
+			},
+
+			closing_tags = {
+				highlight = "Comment",
+				prefix = " // ",
+				enabled = true
+			},
+		})
+	end
 }
