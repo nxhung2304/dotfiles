@@ -3,7 +3,7 @@ local wezterm = require("wezterm")
 
 function M.setup(config)
 	config.font = wezterm.font("JetBrainsMonoNL Nerd Font")
-	config.font_size = 12.3
+	config.font_size = 12.5
 	config.line_height = 1.4
 end
 
