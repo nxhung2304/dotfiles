@@ -14,13 +14,6 @@ return {
 				title = "Outline symbols",
 				ft = "aerial",
 			},
-			{
-				title = "Log",
-				ft = "log",
-				size = {
-					width = 0.3,
-				},
-			},
 		},
 		left = { {
 			title = "File Explorer",
