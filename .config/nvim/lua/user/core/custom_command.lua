@@ -33,3 +33,11 @@ vim.api.nvim_create_user_command("CopyCurrentDiagnostic", function()
 		print("Not found diagnostics at current cursor")
 	end
 end, {})
+
+vim.api.nvim_create_user_command("FlutterLspRestartSmart", function()
+	vim.cmd("LspRestart")
+
+	vim.defer_fn(function()
+		require("user.core.utils").attach_dartls_to_all_buffers()
+	end, 1000)
+end, { desc = "Restart LSP and re-attach all dart buffers" })

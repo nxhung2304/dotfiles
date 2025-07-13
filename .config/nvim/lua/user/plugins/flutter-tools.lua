@@ -67,7 +67,7 @@ return {
 				-- takes a log_line as string argument; returns a boolean or nil;
 				-- the log_line is only added to the output if the function returns true
 				notify_errors = true, -- if there is an error whilst running then notify the user
-				open_cmd = "30vnew",
+				open_cmd = "45vnew",
 				focus_on_open = true, -- focus on the newly opened log window
 			},
 
@@ -146,5 +146,6 @@ return {
 		-- DevTools
 		{ "<leader>Ft", "<cmd>FlutterDevTools<cr>", desc = "Flutter DevTools" },
 		{ "<leader>Fp", "<cmd>FlutterCopyProfilerUrl<cr>", desc = "Copy Profiler URL" },
+		{ "<leader>Ff", "<cmd>FlutterLspRestartSmart<cr>", desc = "Restart LSP" },
 	},
 }

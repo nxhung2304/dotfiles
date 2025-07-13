@@ -71,10 +71,9 @@ M.get_filepath_with_navic = function()
 	return filepath
 end
 
-
 M.lsp_on_attach = function(client, bufnr)
 	local keymap = M.keymap
-  local navic = require("nvim-navic")
+	local navic = require("nvim-navic")
 
 	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr })
 	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr })
@@ -84,6 +83,46 @@ M.lsp_on_attach = function(client, bufnr)
 	if client.server_capabilities.documentSymbolProvider then
 		navic.attach(client, bufnr)
 	end
+end
+
+-- Fix Lsp cannot start with flutter-tools:https://github.com/nvim-flutter/flutter-tools.nvim
+function M.attach_dartls_to_all_buffers()
+	local dartls_clients = vim.lsp.get_active_clients({ name = "dartls" })
+	if #dartls_clients == 0 then
+		print("No dartls client found")
+		return
+	end
+
+	local dartls_client = dartls_clients[1]
+	local attached_count = 0
+
+	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_is_valid(buf) then
+			local name = vim.api.nvim_buf_get_name(buf)
+			local filetype = vim.api.nvim_buf_get_option(buf, "filetype")
+
+			-- Check if it's a dart file
+			if filetype == "dart" or name:match("%.dart$") then
+				local clients = vim.lsp.get_active_clients({ bufnr = buf })
+				local has_dartls = false
+
+				for _, client in pairs(clients) do
+					if client.name == "dartls" then
+						has_dartls = true
+						break
+					end
+				end
+
+				if not has_dartls then
+					vim.lsp.buf_attach_client(buf, dartls_client.id)
+					attached_count = attached_count + 1
+					print("Attached dartls to buffer " .. buf)
+				end
+			end
+		end
+	end
+
+	print("Attached dartls to " .. attached_count .. " buffers")
 end
 
 return M
