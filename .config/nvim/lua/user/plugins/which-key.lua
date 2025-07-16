@@ -17,7 +17,7 @@ return {
 			{ "<leader>g", desc = "Git" },
 			{ "<leader>s", desc = "Search" },
 			{ "<leader>x", desc = "Xcode" },
-			{ "<leader>D", desc = "Flutter" },
+			{ "<leader>d", desc = "Debugger" },
 			{ "<leader>U", desc = "UI" },
 		})
 		wk.setup(opts)

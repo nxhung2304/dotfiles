@@ -78,3 +78,50 @@ autocmd("LspAttach", {
 		end
 	end,
 })
+
+autocmd("User", {
+	pattern = "DapBreakpointSet",
+	callback = function()
+		require("edgy").goto_main()
+	end,
+})
+
+-- Tự động mở debug layout khi bắt đầu debug
+autocmd("User", {
+	pattern = "DapSessionInitialized",
+	callback = function()
+		-- Mở debug layout
+		require("edgy").open("left")
+		require("edgy").open("bottom")
+		require("edgy").open("right")
+	end,
+})
+
+-- Tự động đóng debug layout khi kết thúc debug
+autocmd("User", {
+	pattern = "DapSessionTerminated",
+	callback = function()
+		vim.defer_fn(function()
+			require("edgy").close("dapui_scopes")
+			-- require("edgy").close("dapui_stacks")
+			require("edgy").close("dap-repl")
+			require("edgy").close("log")
+		end, 100)
+	end,
+})
+
+-- Flutter-specific autocmds
+autocmd("User", {
+	pattern = "FlutterRunPre",
+	callback = function()
+		require("edgy").open("bottom")
+	end,
+})
+
+autocmd("User", {
+	pattern = "FlutterRunPost",
+	callback = function()
+		require("edgy").open("right")
+	end,
+})
+
