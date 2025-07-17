@@ -53,46 +53,6 @@ return {
 		},
 	},
 	keys = {
-		-- { "<leader>e", "<cmd>NvimTreeToggle<cr>", desc = "Toggle NvimTree" },
-		-- {
-		-- 	"<leader>e", -- hoặc phím tắt bạn thường dùng cho NvimTree
-		-- 	function()
-		-- 		-- Đóng debug panels bên trái trước
-		-- 		require("edgy").close("dapui_scopes")
-		-- 		require("edgy").close("dapui_breakpoints")
-		-- 		require("edgy").close("flutterToolsOutline")
-		--
-		-- 		-- Sau đó toggle NvimTree
-		-- 		vim.cmd("NvimTreeToggle")
-		-- 	end,
-		-- 	desc = "Toggle NvimTree and close debug panels",
-		-- },
-		-- {
-		-- 	"<leader>e",
-		-- 	function()
-		-- 		local view = require("nvim-tree.view")
-		-- 		if view.is_visible() then
-		-- 			vim.cmd("NvimTreeClose")
-		-- 		else
-		-- 			-- Đóng debug panels một cách chắc chắn
-		-- 			local edgy = require("edgy")
-		-- 			pcall(function()
-		-- 				edgy.close("dapui_scopes")
-		-- 				edgy.close("dapui_breakpoints")
-		-- 				edgy.close("flutterToolsOutline")
-		-- 			end)
-		--
-		-- 			-- Hoặc thử đóng toàn bộ left panel
-		-- 			edgy.close("left")
-		--
-		-- 			-- Chờ một chút rồi mở NvimTree
-		-- 			vim.defer_fn(function()
-		-- 				vim.cmd("NvimTreeOpen")
-		-- 			end, 100)
-		-- 		end
-		-- 	end,
-		-- 	desc = "Toggle NvimTree",
-		-- },
 		{
 			"<leader>e",
 			function()
@@ -100,15 +60,12 @@ return {
 				if view.is_visible() then
 					vim.cmd("NvimTreeClose")
 				else
-					-- Đóng DAP UI hoàn toàn
 					pcall(function()
 						require("dapui").close()
+						require("aerial").close()
 					end)
 
-					-- Chờ một chút rồi mở NvimTree
-					-- vim.defer_fn(function()
-						vim.cmd("NvimTreeOpen")
-					-- end, 100)
+					vim.cmd("NvimTreeOpen")
 				end
 			end,
 			desc = "Toggle NvimTree",

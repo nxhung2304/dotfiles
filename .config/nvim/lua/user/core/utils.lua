@@ -125,4 +125,25 @@ function M.attach_dartls_to_all_buffers()
 	print("Attached dartls to " .. attached_count .. " buffers")
 end
 
+function M.open_sorted_diagnostics(severity_filter)
+	local diagnostics = vim.diagnostic.get(nil, severity_filter and { severity = severity_filter })
+
+	table.sort(diagnostics, function(a, b)
+		if a.severity ~= b.severity then
+			return a.severity < b.severity
+		end
+
+		if a.bufnr == b.bufnr then
+			return a.lnum < b.lnum
+		end
+
+		local file_a = vim.api.nvim_buf_get_name(a.bufnr)
+		local file_b = vim.api.nvim_buf_get_name(b.bufnr)
+		return file_a < file_b
+	end)
+
+	vim.diagnostic.setqflist(diagnostics)
+	vim.cmd("copen")
+end
+
 return M

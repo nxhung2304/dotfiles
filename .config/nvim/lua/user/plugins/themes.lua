@@ -7,9 +7,7 @@ return {
 			if currentColorscheme ~= "gruvbox-baby" then
 				return
 			end
-
 			local colors = require("gruvbox-baby.colors").config()
-
 			vim.api.nvim_set_hl(
 				0,
 				"BufferLineBufferSelected",
@@ -25,7 +23,6 @@ return {
 				"BufferLineDevIconLuaSelected",
 				{ fg = colors.blue_gray, bg = colors.none, italic = true, sp = "#242424" }
 			)
-
 			vim.api.nvim_set_hl(
 				0,
 				"BufferLineDevIconLuaInactive",
@@ -37,15 +34,19 @@ return {
 				{ fg = colors.comment, bg = colors.none, italic = true, sp = "#242424" }
 			)
 		end,
-	},
-	{
-		"sainnhe/gruvbox-material",
-		lazy = false,
-		priority = 1000,
 		config = function()
-			vim.g.gruvbox_material_enable_italic = true
-			vim.g.gruvbox_material_better_performance = 1
-			vim.cmd.colorscheme("gruvbox-material")
+			vim.cmd.colorscheme("gruvbox-baby")
+
+			local yellow_to_blue_highlights = {
+				"QuickFixLine",
+			}
+
+			for _, hl_group in ipairs(yellow_to_blue_highlights) do
+				vim.api.nvim_set_hl(0, hl_group, {
+					bg = "#1e3a5f",
+					fg = "#ffffff",
+				})
+			end
 		end,
 	},
 }

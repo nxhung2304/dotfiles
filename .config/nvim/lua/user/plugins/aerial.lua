@@ -1,5 +1,9 @@
 return {
 	"stevearc/aerial.nvim",
+	event = {
+		"BufReadPre",
+		"LspAttach"
+	},
 	opts = {
 		filter_kind = {
 			"Class",
@@ -19,6 +23,22 @@ return {
 		},
 	},
 	keys = {
-		{ "<leader>a", "<cmd>AerialToggle<CR>", desc = "Toggle Aerial" },
+		{
+			"<leader>a",
+			function()
+				local is_aerial_open = require("aerial").is_open()
+				if is_aerial_open then
+					vim.cmd("AerialClose")
+				else
+					pcall(function()
+						require("dapui").close()
+						vim.cmd("NvimTreeClose")
+					end)
+				end
+				vim.cmd("AerialOpen")
+
+			end,
+			desc = "Toggle Aerial",
+		},
 	},
 }

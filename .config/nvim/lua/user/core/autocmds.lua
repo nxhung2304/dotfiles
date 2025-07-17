@@ -125,3 +125,19 @@ autocmd("User", {
 	end,
 })
 
+autocmd("ColorScheme", {
+	callback = function()
+		-- Override highlights với màu xanh
+		local overrides = {
+			QuickFixLine = { bg = "#264f78", fg = "NONE" },
+			Search = { bg = "#264f78", fg = "#ffffff" },
+			IncSearch = { bg = "#264f78", fg = "#ffffff" },
+			CurSearch = { bg = "#264f78", fg = "#ffffff" },
+			MatchParen = { bg = "#264f78", fg = "NONE" },
+		}
+
+		for group, opts in pairs(overrides) do
+			vim.api.nvim_set_hl(0, group, opts)
+		end
+	end,
+})

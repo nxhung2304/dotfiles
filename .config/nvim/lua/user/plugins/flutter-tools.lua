@@ -2,7 +2,10 @@ local utils = require("user.core.utils")
 
 return {
 	"akinsho/flutter-tools.nvim",
-	lazy = false,
+	-- lazy = false,
+	ft = {
+		"dart",
+	},
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"stevearc/dressing.nvim",

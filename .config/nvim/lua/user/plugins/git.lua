@@ -72,15 +72,27 @@ return {
 	{
 		"NeogitOrg/neogit",
 		cmd = "Neogit",
-		config = true,
 		opts = {
 			integrations = {
 				telescope = true,
 			},
+			disable_line_numbers = false,
+			disable_relative_line_numbers = false,
 		},
 		keys = {
 			{ "<Leader>go", "<cmd>Neogit<cr>", desc = "Open Neogit" },
 		},
+		config = function(opts)
+			require("neogit").setup(opts)
+
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = { "NeogitStatus", "NeogitCommitMessage", "NeogitPopup" },
+				callback = function()
+					vim.wo.number = true
+					vim.wo.relativenumber = true
+				end,
+			})
+		end,
 	},
 	{
 		"sindrets/diffview.nvim",
