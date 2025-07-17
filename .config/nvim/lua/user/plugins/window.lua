@@ -11,7 +11,15 @@ return {
 				title = "Flutter Log",
 				size = { width = 0.25 },
 				filter = function(buf)
-					return vim.bo[buf].filetype == "log" and vim.api.nvim_buf_get_name(buf):match("flutter")
+					return vim.bo[buf].filetype == "log" and not vim.api.nvim_buf_get_name(buf):match("flutter")
+				end,
+			},
+			{
+				ft = "rest_nvim_result",
+				title = "API Response",
+				size = { width = 0.5 },
+				filter = function(buf)
+					return vim.bo[buf].filetype == "rest_nvim_result"
 				end,
 			},
 		},
@@ -61,6 +69,14 @@ return {
 				ft = "messages",
 				title = "Messages",
 				size = { height = 0.25 },
+			},
+			{
+				ft = "log",
+				title = "Log",
+				size = { width = 0.25 },
+				filter = function(buf)
+					return vim.bo[buf].filetype == "log" and not vim.api.nvim_buf_get_name(buf):match("flutter")
+				end,
 			},
 		},
 	},
