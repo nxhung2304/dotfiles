@@ -8,6 +8,7 @@ local function toggle_diffview(cmd)
 		vim.cmd("DiffviewClose")
 	end
 end
+
 return {
 	{
 		"lewis6991/gitsigns.nvim",
@@ -23,7 +24,20 @@ return {
 				map("n", "<leader>gs", gs.stage_hunk, { desc = "Stage hunk" })
 				map("n", "<leader>gr", gs.reset_hunk, { desc = "Reset hunk" })
 				map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
+				map("n", "<leader>gl", gs.setqflist, { desc = "Show changes in qf" })
 			end,
+
+			-- Blame config
+			current_line_blame = true,
+			current_line_blame_opts = {
+				virt_text = true,
+				virt_text_pos = "eol", -- 'eol' | 'overlay' | 'right_align'
+				delay = 100,
+				ignore_whitespace = false,
+				virt_text_priority = 100,
+				use_focus = true,
+			},
+			current_line_blame_formatter = "<author>, <author_time:%R> - <summary>",
 		},
 		event = { "BufReadPre", "BufNewFile" },
 	},
@@ -35,7 +49,12 @@ return {
 			vim.g.gitblame_date_format = "%x"
 			vim.g.gitblame_message_when_not_committed = ""
 		end,
-		event = "BufRead",
+		keys = {
+			{ "<leader>gc", "<cmd>GitBlameCopyFileURL<cr>", desc = "Copies the file URL Remote" },
+		},
+		opts = {
+			enabled = false,
+		},
 	},
 	{
 		"akinsho/git-conflict.nvim",
@@ -104,13 +123,6 @@ return {
 					toggle_diffview("DiffviewOpen")
 				end,
 				desc = "Diff Index",
-			},
-			{
-				"<leader>gD",
-				function()
-					toggle_diffview("DiffviewOpen master..HEAD")
-				end,
-				desc = "Diff master",
 			},
 			{
 				"<leader>gf",
