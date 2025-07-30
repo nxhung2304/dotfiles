@@ -25,6 +25,7 @@ return {
 				map("n", "<leader>gr", gs.reset_hunk, { desc = "Reset hunk" })
 				map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
 				map("n", "<leader>gl", gs.setqflist, { desc = "Show changes in qf" })
+				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
 			end,
 
 			-- Blame config
@@ -40,21 +41,6 @@ return {
 			current_line_blame_formatter = "<author>, <author_time:%R> - <summary>",
 		},
 		event = { "BufReadPre", "BufNewFile" },
-	},
-	{
-		"f-person/git-blame.nvim",
-		init = function()
-			vim.g.gitblame_ignored_filetypes = { "toggleterm" }
-			vim.g.gitblame_message_template = "<author> • <date> • <summary>"
-			vim.g.gitblame_date_format = "%x"
-			vim.g.gitblame_message_when_not_committed = ""
-		end,
-		keys = {
-			{ "<leader>gc", "<cmd>GitBlameCopyFileURL<cr>", desc = "Copies the file URL Remote" },
-		},
-		opts = {
-			enabled = false,
-		},
 	},
 	{
 		"akinsho/git-conflict.nvim",
