@@ -31,8 +31,8 @@ export PATH="$HOME/flutter/bin:$PATH"
 eval "$(direnv hook zsh)"
 
 # Alias
-alias zshconfig="vim ~/dotfiles/.zshrc"
-alias ohmyzsh="vim ~/.oh-my-zsh"
+alias zshconfig="nvim ~/dotfiles/.zshrc"
+alias ohmyzsh="nvim ~/.oh-my-zsh"
 alias ll="ls -la"
 alias la="ls -A"
 alias l="ls -CF"
