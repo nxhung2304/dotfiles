@@ -58,39 +58,38 @@ return {
 	config = function()
 		local dap = require("dap")
 
-		-- Cấu hình adapter cho Dart/Flutter - dùng flutter debug adapter
-		dap.adapters.dart = {
-			type = "executable",
-			command = "flutter",
-			args = { "debug_adapter" },
-			options = {
-				detached = false,
-			},
-		}
+		-- dap.adapters.dart = {
+		-- 	type = "executable",
+		-- 	command = "flutter",
+		-- 	args = { "debug_adapter" },
+		-- 	options = {
+		-- 		detached = false,
+		-- 	},
+		-- }
 
 		-- Cấu hình cho Dart/Flutter debugging
-		dap.configurations.dart = {
-			-- Configuration cho file Dart đơn lẻ
-			{
-				type = "dart",
-				request = "launch",
-				name = "Launch Dart File",
-				program = "${file}",
-				cwd = "${fileDirname}",
-				console = "terminal",
-				args = {},
-			},
-			-- Configuration cho Flutter project (sẽ được override bởi flutter-tools)
-			{
-				type = "dart",
-				request = "launch",
-				name = "Launch Flutter (Debug)",
-				program = "${workspaceFolder}/lib/main.dart",
-				cwd = "${workspaceFolder}",
-				console = "terminal",
-				args = {},
-			},
-		}
+		-- dap.configurations.dart = {
+		-- 	-- Configuration cho file Dart đơn lẻ
+		-- 	{
+		-- 		type = "dart",
+		-- 		request = "launch",
+		-- 		name = "Launch Dart File",
+		-- 		program = "${file}",
+		-- 		cwd = "${fileDirname}",
+		-- 		console = "terminal",
+		-- 		args = {},
+		-- 	},
+		-- 	-- -- Configuration cho Flutter project (sẽ được override bởi flutter-tools)
+		-- 	-- {
+		-- 	-- 	type = "dart",
+		-- 	-- 	request = "launch",
+		-- 	-- 	name = "Launch Flutter (Debug)",
+		-- 	-- 	program = "${workspaceFolder}/lib/main.dart",
+		-- 	-- 	cwd = "${workspaceFolder}",
+		-- 	-- 	console = "terminal",
+		-- 	-- 	args = {},
+		-- 	-- },
+		-- }
 
 		-- Input configurations
 		dap.configurations.inputs = {

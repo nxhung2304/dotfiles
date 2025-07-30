@@ -28,10 +28,25 @@ return {
 			debugger = {
 				enabled = true,
 				run_via_dap = true, -- QUAN TRỌNG: Chạy debug qua nvim-dap
-				exception_breakpoints = { "uncaught", "raised" }, -- Dừng tại exception
+				-- exception_breakpoints = { "uncaught", "raised" }, -- Dừng tại exception
+				exception_breakpoints = {},
 				evaluate_to_string_in_debug_views = true,
+				force_setup = true,
 				register_configurations = function(paths)
 					local dap = require("dap")
+
+					dap.adapters.dart = {
+						type = "executable",
+						command = paths.flutter_sdk .. "/bin/flutter",
+						args = { "debug_adapter" },
+						options = {
+							detached = false,
+						},
+					}
+
+					if not dap.configurations.dart then
+						dap.configurations.dart = {}
+					end
 
 					-- Override configurations để tương tác với nvim-dap
 					dap.configurations.dart = {
@@ -45,7 +60,7 @@ return {
 							program = "${workspaceFolder}/lib/main.dart",
 							cwd = "${workspaceFolder}",
 							console = "terminal",
-							args = {},
+							args = { "--dart-define=FLAVOR=development" },
 							vmArgs = {},
 							flutterMode = "debug",
 						},
@@ -59,7 +74,7 @@ return {
 							program = "${workspaceFolder}/lib/main.dart",
 							cwd = "${workspaceFolder}",
 							console = "terminal",
-							args = { "--profile" },
+							args = { "--profile", "--dart-define=FLAVOR=development" },
 							vmArgs = {},
 							flutterMode = "profile",
 						},
@@ -73,7 +88,7 @@ return {
 							program = "${workspaceFolder}/lib/main.dart",
 							cwd = "${workspaceFolder}",
 							console = "terminal",
-							args = { "--release" },
+							args = { "--release", "--dart-define=FLAVOR=production" },
 							vmArgs = {},
 							flutterMode = "release",
 						},
@@ -179,46 +194,52 @@ return {
 
 			local dap = require("dap")
 
+			-- if has_pubspec then
+			-- 	-- Flutter project - tự động chọn "Launch Flutter (Debug)"
+			-- 	print("Starting Flutter debug session...")
+			--
+			-- 	-- Tìm configuration "Launch Flutter (Debug)"
+			-- 	local configs = dap.configurations.dart or {}
+			-- 	local flutter_config = nil
+			--
+			-- 	for _, config in ipairs(configs) do
+			-- 		if config.name == "Launch Flutter (Debug)" then
+			-- 			flutter_config = config
+			-- 			break
+			-- 		end
+			-- 	end
+			--
+			-- 	if flutter_config then
+			-- 		dap.run(flutter_config)
+			-- 	end
+			-- 	vim.cmd("FlutterRun")
+			-- 	vim.cmd("FlutterLogToggle")
+			-- else
+			-- 	-- File Dart đơn lẻ - tự động chọn "Launch Dart File"
+			-- 	print("Starting Dart file debug...")
+			--
+			-- 	local configs = dap.configurations.dart or {}
+			-- 	local dart_config = nil
+			--
+			-- 	for _, config in ipairs(configs) do
+			-- 		if config.name == "Launch Dart File" then
+			-- 			dart_config = config
+			-- 			break
+			-- 		end
+			-- 	end
+			--
+			-- 	if dart_config then
+			-- 		dap.run(dart_config)
+			-- 	else
+			-- 		-- Fallback: dùng dap.continue()
+			-- 		dap.continue()
+			-- 	end
+			-- end
+
 			if has_pubspec then
-				-- Flutter project - tự động chọn "Launch Flutter (Debug)"
-				print("Starting Flutter debug session...")
-
-				-- Tìm configuration "Launch Flutter (Debug)"
-				local configs = dap.configurations.dart or {}
-				local flutter_config = nil
-
-				for _, config in ipairs(configs) do
-					if config.name == "Launch Flutter (Debug)" then
-						flutter_config = config
-						break
-					end
-				end
-
-				if flutter_config then
-					dap.run(flutter_config)
-				end
-				vim.cmd("FlutterRun")
-				vim.cmd("FlutterLogToggle")
+				vim.cmd("FlutterRun") -- CHỈ dùng FlutterRun
 			else
-				-- File Dart đơn lẻ - tự động chọn "Launch Dart File"
-				print("Starting Dart file debug...")
-
-				local configs = dap.configurations.dart or {}
-				local dart_config = nil
-
-				for _, config in ipairs(configs) do
-					if config.name == "Launch Dart File" then
-						dart_config = config
-						break
-					end
-				end
-
-				if dart_config then
-					dap.run(dart_config)
-				else
-					-- Fallback: dùng dap.continue()
-					dap.continue()
-				end
+				require("dap").continue()
 			end
 		end
 
@@ -334,75 +355,8 @@ return {
 			end,
 			desc = "Flutter Smart Debug (Auto-select)",
 		},
-		{
-			"<leader>Fd",
-			function()
-				_G.safe_dap_continue()
-			end,
-			desc = "DAP Continue/Start Debug (Auto-select)",
-		},
 		-- Debug với lựa chọn manual
-		{
-			"<leader>Fm",
-			function()
-				if vim.bo.filetype == "dart" then
-					require("dap").continue() -- Sẽ hiện Telescope prompt
-				else
-					print("Please open a Dart file first")
-				end
-			end,
-			desc = "Debug with Manual Selection",
-		},
-		-- Debug Flutter trực tiếp
-		{
-			"<leader>Ff",
-			function()
-				if vim.bo.filetype == "dart" then
-					local dap = require("dap")
-					local configs = dap.configurations.dart or {}
-					for _, config in ipairs(configs) do
-						if config.name == "Launch Flutter (Debug)" then
-							print("Found Flutter config, starting debug...")
-							dap.run(config)
-							return
-						end
-					end
-					print("Flutter debug config not found")
-					_G.debug_dap_configs() -- Debug info
-				else
-					print("Please open a Dart file first")
-				end
-			end,
-			desc = "Launch Flutter Debug",
-		},
-		-- Debug info
-		{
-			"<leader>Fi",
-			function()
-				_G.debug_dap_configs()
-			end,
-			desc = "Debug DAP Configs Info",
-		},
 		-- Debug Dart file trực tiếp
-		{
-			"<leader>Fa",
-			function()
-				if vim.bo.filetype == "dart" then
-					local dap = require("dap")
-					local configs = dap.configurations.dart or {}
-					for _, config in ipairs(configs) do
-						if config.name == "Launch Dart File" then
-							dap.run(config)
-							return
-						end
-					end
-					print("Dart file debug config not found")
-				else
-					print("Please open a Dart file first")
-				end
-			end,
-			desc = "Launch Dart File Debug",
-		},
 		{
 			"<leader>Fq",
 			function()
@@ -428,61 +382,6 @@ return {
 			desc = "Flutter Hot Restart (Debug)",
 		},
 
-		-- -- Debug controls - nvim-dap keymaps
-		-- {
-		-- 	"<leader>Fb",
-		-- 	function()
-		-- 		require("dap").toggle_breakpoint()
-		-- 	end,
-		-- 	desc = "Toggle Breakpoint",
-		-- },
-		-- {
-		-- 	"<leader>FB",
-		-- 	function()
-		-- 		require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
-		-- 	end,
-		-- 	desc = "Conditional Breakpoint",
-		-- },
-		-- {
-		-- 	"<leader>Fn",
-		-- 	function()
-		-- 		require("dap").step_over()
-		-- 	end,
-		-- 	desc = "Step Over",
-		-- },
-		-- {
-		-- 	"<leader>Fi",
-		-- 	function()
-		-- 		require("dap").step_into()
-		-- 	end,
-		-- 	desc = "Step Into",
-		-- },
-		-- {
-		-- 	"<leader>Fo",
-		-- 	function()
-		-- 		require("dap").step_out()
-		-- 	end,
-		-- 	desc = "Step Out",
-		-- },
-		-- {
-		-- 	"<leader>Fu",
-		-- 	function()
-		-- 		require("dapui").toggle()
-		-- 	end,
-		-- 	desc = "Toggle Debug UI",
-		-- },
-		-- {
-		-- 	"<leader>Fe",
-		-- 	function()
-		-- 		require("dapui").eval()
-		-- 	end,
-		-- 	desc = "Evaluate Expression",
-		-- },
-
-		-- Device management
-		{ "<leader>FD", "<cmd>FlutterDevices<cr>", desc = "Flutter Devices" },
-		{ "<leader>FE", "<cmd>FlutterEmulators<cr>", desc = "Flutter Emulators" },
-
 		-- Log management
 		{ "<leader>Fl", "<cmd>FlutterLogToggle<cr>", desc = "Flutter Log Toggle" },
 		{ "<leader>FC", "<cmd>FlutterLogClear<cr>", desc = "Flutter Log Clear" },
@@ -492,8 +391,117 @@ return {
 		{ "<leader>FA", "<cmd>FlutterReanalyze<cr>", desc = "Flutter Reanalyze" },
 		{ "<leader>FO", "<cmd>FlutterOutlineToggle<cr>", desc = "Flutter Outline Toggle" },
 
-		-- DevTools
-		{ "<leader>Ft", "<cmd>FlutterDevTools<cr>", desc = "Flutter DevTools" },
-		{ "<leader>Fp", "<cmd>FlutterCopyProfilerUrl<cr>", desc = "Copy Profiler URL" },
+		{
+			"<leader>Ft",
+			function()
+				local function create_or_open_test_file()
+					local current_file = vim.fn.expand("%:p")
+					local current_filetype = vim.bo.filetype
+
+					-- Kiểm tra nếu không phải file Dart
+					if current_filetype ~= "dart" then
+						print("Error: Please open a Dart file first")
+						return
+					end
+
+					local workspace_folder = vim.fn.getcwd()
+					local relative_path = vim.fn.fnamemodify(current_file, ":.")
+					local file_name = vim.fn.fnamemodify(current_file, ":t:r")
+
+					-- Kiểm tra nếu đang ở file test
+					if file_name:match("_test$") then
+						print("Already in a test file: " .. relative_path)
+						return
+					end
+
+					-- Kiểm tra nếu file trong thư mục test/
+					if relative_path:match("^test/") then
+						print("Already in test directory: " .. relative_path)
+						return
+					end
+
+					local class_name = file_name:gsub("^%l", string.upper) -- Capitalize first letter
+
+					-- Tạo đường dẫn test file với cấu trúc y hệt
+					local test_file_path
+
+					if relative_path:match("^lib/") then
+						-- File trong lib/ -> giữ nguyên cấu trúc trong test/
+						-- lib/core/services/network_connectivity.dart -> test/core/services/network_connectivity_test.dart
+						local lib_path = relative_path:gsub("^lib/", "") -- bỏ lib/ prefix
+						local dir_path = lib_path:gsub("/[^/]*$", "") -- lấy thư mục (core/services)
+						local test_filename = file_name .. "_test.dart"
+
+						if dir_path == lib_path then
+							-- File ở root lib/ (lib/main.dart)
+							test_file_path = workspace_folder .. "/test/" .. test_filename
+						else
+							-- File trong subfolder (lib/core/services/file.dart)
+							test_file_path = workspace_folder .. "/test/" .. dir_path .. "/" .. test_filename
+						end
+					else
+						-- File không trong lib/ -> tạo test trong test/
+						test_file_path = workspace_folder .. "/test/" .. file_name .. "_test.dart"
+					end
+
+					-- Kiểm tra file test đã tồn tại chưa
+					if vim.fn.filereadable(test_file_path) == 1 then
+						-- File test đã tồn tại, mở nó
+						vim.cmd("edit " .. test_file_path)
+						print("Opened existing test file: " .. vim.fn.fnamemodify(test_file_path, ":."))
+					else
+						-- Tính toán relative path cho import helper
+						local test_relative = test_file_path:gsub(workspace_folder .. "/", "")
+						local depth = select(2, test_relative:gsub("/", "")) - 1 -- đếm số thư mục con từ root
+						local helper_path = string.rep("../", depth) .. "helpers/test_helper.dart"
+
+						-- Tạo thư mục nếu chưa có
+						local test_dir = vim.fn.fnamemodify(test_file_path, ":h")
+						vim.fn.mkdir(test_dir, "p")
+
+						-- Template test file với import path động
+						local template = string.format(
+							[[import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  setUp(() {
+
+  });
+  tearDownAll(() {
+    TestHelper.tearDownTestEnvironment();
+  });
+  group('%s Test', () {
+    
+
+  });
+}]],
+							helper_path,
+							class_name
+						)
+
+						-- Tạo và mở file test
+						local file = io.open(test_file_path, "w")
+						if file then
+							file:write(template)
+							file:close()
+							vim.cmd("edit " .. test_file_path)
+							print("Created new test file: " .. vim.fn.fnamemodify(test_file_path, ":."))
+
+							-- Di chuyển cursor đến vị trí thích hợp (trong group)
+							vim.schedule(function()
+								vim.fn.search("group.*Test.*{")
+								vim.cmd("normal! o")
+								vim.cmd("startinsert")
+							end)
+						else
+							print("Error: Could not create test file")
+						end
+					end
+				end
+
+				create_or_open_test_file()
+			end,
+			desc = "Create/Open Test File",
+		},
 	},
 }
