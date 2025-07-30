@@ -27,15 +27,15 @@ return {
 			{
 				title = "Outline symbols",
 				ft = "aerial",
-				size = { width = 0.3 },
+				size = { width = 0.2 },
 			},
-			{
-				title = "File Explorer",
-				ft = "NvimTree",
-				size = {
-					width = 0.3,
-				},
-			},
+			-- {
+			-- 	title = "File Explorer",
+			-- 	ft = "NvimTree",
+			-- 	size = {
+			-- 		width = 0.2,
+			-- 	},
+			-- },
 			{
 				ft = "flutterToolsOutline",
 				title = "Flutter Outline",
@@ -56,28 +56,28 @@ return {
 		},
 		bottom = {
 			-- DAP REPL
-			{
-				ft = "dap-repl",
-				title = "Debug REPL",
-				size = { height = 0.2 },
-				filter = function(buf)
-					return vim.bo[buf].filetype == "dap-repl"
-				end,
-			},
+			-- {
+			-- 	ft = "dap-repl",
+			-- 	title = "Debug REPL",
+			-- 	size = { height = 0.2 },
+			-- 	filter = function(buf)
+			-- 		return vim.bo[buf].filetype == "dap-repl"
+			-- 	end,
+			-- },
 			-- Messages
 			{
 				ft = "messages",
 				title = "Messages",
 				size = { height = 0.25 },
 			},
-			{
-				ft = "log",
-				title = "Log",
-				size = { width = 0.25 },
-				filter = function(buf)
-					return vim.bo[buf].filetype == "log" and not vim.api.nvim_buf_get_name(buf):match("flutter")
-				end,
-			},
+			-- {
+			-- 	ft = "log",
+			-- 	title = "Log",
+			-- 	size = { width = 0.25 },
+			-- 	filter = function(buf)
+			-- 		return vim.bo[buf].filetype == "log" and not vim.api.nvim_buf_get_name(buf):match("flutter")
+			-- 	end,
+			-- },
 		},
 	},
 	init = function()

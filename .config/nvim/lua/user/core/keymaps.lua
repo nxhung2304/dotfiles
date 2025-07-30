@@ -69,3 +69,22 @@ vim.keymap.set("n", "<leader>ud", function()
 		utils.open_sorted_diagnostics()
 	end
 end, { desc = "Toggle sorted diagnostics" })
+
+vim.api.nvim_create_autocmd("BufWritePost", {
+	callback = function()
+		local qf_winid = vim.fn.getqflist({ winid = 0 }).winid
+		if qf_winid ~= 0 then
+			local current_win = vim.api.nvim_get_current_win()
+
+			vim.defer_fn(function()
+				utils.open_sorted_diagnostics()
+			end, 50)
+
+			pcall(function()
+				vim.api.nvim_set_current_win(current_win)
+			end)
+		end
+	end,
+})
+
+-- keymap("n", "<leader>um", "<cmd>NoiceAll<cr>", { desc = "Show messages" })

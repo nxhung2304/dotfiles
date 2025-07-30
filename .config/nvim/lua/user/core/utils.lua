@@ -38,37 +38,51 @@ end
 
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-
 	local aquaColor = "#83a598"
 	local orangeColor = "#d65d0e"
+	local filenameColor = "#b8bb26"
+	local pathColor = "#928374"
 
 	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
+	vim.api.nvim_set_hl(0, "WinBarPath", { fg = pathColor })
+	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = filenameColor, bold = true })
+
+	local path_parts = vim.split(filepath, "/")
+	local filename = path_parts[#path_parts]
+	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
+	local icons = require("user.core.configs").icons.lsp
+
+	local colored_filepath = ""
+	if path ~= "" then
+		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename#" .. " " .. icons.File .. filename .. "%*"
+	else
+		colored_filepath = "%#WinBarFilename#" .. "" .. icons.File .. filename .. "%*"
+	end
 
 	if require("nvim-navic").is_available() then
 		local data = require("nvim-navic").get_data()
 		if data and #data > 0 then
 			local context_string = ""
-
 			local first_context = data[1]
 			local first_name = first_context.name
-			local highlighted_first = "%#NavicHighlight1#" .. first_name .. "%*"
-
+			local first_kind = first_context.kind
+			local first_icon = icons[first_kind] or " "
+			local highlighted_first = "%#NavicHighlight1#" .. first_icon .. first_name .. "%*"
 			context_string = highlighted_first
 
 			if #data >= 2 then
 				local second_context = data[2]
 				local second_name = second_context.name
-				local highlighted_second = "%#NavicHighlight2#" .. second_name .. "%*"
-
+				local second_kind = second_context.kind
+				local second_icon = icons[second_kind] or " "
+				local highlighted_second = "%#NavicHighlight2#" .. second_icon .. second_name .. "%*"
 				context_string = context_string .. " > " .. highlighted_second
 			end
-
-			return filepath .. " > " .. context_string
+			return colored_filepath .. " > " .. context_string
 		end
 	end
-
-	return filepath
+	return colored_filepath
 end
 
 M.lsp_on_attach = function(client, bufnr)
@@ -132,18 +146,12 @@ function M.open_sorted_diagnostics(severity_filter)
 		if a.severity ~= b.severity then
 			return a.severity < b.severity
 		end
-
-		if a.bufnr == b.bufnr then
-			return a.lnum < b.lnum
-		end
-
-		local file_a = vim.api.nvim_buf_get_name(a.bufnr)
-		local file_b = vim.api.nvim_buf_get_name(b.bufnr)
-		return file_a < file_b
+		return a.lnum < b.lnum
 	end)
 
 	vim.diagnostic.setqflist(diagnostics)
 	vim.cmd("copen")
+	vim.cmd("wincmd p")
 end
 
 return M
