@@ -96,7 +96,7 @@ return {
 
 			for _, server in pairs(servers) do
 				local opts = {
-					on_attach = utils.lsp_on_attach
+					on_attach = utils.lsp_on_attach,
 				}
 				local has_custom_opts, server_custom_opts = pcall(require, "user.plugins.lsp.settings." .. server)
 				if has_custom_opts then
@@ -134,7 +134,7 @@ return {
 			PATH = "prepend",
 		},
 	},
-	{"mfussenegger/nvim-lint"},
+	{ "mfussenegger/nvim-lint" },
 	{ "williamboman/mason-lspconfig.nvim", event = { "BufReadPre", "BufNewFile" } },
 	{
 		"onsails/lspkind.nvim",

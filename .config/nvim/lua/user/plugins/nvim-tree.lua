@@ -26,13 +26,21 @@ return {
 					default = "",
 					symlink = "",
 					git = {
-						unstaged = "",
-						staged = "S",
-						unmerged = "",
-						renamed = "➜",
-						deleted = "",
-						untracked = "U",
-						ignored = "◌",
+						-- unstaged = "",
+						-- staged = "S",
+						-- unmerged = "",
+						-- renamed = "➜",
+						-- deleted = "",
+						-- untracked = "U",
+						-- ignored = "◌",
+
+						unstaged = "󰏫", -- Modified/changed
+						staged = "󰱒", -- Staged/added
+						unmerged = "", -- Conflict
+						renamed = "󰁕", -- Renamed
+						deleted = "󰍷", -- Deleted
+						untracked = "󰝒", -- New/untracked
+						ignored = "󰈉", -- Ignored
 					},
 					folder = {
 						default = "",

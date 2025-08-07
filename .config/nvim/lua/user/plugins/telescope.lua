@@ -7,7 +7,6 @@ return {
 			defaults = {
 				file_ignore_patterns = { "node_modules", ".git/" },
 				selection_strategy = "reset",
-				file_sorter = require("telescope.sorters").get_fuzzy_file,
 				case_mode = "ignore_case",
 				vimgrep_arguments = {
 					"rg",
