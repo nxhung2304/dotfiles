@@ -51,7 +51,7 @@ M.get_filepath_with_navic = function()
 	local path_parts = vim.split(filepath, "/")
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
-	local icons = require("user.core.configs").icons.lsp
+	local icons = require("user.core.configs").icons.kind
 
 	local colored_filepath = ""
 	if path ~= "" then

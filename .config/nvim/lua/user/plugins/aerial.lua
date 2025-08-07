@@ -1,3 +1,5 @@
+local Configs = require("user.core.configs")
+
 return {
 	"stevearc/aerial.nvim",
 	event = {
@@ -21,6 +23,8 @@ return {
 			aerial_current = "Visual",
 			aerial_guide = "Comment",
 		},
+
+    icons = Configs.icons.kind,
 	},
 	keys = {
 		{

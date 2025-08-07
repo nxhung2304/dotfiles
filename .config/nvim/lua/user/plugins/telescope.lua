@@ -6,14 +6,46 @@ return {
 		opts = {
 			defaults = {
 				file_ignore_patterns = { "node_modules", ".git/" },
-				hidden = true,
+				selection_strategy = "reset",
+				file_sorter = require("telescope.sorters").get_fuzzy_file,
+				case_mode = "ignore_case",
+				vimgrep_arguments = {
+					"rg",
+					"--color=never",
+					"--no-heading",
+					"--with-filename",
+					"--line-number",
+					"--column",
+					"--smart-case",
+				},
+				mappings = {
+					i = {
+						["<C-w>"] = function()
+							vim.api.nvim_input("<C-S-w>")
+						end,
+						["<C-u>"] = function()
+							vim.api.nvim_input("<C-u>")
+						end,
+						["<C-a>"] = function()
+							vim.api.nvim_input("<Home>")
+						end,
+						["<C-e>"] = function()
+							vim.api.nvim_input("<End>")
+						end,
+					},
+				},
 			},
+
 			pickers = {
 				colorscheme = {
 					enable_preview = true,
 				},
 				oldfiles = {
 					cwd_only = true,
+				},
+				find_files = {
+					find_command = { "rg", "--files", "--iglob", "!.git", "--hidden" },
+					case_mode = "ignore_case",
 				},
 			},
 			extensions = {
@@ -27,25 +59,13 @@ return {
 		keys = {
 			{
 				"<leader>sf",
-				function()
-					require("telescope").extensions.smart_open.smart_open()
-				end,
+				"<cmd>Telescope find_files<cr>",
 				desc = "Find files",
 			},
-			{ "<leader>sr", "<cmd>Telescope oldfiles<cr>",     desc = "Find oldfiles" },
+			{ "<leader>sr", "<cmd>Telescope oldfiles<cr>", desc = "Find oldfiles" },
 			{ "<leader>sB", "<cmd>Telescope git_branches<cr>", desc = "Find branches" },
-			{ "<leader>sb", "<cmd>Telescope buffers<cr>",      desc = "Find buffers" },
-			-- { "<leader>sg", "<cmd>Telescope live_grep<cr>", desc = "Find string" },
-			{ "<leader>sw", "<cmd>Telescope grep_string<cr>",  desc = "Find current cursor" },
-		},
-	},
-	{
-		"danielfalk/smart-open.nvim",
-		lazy = true,
-		branch = "0.2.x",
-		dependencies = {
-			"kkharji/sqlite.lua",
-			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+			{ "<leader>sb", "<cmd>Telescope buffers<cr>", desc = "Find buffers" },
+			{ "<leader>sw", "<cmd>Telescope grep_string<cr>", desc = "Find current cursor" },
 		},
 	},
 }
