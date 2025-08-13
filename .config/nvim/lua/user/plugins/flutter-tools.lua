@@ -2,20 +2,18 @@ local utils = require("user.core.utils")
 
 return {
 	"akinsho/flutter-tools.nvim",
-	-- lazy = false,
 	ft = {
 		"dart",
 	},
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"stevearc/dressing.nvim",
-		"mfussenegger/nvim-dap", -- Thêm dependency nvim-dap
 	},
 	config = function()
 		require("flutter-tools").setup({
 			flutter_path = vim.fn.system("which flutter"):gsub("\n", ""),
 
-			root_patterns = { ".git", "pubspec.yaml" },
+			root_patterns = { ".git", "pubspec.yaml", ".fvm" },
 
 			decorations = {
 				statusline = {
@@ -27,88 +25,14 @@ return {
 
 			debugger = {
 				enabled = true,
-				run_via_dap = true, -- QUAN TRỌNG: Chạy debug qua nvim-dap
 				-- exception_breakpoints = { "uncaught", "raised" }, -- Dừng tại exception
 				exception_breakpoints = {},
 				evaluate_to_string_in_debug_views = true,
-				force_setup = true,
-				register_configurations = function(paths)
-					local dap = require("dap")
-
-					dap.adapters.dart = {
-						type = "executable",
-						command = paths.flutter_sdk .. "/bin/flutter",
-						args = { "debug_adapter" },
-						options = {
-							detached = false,
-						},
-					}
-
-					if not dap.configurations.dart then
-						dap.configurations.dart = {}
-					end
-
-					-- Override configurations để tương tác với nvim-dap
-					dap.configurations.dart = {
-						-- Configuration cho Flutter Debug (sử dụng adapter dart)
-						{
-							type = "dart",
-							request = "launch",
-							name = "Launch Flutter (Debug)",
-							dartSdkPath = paths.dart_sdk,
-							flutterSdkPath = paths.flutter_sdk,
-							program = "${workspaceFolder}/lib/main.dart",
-							cwd = "${workspaceFolder}",
-							console = "terminal",
-							args = { "--dart-define=FLAVOR=development" },
-							vmArgs = {},
-							flutterMode = "debug",
-						},
-						-- Configuration cho Flutter Profile mode
-						{
-							type = "dart",
-							request = "launch",
-							name = "Launch Flutter (Profile)",
-							dartSdkPath = paths.dart_sdk,
-							flutterSdkPath = paths.flutter_sdk,
-							program = "${workspaceFolder}/lib/main.dart",
-							cwd = "${workspaceFolder}",
-							console = "terminal",
-							args = { "--profile", "--dart-define=FLAVOR=development" },
-							vmArgs = {},
-							flutterMode = "profile",
-						},
-						-- Configuration cho Flutter Release mode
-						{
-							type = "dart",
-							request = "launch",
-							name = "Launch Flutter (Release)",
-							dartSdkPath = paths.dart_sdk,
-							flutterSdkPath = paths.flutter_sdk,
-							program = "${workspaceFolder}/lib/main.dart",
-							cwd = "${workspaceFolder}",
-							console = "terminal",
-							args = { "--release", "--dart-define=FLAVOR=production" },
-							vmArgs = {},
-							flutterMode = "release",
-						},
-						-- Configuration cho file Dart đơn lẻ
-						{
-							type = "dart",
-							request = "launch",
-							name = "Launch Dart File",
-							program = "${file}",
-							cwd = "${fileDirname}",
-							console = "terminal",
-							args = {},
-							vmArgs = {},
-						},
-					}
-				end,
+				-- force_setup = true,
 			},
 
 			flutter_lookup_cmd = nil,
-			fvm = false,
+			fvm = true,
 			default_run_args = nil,
 
 			widget_guides = {
@@ -166,220 +90,36 @@ return {
 				},
 			},
 		})
-
-		-- Tạo function để smart debug
-		local function flutter_smart_debug()
-			-- Kiểm tra filetype hiện tại
-			local current_filetype = vim.bo.filetype
-
-			-- Nếu không phải file Dart, tìm file Dart gần nhất
-			if current_filetype ~= "dart" then
-				-- Tìm file main.dart hoặc file .dart trong project
-				local workspace_folder = vim.fn.getcwd()
-				local main_dart = workspace_folder .. "/lib/main.dart"
-
-				if vim.fn.filereadable(main_dart) == 1 then
-					-- Mở main.dart và focus vào đó
-					vim.cmd("edit " .. main_dart)
-					print("Switched to main.dart for debugging")
-				else
-					print("Error: No Dart file found. Please open a .dart file first.")
-					return
-				end
-			end
-
-			local workspace_folder = vim.fn.getcwd()
-			local pubspec_path = workspace_folder .. "/pubspec.yaml"
-			local has_pubspec = vim.fn.filereadable(pubspec_path) == 1
-
-			local dap = require("dap")
-
-			-- if has_pubspec then
-			-- 	-- Flutter project - tự động chọn "Launch Flutter (Debug)"
-			-- 	print("Starting Flutter debug session...")
-			--
-			-- 	-- Tìm configuration "Launch Flutter (Debug)"
-			-- 	local configs = dap.configurations.dart or {}
-			-- 	local flutter_config = nil
-			--
-			-- 	for _, config in ipairs(configs) do
-			-- 		if config.name == "Launch Flutter (Debug)" then
-			-- 			flutter_config = config
-			-- 			break
-			-- 		end
-			-- 	end
-			--
-			-- 	if flutter_config then
-			-- 		dap.run(flutter_config)
-			-- 	end
-			-- 	vim.cmd("FlutterRun")
-			-- 	vim.cmd("FlutterLogToggle")
-			-- else
-			-- 	-- File Dart đơn lẻ - tự động chọn "Launch Dart File"
-			-- 	print("Starting Dart file debug...")
-			--
-			-- 	local configs = dap.configurations.dart or {}
-			-- 	local dart_config = nil
-			--
-			-- 	for _, config in ipairs(configs) do
-			-- 		if config.name == "Launch Dart File" then
-			-- 			dart_config = config
-			-- 			break
-			-- 		end
-			-- 	end
-			--
-			-- 	if dart_config then
-			-- 		dap.run(dart_config)
-			-- 	else
-			-- 		-- Fallback: dùng dap.continue()
-			-- 		dap.continue()
-			-- 	end
-			-- end
-
-			if has_pubspec then
-				vim.cmd("FlutterRun") -- CHỈ dùng FlutterRun
-			else
-				require("dap").continue()
-			end
-		end
-
-		-- Function để hot reload thông qua DAP
-		local function smart_reload()
-			-- Kiểm tra filetype
-			if vim.bo.filetype ~= "dart" then
-				print("Please switch to a Dart file first")
-				return
-			end
-
-			local dap = require("dap")
-			local session = dap.session()
-
-			if session then
-				-- Dùng FlutterReload command
-				vim.cmd("FlutterReload")
-				print("Hot reloading...")
-			else
-				-- Không có debug session, thử chạy flutter run
-				print("No debug session active. Starting Flutter...")
-				vim.cmd("FlutterRun")
-			end
-		end
-
-		-- Function để hot restart thông qua DAP
-		local function smart_restart()
-			-- Kiểm tra filetype
-			if vim.bo.filetype ~= "dart" then
-				print("Please switch to a Dart file first")
-				return
-			end
-
-			local session = require("dap").session()
-			if session then
-				vim.cmd("FlutterRestart")
-			else
-				print("No debug session active")
-			end
-		end
-
-		-- Expose functions globally
-		_G.flutter_smart_debug = flutter_smart_debug
-		_G.smart_reload = smart_reload
-		_G.smart_restart = smart_restart
-
-		-- Function để debug an toàn
-		local function safe_dap_continue()
-			local current_filetype = vim.bo.filetype
-
-			if current_filetype == "dart" then
-				local workspace_folder = vim.fn.getcwd()
-				local pubspec_path = workspace_folder .. "/pubspec.yaml"
-				local has_pubspec = vim.fn.filereadable(pubspec_path) == 1
-
-				local dap = require("dap")
-				local configs = dap.configurations.dart or {}
-
-				if has_pubspec then
-					-- Tự động chọn Flutter config
-					for _, config in ipairs(configs) do
-						if config.name == "Launch Flutter (Debug)" then
-							dap.run(config)
-							return
-						end
-					end
-					-- Fallback
-					dap.continue()
-				else
-					-- Tự động chọn Dart file config
-					for _, config in ipairs(configs) do
-						if config.name == "Launch Dart File" then
-							dap.run(config)
-							return
-						end
-					end
-					-- Fallback
-					dap.continue()
-				end
-			else
-				print("Error: Not in a Dart file. Current filetype: " .. current_filetype)
-				print("Please open a .dart file first")
-			end
-		end
-
-		-- Function để kiểm tra DAP configs
-		local function debug_dap_configs()
-			local dap = require("dap")
-			print("=== DAP Adapters ===")
-			for name, adapter in pairs(dap.adapters) do
-				print("Adapter: " .. name)
-			end
-
-			print("\n=== DAP Configurations ===")
-			if dap.configurations.dart then
-				for i, config in ipairs(dap.configurations.dart) do
-					print(i .. ". " .. config.name .. " (type: " .. config.type .. ")")
-				end
-			else
-				print("No dart configurations found")
-			end
-		end
-
-		_G.debug_dap_configs = debug_dap_configs
 	end,
 
 	keys = {
-		-- Debug commands - tự động chọn configuration
 		{
 			"<leader>Fs",
-			function()
-				_G.flutter_smart_debug()
-			end,
-			desc = "Flutter Smart Debug (Auto-select)",
+			"FlutterRun",
+			desc = "Flutter Run",
 		},
-		-- Debug với lựa chọn manual
-		-- Debug Dart file trực tiếp
 		{
 			"<leader>Fq",
 			function()
-				require("dap").terminate()
 				vim.cmd("FlutterQuit")
 			end,
 			desc = "Stop Debug & Quit Flutter",
 		},
 
-		-- Hot reload/restart thông qua debug session
 		{
 			"<leader>Fr",
-			function()
-				_G.smart_reload()
-			end,
+			"FlutterReload",
 			desc = "Flutter Hot Reload (Debug)",
 		},
 		{
 			"<leader>FR",
-			function()
-				_G.smart_restart()
-			end,
+			"FlutterRestart",
 			desc = "Flutter Hot Restart (Debug)",
+		},
+		{
+			"<leader>Fd",
+			"FlutterDevices",
+			desc = "Select devices",
 		},
 
 		-- Log management

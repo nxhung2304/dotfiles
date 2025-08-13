@@ -1,6 +1,7 @@
 return {
 	"folke/which-key.nvim",
 	event = "VeryLazy",
+	-- keys = { "<leader>", "<C-w>", '"', "'", "`", "c", "v", "g" },
 	opts = {
 		win = {
 			border = "single",
@@ -20,6 +21,7 @@ return {
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>F", desc = "Flutter" },
 			{ "<leader>r", desc = "Rest API" },
+			{ "<leader>A", desc = "AI" },
 		})
 		wk.setup(opts)
 	end,

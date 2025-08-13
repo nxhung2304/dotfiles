@@ -35,7 +35,7 @@ return {
 					vim.cmd("AerialClose")
 				else
 					pcall(function()
-						require("dapui").close()
+						-- require("dapui").close()
 						vim.cmd("NvimTreeClose")
 					end)
 				end

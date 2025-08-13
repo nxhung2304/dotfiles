@@ -7,8 +7,17 @@ return {
       message = function() -- message to print on save
         return ("AutoSave: saved at " .. vim.fn.strftime("%H:%M:%S"))
       end,
-      dim = 0.18,           -- dim the color of `message`
+      -- dim = 0.18,           -- dim the color of `message`
       cleaning_interval = 2000, -- (milliseconds) automatically clean MsgArea after displaying `message`. See :h MsgArea
     },
   }
 }
+-- return {
+--   dir = vim.fn.stdpath('config') .. '/lua/auto-save.nvim',
+--   name = 'auto-save-dev',
+--   dev = true,
+--   config = function()
+--     require('auto-save').setup({
+--     })
+--   end
+-- }

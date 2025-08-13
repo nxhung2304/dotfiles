@@ -102,9 +102,9 @@ autocmd("User", {
 	pattern = "DapSessionTerminated",
 	callback = function()
 		vim.defer_fn(function()
-			require("edgy").close("dapui_scopes")
+			-- require("edgy").close("dapui_scopes")
 			-- require("edgy").close("dapui_stacks")
-			require("edgy").close("dap-repl")
+			-- require("edgy").close("dap-repl")
 			require("edgy").close("log")
 		end, 100)
 	end,

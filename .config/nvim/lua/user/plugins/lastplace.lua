@@ -1,4 +1,4 @@
 return {
-  "nxhung2304/lastplace.nvim",
-  opts = {}
+	"nxhung2304/lastplace.nvim",
+	opts = {},
 }

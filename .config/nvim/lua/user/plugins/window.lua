@@ -42,17 +42,17 @@ return {
 				size = { width = 0.2 },
 			},
 			-- DAP UI Scopes
-			{
-				ft = "dapui_scopes",
-				title = "Variables",
-				size = { width = 0.2 },
-			},
-			-- DAP UI Breakpoints
-			{
-				ft = "dapui_breakpoints",
-				title = "Breakpoints",
-				size = { width = 0.2 },
-			},
+			-- {
+			-- 	ft = "dapui_scopes",
+			-- 	title = "Variables",
+			-- 	size = { width = 0.2 },
+			-- },
+			-- -- DAP UI Breakpoints
+			-- {
+			-- 	ft = "dapui_breakpoints",
+			-- 	title = "Breakpoints",
+			-- 	size = { width = 0.2 },
+			-- },
 		},
 		bottom = {
 			-- DAP REPL

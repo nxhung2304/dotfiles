@@ -2,8 +2,12 @@ local lualine_components = require("user.plugins.lualine.components")
 
 return {
 	"nvim-lualine/lualine.nvim",
-	event = "VeryLazy",
+	event = { "BufReadPost", "BufNewFile" },
 	opts = {
+		disabled_filetypes = {
+			statusline = { "alpha" },
+			winbar = {},
+		},
 		options = {
 			icons_enabled = true,
 			theme = "auto",

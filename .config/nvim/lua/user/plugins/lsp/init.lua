@@ -134,7 +134,7 @@ return {
 			PATH = "prepend",
 		},
 	},
-	{ "mfussenegger/nvim-lint" },
+	{ "mfussenegger/nvim-lint", event = { "BufReadPre", "BufNewFile" } },
 	{ "williamboman/mason-lspconfig.nvim", event = { "BufReadPre", "BufNewFile" } },
 	{
 		"onsails/lspkind.nvim",

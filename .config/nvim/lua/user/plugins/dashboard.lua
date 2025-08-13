@@ -13,7 +13,7 @@ return {
 			"                                                     ",
 		}
 		dashboard.section.buttons.val = {
-			dashboard.button("f", "📁 Find file", ":TeleSmartOpen<cr>"),
+			dashboard.button("f", "📁 Find file", ":Telescope find_files<cr>"),
 			dashboard.button("r", "📄 Frecency files", ":Telescope oldfiles<CR>"),
 			dashboard.button("t", "🔍 Find text", "<cmd>GrugFar<CR>"),
 			dashboard.button("l", "󰒲 Lazy", ":Lazy<CR>"),

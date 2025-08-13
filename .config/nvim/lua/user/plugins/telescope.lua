@@ -5,6 +5,7 @@ return {
 		cmd = "Telescope",
 		opts = {
 			defaults = {
+				preview = false,
 				file_ignore_patterns = { "node_modules", ".git/" },
 				selection_strategy = "reset",
 				case_mode = "ignore_case",
@@ -45,13 +46,8 @@ return {
 				find_files = {
 					find_command = { "rg", "--files", "--iglob", "!.git", "--hidden" },
 					case_mode = "ignore_case",
-				},
-			},
-			extensions = {
-				smart_open = {
-					match_algorithm = "fzf",
-					cwd_only = true,
-					ignore_patterns = { "*.git/*", "*/tmp/*", ".idea/" },
+					enable_preview = false,
+					previewer = false,
 				},
 			},
 		},
