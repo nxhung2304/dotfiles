@@ -2,6 +2,7 @@ local M = {}
 
 function M.setup(config)
 	config.color_scheme = "GruvboxDark"
+  -- config.color_scheme = 'Gruvbox Material (Gogh)'
 	-- config.color_scheme = "Solarized (dark) (terminal.sexy)"
 
 	-- config.window_decorations = "NONE"
