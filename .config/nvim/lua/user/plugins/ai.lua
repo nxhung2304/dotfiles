@@ -1,107 +1,92 @@
 return {
-	{
-		"olimorris/codecompanion.nvim",
-		opts = {},
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-treesitter/nvim-treesitter",
-			"ravitemer/mcphub.nvim",
-			{
-				"echasnovski/mini.diff",
-				config = function()
-					local diff = require("mini.diff")
-					diff.setup({
-						source = diff.gen_source.none(),
-					})
-				end,
+	"yetone/avante.nvim",
+	-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+	-- ⚠️ must add this setting! ! !
+	build = vim.fn.has("win32") ~= 0 and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false"
+		or "make",
+	event = "VeryLazy",
+	version = false, -- Never set this value to "*"! Never!
+	---@module 'avante'
+	---@type avante.Config
+	opts = {
+		behaviour = {
+			auto_suggestions = true, -- Enable auto suggestions
+		},
+		-- suggestion = {
+		-- 	debounce = 300, -- Delay trước khi trigger suggestion
+		-- 	throttle = 600, -- Giới hạn tần suất request
+		-- 	accept = "<M-l>", -- Accept suggestion
+		-- 	next = "<M-]>", -- Next suggestion
+		-- 	prev = "<M-[>", -- Previous suggestion
+		-- 	dismiss = "<C-]>", -- Dismiss suggestion
+		-- },
+		provider = "gemini",
+		prompt_logger = {
+			enabled = false,
+		},
+		debug = false,
+
+		windows = {
+			position = "right", -- "right" | "left" | "top" | "bottom"
+			wrap = true,
+			width = 30, -- % width
+			border = "rounded",
+			sidebar_header = {
+				enabled = true,
+				align = "center",
+				rounded = true,
 			},
-			{
-				"OXY2DEV/markview.nvim",
-				lazy = false,
-				opts = {
-					preview = {
-						filetypes = { "markdown", "codecompanion" },
-						ignore_buftypes = {},
-					},
-				},
+			input = {
+				border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+				height = 8,
 			},
-			{
-				"HakonHarnes/img-clip.nvim",
-				opts = {
-					filetypes = {
-						codecompanion = {
-							prompt_for_file_name = false,
-							template = "[Image]($FILE_PATH)",
-							use_absolute_path = true,
-						},
+			edit = {
+				border = "rounded",
+				start_insert = true,
+			},
+			ask = {
+				floating = false,
+				start_insert = true,
+				border = "rounded",
+			},
+		},
+	},
+	dependencies = {
+		"nvim-lua/plenary.nvim",
+		"MunifTanjim/nui.nvim",
+		-- --- The below dependencies are optional,
+		-- "echasnovski/mini.pick", -- for file_selector provider mini.pick
+		-- "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
+		-- "hrsh7th/nvim-cmp", -- autocompletion for avante commands and mentions
+		-- "ibhagwan/fzf-lua", -- for file_selector provider fzf
+		-- "stevearc/dressing.nvim", -- for input provider dressing
+		-- "folke/snacks.nvim", -- for input provider snacks
+		-- "nvim-tree/nvim-web-devicons", -- or echasnovski/mini.icons
+		-- "zbirenbaum/copilot.lua", -- for providers='copilot'
+		{
+			-- support for image pasting
+			"HakonHarnes/img-clip.nvim",
+			event = "VeryLazy",
+			opts = {
+				-- recommended settings
+				default = {
+					embed_image_as_base64 = false,
+					prompt_for_file_name = false,
+					drag_and_drop = {
+						insert_mode = true,
 					},
+					-- required for Windows users
+					use_absolute_path = true,
 				},
 			},
 		},
-		config = function()
-			require("codecompanion").setup({
-				extensions = {
-					mcphub = {
-						callback = "mcphub.extensions.codecompanion",
-						opts = {
-							make_vars = true,
-							make_slash_commands = true,
-							show_result_in_chat = true,
-						},
-					},
-				},
-
-				strategies = {
-					chat = {
-						adapter = "gemini",
-					},
-					inline = {
-						adapter = "gemini",
-						keymaps = {
-							accept_change = {
-								modes = { n = "ga" },
-								description = "Accept the suggested change",
-							},
-							reject_change = {
-								modes = { n = "gr" },
-								opts = { nowait = true },
-								description = "Reject the suggested change",
-							},
-						},
-					},
-				},
-
-				display = {
-					action_palette = {
-						width = 95,
-						height = 10,
-						prompt = "Prompt ", -- Prompt used for interactive LLM calls
-						provider = "default", -- Can be "default", "telescope", "fzf_lua", "mini_pick" or "snacks". If not specified, the plugin will autodetect installed providers.
-						opts = {
-							show_default_actions = true, -- Show the default actions in the action palette?
-							show_default_prompt_library = true, -- Show the default prompt library in the action palette?
-							title = "CodeCompanion actions", -- The title of the action palette
-						},
-					},
-
-					diff = {
-						provider = "mini_diff", -- Hiển thị diff
-						show_signs = true,
-					},
-					inline = {
-						show_virtual_text = true, -- Hiển thị virtual text
-					},
-				},
-				inline = {
-					show_diff = true,
-					show_help = true, -- Hiển thị ga/gr hints
-				},
-			})
-		end,
-		keys = {
-			{ "<leader>Ao", "<cmd>CodeCompanion<cr>", desc = "Prompt" },
-			{ "<leader>Aa", "<cmd>CodeCompanionActions<cr>", desc = "Actions" },
-			{ "<leader>Ac", "<cmd>CodeCompanionChat<cr>", desc = "Chat" },
+		{
+			-- Make sure to set this up properly if you have lazy=true
+			"MeanderingProgrammer/render-markdown.nvim",
+			opts = {
+				file_types = { "markdown", "Avante" },
+			},
+			ft = { "markdown", "Avante" },
 		},
 	},
 }

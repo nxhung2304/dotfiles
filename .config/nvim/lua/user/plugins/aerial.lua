@@ -28,7 +28,7 @@ return {
 	},
 	keys = {
 		{
-			"<leader>a",
+			"<leader>o",
 			function()
 				local is_aerial_open = require("aerial").is_open()
 				if is_aerial_open then
