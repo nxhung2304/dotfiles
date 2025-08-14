@@ -51,13 +51,24 @@ M.get_filepath_with_navic = function()
 	local path_parts = vim.split(filepath, "/")
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
-	local icons = require("user.core.configs").icons.kind
 
-	local colored_filepath = ""
-	if path ~= "" then
-		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename#" .. " " .. icons.File .. filename .. "%*"
+	local devicons = require("nvim-web-devicons")
+	local file_icon, icon_color = devicons.get_icon_color(filename, vim.fn.expand("%:e"))
+
+	if icon_color then
+		vim.api.nvim_set_hl(0, "WinBarFileIcon", { fg = icon_color })
+		file_icon = "%#WinBarFileIcon#" .. (file_icon or "") .. "%*"
 	else
-		colored_filepath = "%#WinBarFilename#" .. "" .. icons.File .. filename .. "%*"
+		file_icon = file_icon or ""
+	end
+
+	local icons = require("user.core.configs").icons.kind
+	local colored_filepath = ""
+
+	if path ~= "" then
+		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
+	else
+		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
 
 	if require("nvim-navic").is_available() then
@@ -79,9 +90,11 @@ M.get_filepath_with_navic = function()
 				local highlighted_second = "%#NavicHighlight2#" .. second_icon .. second_name .. "%*"
 				context_string = context_string .. " > " .. highlighted_second
 			end
+
 			return colored_filepath .. " > " .. context_string
 		end
 	end
+
 	return colored_filepath
 end
 
