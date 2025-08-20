@@ -87,4 +87,6 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 	end,
 })
 
--- keymap("n", "<leader>um", "<cmd>NoiceAll<cr>", { desc = "Show messages" })
+keymap("n", "<leader>um", "<cmd>NoiceAll<cr>", { desc = "Show messages" })
+keymap("n", "<leader>Ah", "<cmd>MCPHub<cr>", { desc = "Open MCPHub" })
+

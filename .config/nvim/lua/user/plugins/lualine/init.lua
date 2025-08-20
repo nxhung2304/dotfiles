@@ -23,7 +23,6 @@ return {
 			lualine_b = {},
 			lualine_c = {},
 			lualine_x = {
-				"rest",
 				lualine_components.spaces(),
 				"filetype",
 				lualine_components.lsp(),

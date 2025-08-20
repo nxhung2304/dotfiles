@@ -14,13 +14,13 @@ return {
 			local cmp = require("cmp")
 			require("luasnip/loaders/from_vscode").lazy_load()
 			require("luasnip.loaders.from_vscode").lazy_load({ paths = "~/.config/nvim/lua/user/snippets" })
-
 			local col = vim.fn.col(".") - 1
 			local check_backspace = col == 0 or vim.fn.getline("."):sub(col, col):match("%s")
 			cmp.setup.cmdline({ "/", "?" }, {
 				mapping = cmp.mapping.preset.cmdline(),
 				sources = {
 					{ name = "buffer" },
+					-- { name = "minuet" },
 				},
 			})
 			return {
@@ -41,6 +41,10 @@ return {
 						c = cmp.mapping.close(),
 					}),
 					["<CR>"] = cmp.mapping.confirm({ select = false }),
+					-- Thêm manual completion cho minuet
+					-- ["<A-y>"] = require("minuet").make_cmp_map(),
+					-- ["<C-g>"] = require("minuet").make_cmp_map(),
+					-- ["<C-a>"] = require("minuet").make_cmp_map(),
 					["<Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_next_item()
@@ -79,15 +83,18 @@ return {
 						local strings = vim.split(kind.kind, "%s", { trimempty = true })
 						kind.kind = " " .. (strings[1] or "") .. " "
 						kind.menu = "    (" .. (strings[2] or "") .. ")"
-
 						return kind
 					end,
 				},
 				sources = {
 					{ name = "nvim_lsp" },
+					-- { name = "minuet", priority = 100 }, -- Thêm minuet với priority cao
 					{ name = "luasnip", priority = 8 },
 					{ name = "buffer" },
 					{ name = "path" },
+				},
+				performance = {
+					fetching_timeout = 2000, -- Tăng timeout cho LLM
 				},
 				confirm_opts = {
 					behavior = cmp.ConfirmBehavior.Replace,
