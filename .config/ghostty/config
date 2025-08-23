@@ -43,7 +43,7 @@ adjust-cursor-thickness = 2
 # Window và UI enhancements
 window-padding-x = 8
 window-padding-y = 8
-window-decoration = false
+window-decoration = true
 window-title-font-family = JetBrains Mono
 window-save-state = always
 window-step-resize = true
@@ -76,8 +76,8 @@ click-repeat-interval = 500
 confirm-close-surface = false
 
 # Shell integration
-shell-integration = zsh
-shell-integration-features = cursor,sudo,title
+# shell-integration = zsh
+# shell-integration-features = cursor,sudo,title
 
 # === KEYBINDS ===
 # Font size control
