@@ -1,4 +1,5 @@
 local opt = vim.opt
+local statusline = require("user.core.statusline")
 
 opt.cursorline = true -- Show current line
 
@@ -46,3 +47,7 @@ vim.o.foldenable = true
 vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
 vim.o.swapfile = false -- disable swapfile
+
+
+vim.o.statusline = table.concat(statusline, '')
+vim.opt.showtabline = 0

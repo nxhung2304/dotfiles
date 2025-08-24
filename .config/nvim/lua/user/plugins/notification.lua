@@ -1,6 +1,7 @@
 return {
 	"folke/noice.nvim",
-	event = "VeryLazy",
+	-- event = "VeryLazy",
+  event = "UIEnter",
 	opts = {
 		routes = {
 			-- Skip AutoSave messages

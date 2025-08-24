@@ -12,6 +12,7 @@ end
 return {
 	{
 		"lewis6991/gitsigns.nvim",
+		event = { "BufReadPre", "BufNewFile" },
 		opts = {
 			on_attach = function(_)
 				local gs = require("gitsigns")
@@ -40,7 +41,6 @@ return {
 			},
 			current_line_blame_formatter = "<author>, <author_time:%R> - <summary>",
 		},
-		event = { "BufReadPre", "BufNewFile" },
 	},
 	{
 		"akinsho/git-conflict.nvim",
