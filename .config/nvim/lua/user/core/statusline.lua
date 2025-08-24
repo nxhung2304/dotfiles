@@ -1,18 +1,17 @@
-local cmp = {} -- statusline components
+local components = {}
 local hi_pattern = "%%#%s#%s%%*"
 
 function _G._statusline_component(name)
-	return cmp[name]()
+	return components[name]()
 end
 
-function cmp.position()
+function components.position()
 	return hi_pattern:format("Search", "  %3l:%-2c ")
 end
 
 -- Git branch
 local git_branch_cache = {}
-function cmp.git_branch()
-	local devicons = require("nvim-web-devicons")
+function components.git_branch()
 	local cwd = vim.fn.getcwd()
 
 	local now = vim.fn.localtime()
@@ -28,7 +27,7 @@ function cmp.git_branch()
 
 	local result = ""
 	if branch and branch ~= "" then
-		result = hi_pattern:format("DiffAdd", "   " .. branch .. "  ")
+		result = hi_pattern:format("DiffAdd", " 󰘬  " .. branch .. "  ") -- 󰘬
 	end
 
 	git_branch_cache[cwd] = { result = result, time = now }
@@ -36,7 +35,7 @@ function cmp.git_branch()
 end
 
 -- LSP clients
-function cmp.lsp_clients()
+function components.lsp_clients()
 	local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
 	if #buf_clients == 0 then
 		return ""
@@ -48,11 +47,11 @@ function cmp.lsp_clients()
 	end
 
 	local lsp_info = table.concat(client_names, ", ")
-	return hi_pattern:format("Function", "   " .. lsp_info .. "  ")
+	return hi_pattern:format("Function", "   [" .. lsp_info .. "]  ")
 end
 
 -- Filename với icon
-function cmp.filename()
+function components.filename()
 	local devicons = require("nvim-web-devicons")
 	local filename = vim.fn.expand("%:t")
 
@@ -69,8 +68,7 @@ function cmp.filename()
 	end
 end
 
--- Filetype với icon
-function cmp.filetype()
+function components.filetype()
 	local devicons = require("nvim-web-devicons")
 	local ft = vim.bo.filetype
 
@@ -87,16 +85,32 @@ function cmp.filetype()
 	end
 end
 
--- Percentage với icon
-function cmp.percentage()
-	return "  %2p%%  "
+-- Percentage
+function components.percentage()
+	return "%2p%%"
+end
+
+function components.indent_info()
+	local expandtab = vim.bo.expandtab
+	local shiftwidth = vim.bo.shiftwidth
+	local tabstop = vim.bo.tabstop
+
+	local indent_info
+	if expandtab then
+		indent_info = "space: " .. shiftwidth
+	else
+		indent_info = "tab:" .. tabstop
+	end
+
+	return hi_pattern:format("Special", "  " .. indent_info)
 end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
 	'%{%v:lua._statusline_component("filename")%}',
-	-- "%r",
+	"%r",
 	"%=",
+	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
 	'%{%v:lua._statusline_component("percentage")%}',
