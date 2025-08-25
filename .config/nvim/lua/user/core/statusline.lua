@@ -85,11 +85,6 @@ function components.filetype()
 	end
 end
 
--- Percentage
-function components.percentage()
-	return "%2p%%"
-end
-
 function components.indent_info()
 	local expandtab = vim.bo.expandtab
 	local shiftwidth = vim.bo.shiftwidth
@@ -113,7 +108,6 @@ local statusline = {
 	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
-	'%{%v:lua._statusline_component("percentage")%}',
 	'%{%v:lua._statusline_component("position")%}',
 }
 

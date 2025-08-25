@@ -126,11 +126,6 @@ return {
 		{ "<leader>Fl", "<cmd>FlutterLogToggle<cr>", desc = "Flutter Log Toggle" },
 		{ "<leader>FC", "<cmd>FlutterLogClear<cr>", desc = "Flutter Log Clear" },
 
-		-- LSP & Development
-		{ "<leader>FL", "<cmd>FlutterLspRestart<cr>", desc = "Flutter LSP Restart" },
-		{ "<leader>FA", "<cmd>FlutterReanalyze<cr>", desc = "Flutter Reanalyze" },
-		{ "<leader>FO", "<cmd>FlutterOutlineToggle<cr>", desc = "Flutter Outline Toggle" },
-
 		{
 			"<leader>Ft",
 			function()
