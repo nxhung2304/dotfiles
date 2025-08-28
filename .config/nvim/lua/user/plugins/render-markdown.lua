@@ -1,6 +1,6 @@
 return {
     'MeanderingProgrammer/render-markdown.nvim',
-    ft = "markdown",
+    ft = {"markdown", "codecompanion"},
     opts = {},
     config = function()
         local render_markdown = require("render-markdown")
