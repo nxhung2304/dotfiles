@@ -47,7 +47,7 @@ return {
 			dev_log = {
 				enabled = true,
 				filter = nil,
-				notify_errors = true,
+				notify_errors = false,
 				open_cmd = "30vnew",
 				focus_on_open = false,
 			},

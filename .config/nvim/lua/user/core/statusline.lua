@@ -36,7 +36,7 @@ end
 
 -- LSP clients
 function components.lsp_clients()
-	local buf_clients = vim.lsp.get_active_clients({ bufnr = 0 })
+	local buf_clients = vim.lsp.get_clients({ bufnr = 0 })
 	if #buf_clients == 0 then
 		return ""
 	end
@@ -100,24 +100,8 @@ function components.indent_info()
 	return hi_pattern:format("Special", "  " .. indent_info)
 end
 
-function components.flutter_device()
-	if vim.bo.filetype ~= "dart" then
-		return ""
-	end
-
-	-- Debug xem có gì trong decorations
-	local decorations = vim.g.flutter_tools_decorations
-
-	if decorations and decorations.device then
-		return hi_pattern:format("String", " 󰀶 " .. tostring(decorations.device) .. " ")
-	else
-		return hi_pattern:format("WarningMsg", "  (no device) ")
-	end
-end
-
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
-	'%{%v:lua._statusline_component("flutter_device")%}',
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("indent_info")%}',

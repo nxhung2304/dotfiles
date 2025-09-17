@@ -74,17 +74,17 @@ return {
 			local servers = {
 				"solargraph",
 				"phpactor",
-				"ts_ls",
+				"vtsls",
 				"eslint",
 				"jsonls",
 				"emmet_ls",
-				"vuels",
+				"volar",
 				"lua_ls",
 				"pyright",
 				"tailwindcss",
 				"sourcekit",
 				"cssls",
-				"kotlin_language_server",
+				"kotlin_language_server"
 			}
 
 			local lspconfig = require("lspconfig")
@@ -94,9 +94,13 @@ return {
 
 			vim.o.winbar = "%{%v:lua.require('user.core.utils').get_filepath_with_navic()%}"
 
+			-- Setup LSP capabilities for completion
+			local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
 			for _, server in pairs(servers) do
 				local opts = {
 					on_attach = utils.lsp_on_attach,
+					capabilities = capabilities,
 				}
 				local has_custom_opts, server_custom_opts = pcall(require, "user.plugins.lsp.settings." .. server)
 				if has_custom_opts then
@@ -125,7 +129,6 @@ return {
 				"solargraph",
 				"stylua",
 				"typescript_language_server",
-				"vetur_vls",
 				"vue-language-server",
 			},
 			ui = {

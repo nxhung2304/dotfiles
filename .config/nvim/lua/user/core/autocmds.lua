@@ -47,7 +47,7 @@ autocmd({ "BufEnter", "BufWinEnter" }, {
 	pattern = "*.dart",
 	callback = function()
 		local buf = vim.api.nvim_get_current_buf()
-		local clients = vim.lsp.get_active_clients({ bufnr = buf })
+		local clients = vim.lsp.get_clients({ bufnr = buf })
 
 		local has_dartls = false
 		for _, client in pairs(clients) do
@@ -58,7 +58,7 @@ autocmd({ "BufEnter", "BufWinEnter" }, {
 		end
 
 		if not has_dartls then
-			local dartls_clients = vim.lsp.get_active_clients({ name = "dartls" })
+			local dartls_clients = vim.lsp.get_clients({ name = "dartls" })
 			if #dartls_clients > 0 then
 				vim.lsp.buf_attach_client(buf, dartls_clients[1].id)
 				print("Auto-attached dartls to buffer " .. buf)
@@ -134,6 +134,8 @@ autocmd("ColorScheme", {
 			IncSearch = { bg = "#264f78", fg = "#ffffff" },
 			CurSearch = { bg = "#264f78", fg = "#ffffff" },
 			MatchParen = { bg = "#264f78", fg = "NONE" },
+			-- Vue component highlighting
+			["@lsp.type.component"] = { link = "@type" },
 		}
 
 		for group, opts in pairs(overrides) do

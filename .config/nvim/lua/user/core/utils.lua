@@ -102,6 +102,9 @@ M.lsp_on_attach = function(client, bufnr)
 	local keymap = M.keymap
 	local navic = require("nvim-navic")
 
+	-- Enable completion triggered by <c-x><c-o>
+	vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+
 	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr })
 	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr })
 	keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", { buffer = bufnr })
@@ -114,7 +117,7 @@ end
 
 -- Fix Lsp cannot start with flutter-tools:https://github.com/nvim-flutter/flutter-tools.nvim
 function M.attach_dartls_to_all_buffers()
-	local dartls_clients = vim.lsp.get_active_clients({ name = "dartls" })
+	local dartls_clients = vim.lsp.get_clients({ name = "dartls" })
 	if #dartls_clients == 0 then
 		print("No dartls client found")
 		return
@@ -130,7 +133,7 @@ function M.attach_dartls_to_all_buffers()
 
 			-- Check if it's a dart file
 			if filetype == "dart" or name:match("%.dart$") then
-				local clients = vim.lsp.get_active_clients({ bufnr = buf })
+				local clients = vim.lsp.get_clients({ bufnr = buf })
 				local has_dartls = false
 
 				for _, client in pairs(clients) do
