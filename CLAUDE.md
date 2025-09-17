@@ -8,9 +8,10 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ## Setup Commands
 
-- **Initial setup (full installation)**: `./install.sh` - Sets up Oh My Zsh, installs dependencies, creates symlinks
-- **Manage dotfiles**: `./script.sh` - Creates symlinks for existing dotfiles to this repository
+- **Initial setup (full installation)**: `./install.sh` - Sets up Oh My Zsh, installs Zsh plugins, asdf runtime manager, direnv, and creates symlinks
+- **Migrate existing dotfiles**: `./script.sh` - Copies existing dotfiles to repository and creates symlinks for centralized management
 - **Make scripts executable**: `chmod +x script.sh` or `chmod +x install.sh`
+- **Environment setup**: Copy `.env.sample` to `~/.env` and configure environment variables
 
 ## Architecture and Structure
 
@@ -50,11 +51,18 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 - **Required**: nvim 0.11+, tmux, wezterm
 - **Package managers**: asdf (runtime version management), brew (macOS)
 - **Runtime support**: Ruby, Node.js via asdf plugins
-- **Tools**: direnv for environment management
+- **Tools**: direnv for environment management, vim-plug for Vim plugins
+- **Zsh plugins**: zsh-autosuggestions, zsh-syntax-highlighting (auto-installed via install.sh)
 
 ### Script Utilities
-- **tmux-sessionizer**: Custom tmux session management script in `scripts/`
-- **Dotfile management**: Two approaches via `install.sh` (full setup) and `script.sh` (symlink existing)
+- **tmux-sessionizer**: Custom tmux session management script (moved to `~/.local/bin/scripts/` during install)
+- **Dotfile management**: Two approaches:
+  - `install.sh`: Full environment setup including Oh My Zsh, plugins, and package managers
+  - `script.sh`: Migration tool for existing dotfiles to centralized management
+
+### Managed Configuration Files
+- **Dotfiles**: `.zshrc`, `.tmux.conf`, `.gitconfig`, `.vimrc`
+- **Config directories**: `nvim`, `wezterm`, `tmux`, `alacritty` (in `.config/`)
 
 ## Environment Configuration
 - Copy `.env.sample` to `~/.env` for environment-specific variables
