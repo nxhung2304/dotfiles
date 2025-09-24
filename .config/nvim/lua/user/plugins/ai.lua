@@ -47,40 +47,4 @@ return {
 			})
 		end,
 	},
-	{
-		"olimorris/codecompanion.nvim",
-		opts = {
-			display = {
-				chat = {
-					window = {
-						layout = "vertical", -- hoặc "horizontal"
-						border = "single",
-						title = "Chatbox",
-					},
-				},
-			},
-		},
-		dependencies = {
-			"nvim-lua/plenary.nvim",
-			"nvim-treesitter/nvim-treesitter",
-			-- {
-			-- 	"OXY2DEV/markview.nvim",
-			-- 	lazy = false,
-			-- 	opts = {
-			-- 		preview = {
-			-- 			filetypes = { "codecompanion" },
-			-- 			ignore_buftypes = {},
-			-- 		},
-			-- 	},
-			-- },
-		},
-		keys = {
-			{ mode = "n", "<leader>ao", "<cmd>CodeCompanion<cr>", desc = "Code Companion" },
-			{ mode = "n", "<leader>aa", "<cmd>CodeCompanionActions<cr>", desc = "Actions" },
-			{ mode = "n", "<leader>ac", "<cmd>CodeCompanionChat<cr>", desc = "Chat" },
-			{ mode = "v", "<leader>ao", "<cmd>CodeCompanion<cr>", desc = "Code Companion" },
-			{ mode = "v", "<leader>aa", "<cmd>CodeCompanionActions<cr>", desc = "Actions" },
-			{ mode = "v", "<leader>ac", "<cmd>CodeCompanionChat<cr>", desc = "Chat" },
-		},
-	},
 }

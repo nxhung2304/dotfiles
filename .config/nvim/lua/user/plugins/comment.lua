@@ -1,7 +1,1 @@
-return {
-	"numToStr/Comment.nvim",
-	event = {
-		"BufReadPre"
-	},
-	opts = {},
-}
+return { "nvim-mini/mini.comment", version = "*" }
