@@ -1,5 +1,5 @@
 return {
-  filetypes = { 'html', 'typescriptreact', 'javascriptreact', 'css', 'sass', 'scss', 'less', 'ruby', 'eruby' },
+  filetypes = { 'html', 'typescriptreact', 'javascriptreact', 'css', 'sass', 'scss', 'less', 'ruby', 'eruby', 'vue' },
   init_options = {
     html = {
       options = {

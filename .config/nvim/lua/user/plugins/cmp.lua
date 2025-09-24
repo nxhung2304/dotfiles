@@ -41,19 +41,11 @@ return {
 						c = cmp.mapping.close(),
 					}),
 					["<CR>"] = cmp.mapping.confirm({ select = false }),
-					-- Thêm manual completion cho minuet
-					-- ["<A-y>"] = require("minuet").make_cmp_map(),
-					-- ["<C-g>"] = require("minuet").make_cmp_map(),
-					-- ["<C-a>"] = require("minuet").make_cmp_map(),
 					["<Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_next_item()
 						elseif luasnip.expandable() then
 							luasnip.expand()
-						elseif luasnip.expand_or_jumpable() then
-							luasnip.expand_or_jump()
-						elseif check_backspace then
-							fallback()
 						else
 							fallback()
 						end
@@ -87,14 +79,19 @@ return {
 					end,
 				},
 				sources = {
-					{ name = "nvim_lsp" },
+					{ name = "nvim_lsp", priority = 1000 },
 					-- { name = "minuet", priority = 100 }, -- Thêm minuet với priority cao
-					{ name = "luasnip", priority = 8 },
-					{ name = "buffer" },
-					{ name = "path" },
+					{ name = "luasnip", priority = 750 },
+					{ name = "buffer", priority = 500, keyword_length = 3, max_item_count = 5 },
+					{ name = "path", priority = 250 },
 				},
 				performance = {
-					fetching_timeout = 2000, -- Tăng timeout cho LLM
+					debounce = 60,
+					throttle = 30,
+					fetching_timeout = 500,
+					confirm_resolve_timeout = 80,
+					async_budget = 1,
+					max_view_entries = 200,
 				},
 				confirm_opts = {
 					behavior = cmp.ConfirmBehavior.Replace,
