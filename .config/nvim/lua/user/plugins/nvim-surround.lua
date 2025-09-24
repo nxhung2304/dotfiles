@@ -1,6 +1,1 @@
-return {
-  "kylechui/nvim-surround",
-  version = "*",
-  opts = {},
-  event = "BufReadPre"
-}
+return { 'nvim-mini/mini.surround', version = '*' }
