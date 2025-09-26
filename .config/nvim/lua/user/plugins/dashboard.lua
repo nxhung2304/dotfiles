@@ -1,6 +1,9 @@
 return {
 	"goolord/alpha-nvim",
 	event = "VimEnter",
+	cond = function()
+		return vim.fn.argc() == 0
+	end,
 	opts = function()
 		local dashboard = require("alpha.themes.dashboard")
 		dashboard.section.header.val = {

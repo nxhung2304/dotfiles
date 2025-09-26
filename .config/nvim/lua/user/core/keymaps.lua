@@ -89,3 +89,5 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 
 keymap("n", "<leader>um", "<cmd>NoiceAll<cr>", { desc = "Show messages" })
 
+
+vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
