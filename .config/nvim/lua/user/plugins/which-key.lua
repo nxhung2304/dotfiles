@@ -21,6 +21,7 @@ return {
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>F", desc = "Flutter" },
 			{ "<leader>r", desc = "Rest API" },
+			{ "<leader>t", desc = "Todo" },
 		})
 		wk.setup(opts)
 	end,

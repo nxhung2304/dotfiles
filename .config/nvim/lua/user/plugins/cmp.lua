@@ -46,13 +46,14 @@ return {
 							cmp.select_next_item()
 						elseif luasnip.expandable() then
 							luasnip.expand()
+						elseif luasnip.expand_or_jumpable() then
+							luasnip.expand_or_jump()
 						else
 							fallback()
 						end
 					end, {
 						"i",
 						"s",
-						c = cmp.config.disable,
 					}),
 					["<S-Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
