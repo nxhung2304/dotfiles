@@ -1,7 +1,6 @@
 return {
 	"folke/which-key.nvim",
 	event = "VeryLazy",
-	-- keys = { "<leader>", "<C-w>", '"', "'", "`", "c", "v", "g" },
 	opts = {
 		win = {
 			border = "single",
