@@ -57,7 +57,6 @@ keymap("n", "]q", ":cnext<CR>", { desc = "Next quickfix item" })
 keymap("n", "[q", ":cprev<CR>", { desc = "Previous quickfix item" })
 
 -- UI
-keymap("n", "<leader>ut", "<cmd>TransparentToggle<cr>", { desc = "Toogle background transparent" })
 keymap("n", "<leader>h", "<cmd>nohlsearch<CR>", { desc = "Disable hlsearch" })
 
 vim.keymap.set("n", "<leader>ud", function()
