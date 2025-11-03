@@ -3,12 +3,21 @@
         {
             "name": "Default profile",
             "selected": true,
-            "simple_modifications": [
-                {
-                    "from": { "key_code": "caps_lock" },
-                    "to": [{ "key_code": "left_control" }]
-                }
-            ],
+            "simple_modifications": [],
+            "complex_modifications": {
+                "rules": [
+                    {
+                        "description": "Caps Lock to Left Control",
+                        "manipulators": [
+                            {
+                                "from": { "key_code": "caps_lock" },
+                                "to": [{ "key_code": "left_control" }],
+                                "type": "basic"
+                            }
+                        ]
+                    }
+                ]
+            },
             "virtual_hid_keyboard": { "keyboard_type_v2": "ansi" }
         }
     ]
