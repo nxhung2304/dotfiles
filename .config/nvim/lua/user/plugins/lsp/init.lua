@@ -72,7 +72,7 @@ return {
 
 			-- attach servers
 			local servers = {
-				"solargraph",
+				-- "solargraph",
 				"phpactor",
 				"vtsls",
 				"eslint",
@@ -84,18 +84,17 @@ return {
 				"tailwindcss",
 				"sourcekit",
 				"cssls",
-				"kotlin_language_server"
+				"kotlin_language_server",
+				"ruby_lsp",
 			}
 
 			local lspconfig = require("lspconfig")
-			local navic = require("nvim-navic")
-			local keymap = require("user.core.utils").keymap
 			local utils = require("user.core.utils")
 
 			vim.o.winbar = "%{%v:lua.require('user.core.utils').get_filepath_with_navic()%}"
 
 			-- Setup LSP capabilities for completion
-			local capabilities = require('cmp_nvim_lsp').default_capabilities()
+			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 			for _, server in pairs(servers) do
 				local opts = {
@@ -126,10 +125,11 @@ return {
 				"phpactor",
 				"prettier",
 				"rubocop",
-				"solargraph",
+				-- "solargraph",
 				"stylua",
 				"typescript_language_server",
 				"vue-language-server",
+				"ruby-lsp",
 			},
 			ui = {
 				border = "rounded",

@@ -66,7 +66,14 @@ M.get_filepath_with_navic = function()
 	local colored_filepath = ""
 
 	if path ~= "" then
-		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
+		colored_filepath = "%#WinBarPath#"
+			.. path
+			.. "/%#WinBarFilename#"
+			.. " "
+			.. file_icon
+			.. " "
+			.. filename
+			.. "%*"
 	else
 		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
@@ -103,12 +110,21 @@ M.lsp_on_attach = function(client, bufnr)
 	local navic = require("nvim-navic")
 
 	-- Enable completion triggered by <c-x><c-o>
-	vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+	vim.api.nvim_buf_set_option(bufnr, "omnifunc", "v:lua.vim.lsp.omnifunc")
 
 	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr })
 	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr })
 	keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", { buffer = bufnr })
 	keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>", { buffer = bufnr })
+	vim.keymap.set("n", "<leader>gl", "<cmd>lua vim.lsp.codelens.run()<CR>", { buffer = bufnr, desc = "Run Code Lens" })
+
+	if client.server_capabilities.codeLensProvider then
+		vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
+			buffer = bufnr,
+			callback = vim.lsp.codelens.refresh,
+		})
+	end
+
 
 	if client.server_capabilities.documentSymbolProvider then
 		navic.attach(client, bufnr)

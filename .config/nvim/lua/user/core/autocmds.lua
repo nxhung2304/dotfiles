@@ -40,3 +40,19 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.spell = true
 	end,
 })
+
+vim.api.nvim_create_autocmd("LspAttach", {
+	desc = "Install solargraph if not present when LSP attaches",
+	callback = function(args)
+		local client = vim.lsp.get_client_by_id(args.data.client_id)
+		if client and client.name == "solargraph" then
+			vim.defer_fn(function()
+				if vim.fn.filereadable(vim.fn.expand("~/.asdf/shims/solargraph")) == 0 then
+					vim.notify("Installing solargraph...", vim.log.levels.INFO)
+					vim.fn.system("gem install solargraph && asdf reshim ruby")
+					vim.cmd("LspRestart")
+				end
+			end, 1000)
+		end
+	end,
+})
