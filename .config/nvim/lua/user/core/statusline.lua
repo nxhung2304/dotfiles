@@ -1,6 +1,31 @@
 local components = {}
 local hi_pattern = "%%#%s#%s%%*"
 
+function components.xcode_device()
+  if not vim.g.xcodebuild_platform then
+    return ""
+  end
+
+	if vim.g.xcodebuild_platform == "macOS" then
+		return " macOS"
+	end
+
+	local deviceIcon = ""
+	if vim.g.xcodebuild_platform:match("watch") then
+		deviceIcon = "􀟤"
+	elseif vim.g.xcodebuild_platform:match("tv") then
+		deviceIcon = "􀡴 "
+	elseif vim.g.xcodebuild_platform:match("vision") then
+		deviceIcon = "􁎖 "
+	end
+
+	if vim.g.xcodebuild_os then
+		return deviceIcon .. " " .. vim.g.xcodebuild_device_name .. " (" .. vim.g.xcodebuild_os .. ")"
+	end
+
+	return deviceIcon .. " " .. vim.g.xcodebuild_device_name
+end
+
 function _G._statusline_component(name)
 	return components[name]()
 end
@@ -104,6 +129,7 @@ local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
 	"%r",
 	"%=",
+	'%{%v:lua._statusline_component("xcode_device")%}',
 	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
