@@ -56,3 +56,13 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end
 	end,
 })
+
+vim.api.nvim_create_autocmd("VimEnter", {
+	callback = function()
+		local telescope = require("telescope.builtin")
+
+		vim.schedule(function()
+			telescope.find_files()
+		end)
+	end,
+})
