@@ -28,14 +28,13 @@ return {
 	},
 	keys = {
 		{
-			"<leader>o",
+			"<leader>uo",
 			function()
 				local is_aerial_open = require("aerial").is_open()
 				if is_aerial_open then
 					vim.cmd("AerialClose")
 				else
 					pcall(function()
-						-- require("dapui").close()
 						vim.cmd("NvimTreeClose")
 					end)
 				end

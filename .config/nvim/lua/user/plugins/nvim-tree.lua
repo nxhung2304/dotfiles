@@ -69,7 +69,6 @@ return {
 					vim.cmd("NvimTreeClose")
 				else
 					pcall(function()
-						-- require("dapui").close()
 						require("aerial").close()
 					end)
 
