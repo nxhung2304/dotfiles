@@ -46,6 +46,8 @@ return {
 				})
 			end
 
+			vim.g.gruvbox_baby_transparent_mode = 1
+
 			local function toggle_transparency()
 				vim.g.gruvbox_baby_transparent_mode = not vim.g.gruvbox_baby_transparent_mode
 				vim.cmd("colorscheme gruvbox-baby")
