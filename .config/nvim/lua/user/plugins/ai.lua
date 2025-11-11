@@ -1,10 +1,10 @@
 return {
 	{
 		"zbirenbaum/copilot.lua",
-		cmd = "Copilot",
-		event = "InsertEnter",
+		event = { "InsertEnter", "CmdlineEnter" },
 		config = function()
 			require("copilot").setup({
+				disable_limit_reached_message = true,
 				suggestion = {
 					enabled = true,
 					auto_trigger = true,

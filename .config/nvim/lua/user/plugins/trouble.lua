@@ -1,7 +1,7 @@
 return {
 	"folke/trouble.nvim",
 	dependencies = { "nvim-tree/nvim-web-devicons" },
-	event = { "BufReadPre", "BufNewFile" },
+	cmd = { "Trouble", "TroubleToggle", "TroubleRefresh", "TroubleQuickfix" },
 	keys = {
 		{ "<leader>ut", "<cmd>Trouble quickfix toggle<cr>", { desc = "Toggle quickfix" } },
 	},

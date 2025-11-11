@@ -60,9 +60,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
 vim.api.nvim_create_augroup("CenterCursor", { clear = true })
 
 vim.api.nvim_create_autocmd("WinEnter", {
-  desc = "Center cursor when entering a window",
-  group = "CenterCursor",
-  callback = function()
-    vim.cmd("normal! zz")
-  end,
+	desc = "Center cursor when entering a window",
+	group = "CenterCursor",
+	callback = function()
+		vim.cmd("normal! zz")
+	end,
 })

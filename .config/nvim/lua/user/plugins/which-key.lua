@@ -12,11 +12,9 @@ return {
 		wk.add({
 			mode = { "n", "v" },
 			{ "<leader>c", desc = "Code" },
-			{ "<leader>C", desc = "Conflict" },
 			{ "<leader>g", desc = "Git" },
 			{ "<leader>s", desc = "Search" },
 			{ "<leader>x", desc = "Xcode" },
-			{ "<leader>d", desc = "Debugger" },
 			{ "<leader>F", desc = "Flutter" },
 			{ "<leader>r", desc = "Rails" },
 			{ "<leader>u", desc = "UI" },

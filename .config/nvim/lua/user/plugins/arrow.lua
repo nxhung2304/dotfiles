@@ -1,6 +1,6 @@
 return {
 	"otavioschwanck/arrow.nvim",
-	event = "BufEnter",
+	event = "VeryLazy",
 	opts = {
 		show_icons = true,
 		leader_key = ";",

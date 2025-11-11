@@ -1,14 +1,6 @@
 local Utils = require("user.core.utils")
 local map = Utils.keymap
 
-local function toggle_diffview(cmd)
-	if next(require("diffview.lib").views) == nil then
-		vim.cmd(cmd)
-	else
-		vim.cmd("DiffviewClose")
-	end
-end
-
 return {
 	{
 		"lewis6991/gitsigns.nvim",
@@ -43,33 +35,6 @@ return {
 		},
 	},
 	{
-		"akinsho/git-conflict.nvim",
-		version = "*",
-		ops = {
-			default_mappings = true, -- disable buffer local mapping created by this plugin
-			default_commands = true, -- disable commands created by this plugin
-			disable_diagnostics = false, -- This will disable the diagnostics in a buffer whilst it is conflicted
-			list_opener = "copen", -- command or function to open the conflicts list
-			highlights = { -- They must have background color, otherwise the default color will be used
-				incoming = "DiffAdd",
-				current = "DiffText",
-			},
-		},
-		keys = {
-			{
-				"<Leader>Cc",
-				"<cmd>GitConflictChooseOurs<cr>",
-				desc = "Select current",
-			},
-			{ "<Leader>Ci", "<cmd>GitConflictChooseTheirs<cr>", desc = "Select incomming" },
-			{ "<Leader>Cb", "<cmd>GitConflictChooseBoth<cr>", desc = "Select both" },
-			"<Leader>Cn",
-			"<cmd>GitConflictNextConflict<cr>",
-			desc = "Next",
-			{ "<Leader>Cp", "<cmd>GitConflictPrevConflict<cr>", desc = "Previous" },
-		},
-	},
-	{
 		"NeogitOrg/neogit",
 		cmd = "Neogit",
 		opts = {
@@ -93,25 +58,5 @@ return {
 				end,
 			})
 		end,
-	},
-	{
-		"sindrets/diffview.nvim",
-		command = "DiffviewOpen",
-		keys = {
-			{
-				"<leader>gd",
-				function()
-					toggle_diffview("DiffviewOpen")
-				end,
-				desc = "Diff Index",
-			},
-			{
-				"<leader>gf",
-				function()
-					toggle_diffview("DiffviewFileHistory %")
-				end,
-				desc = "Open diffs for current File",
-			},
-		},
 	},
 }

@@ -35,7 +35,7 @@ opt.termguicolors = true
 opt.timeoutlen = 400
 opt.undofile = true
 
-opt.shortmess:append("sI") -- disable nvim intro
+-- opt.shortmess:append("sI") -- disable nvim intro
 
 opt.cmdheight = 0 -- Hide command status
 

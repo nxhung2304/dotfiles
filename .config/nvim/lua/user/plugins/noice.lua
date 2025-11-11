@@ -11,21 +11,6 @@ return {
 				opts = { skip = true },
 				view = "vsplit",
 			},
-			-- {
-			-- 	filter = {
-			-- 		event = "msg_show",
-			-- 		kind = "",
-			-- 		find = "written",
-			-- 	},
-			-- 	opts = { skip = true },
-			-- },
-			-- -- Skip showcmd messages
-			-- {
-			-- 	filter = {
-			-- 		event = "msg_showcmd",
-			-- 	},
-			-- 	opts = { skip = true },
-			-- },
 		},
 		lsp = {
 			override = {
