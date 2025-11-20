@@ -4,7 +4,7 @@ function M.setup(config)
 	config.color_scheme = "GruvboxDark"
 	config.window_decorations = "RESIZE | TITLE"
 
-	config.window_background_opacity = 0.98
+	config.window_background_opacity = 1
 
 	config.enable_tab_bar = false
 

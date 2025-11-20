@@ -9,89 +9,89 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
-#source ~/.env
-
-export LANG=en_US.UTF-8
-export EDITOR='vim'
 
 HISTFILE=~/.zsh_history
 HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
 
-# Envs
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
-export PATH="$HOME/flutter/bin:$PATH"
-
-# Hook Asdf
-# . "$HOME/.asdf/asdf.sh"
-
 # Hook direnv: https://direnv.net
 eval "$(direnv hook zsh)"
 
-# Alias
-alias zshconfig="nvim ~/dotfiles/.zshrc"
-alias ohmyzsh="nvim ~/.oh-my-zsh"
-alias ll="ls -la"
-alias la="ls -A"
-alias l="ls -CF"
-alias rights="cd ~/Dev/rights"
-alias personal="cd ~/Dev/personal"
-alias n="nvim"
-
-## docker 
-alias dcb="docker-compose build"
-alias dcd="docker-compose down"
-alias dcu="docker-compose up -d"
-
-alias dclw="docker-compose logs -f web"
-alias dcew="docker-compose exec web"
-alias dcrw="docker-compose run web"
-
-ipad="00008112-000C283836F9401E" # iPad Pro 11 inch
-hiporn="00008120-000915DA2EE9A01E" # Huy's iPhone 15
-ipse="62FC2A6B-A549-47B9-9E2C-6437FAD39F64" # iPhone SE Simulator
-nexus_android="emulator-5554" # Android emulator-4_WVGA_NEXUS
-
-alias ffr_ipad="fvm flutter run -d $ipad"
-alias ffr_ipse="fvm flutter run -d $ipse"
-alias ffr_hiporn="fvm flutter run -d $hiporn"
-alias ffr_android="fvm flutter run -d $nexus_android"
-
-alias noti='send_slack_notification'
-send_slack_notification ()
-{
-  local api_key="${SLACK_NAMI_API_KEY}"
-  local user_id="${SLACK_NAMI_USER_ID}"
-  local message=''
-  if [ -z "$1" ]; then
-    message='Command success' 
-  else
-    message="$1"
-  fi
-
-  response=$(curl -s -X POST -H "Authorization: Bearer $api_key" -H 'Content-type: application/json' \
-    --data "{\"channel\":\"$user_id\",\"text\":\"$message\"}" \
-    https://slack.com/api/chat.postMessage)
-
-  if echo "$response" | grep -q '"ok":true'; then
-    echo $message
-  else
-    echo "failure: $(echo "$response" | jq -r '.error')"
-  fi
-}
-
-export ANDROID_HOME=~/Library/Android/sdk
-export PATH=$PATH:$ANDROID_HOME/emulator
-export PATH=$PATH:$ANDROID_HOME/tools
-export PATH=$PATH:$ANDROID_HOME/tools/bin
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-
-export PATH="$HOME/.asdf/shims:$PATH"
 
 ## [Completion]
 ## Completion scripts setup. Remove the following line to uninstall
 [[ -f /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh ]] && . /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh || true
 ## [/Completion]
+#
+
+
+# Envs
+export PATH=$HOME/bin:/usr/local/bin:$PATH
+export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
+export PATH="$HOME/flutter/bin:$PATH"
+# export PATH="/usr/local/opt/openjdk@21/bin:$PATH"
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+
+# Android
+export ANDROID_HOME=~/Library/Android/sdk
+# export JAVA_HOME=$(/usr/libexec/java_home)
+
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/tools/bin
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+export PATH="$HOME/.asdf/shims:$PATH"
+. $(brew --prefix asdf)/libexec/asdf.sh
+export LDFLAGS="-L$(brew --prefix tcl-tk)/lib"
+export CPPFLAGS="-I$(brew --prefix tcl-tk)/include"
+export PKG_CONFIG_PATH="$(brew --prefix tcl-tk)/lib/pkgconfig"
+export PATH="$(brew --prefix tcl-tk)/bin:$PATH"
+
+
+
+# opencode
+export PATH=/Users/rightsvn-hung/.opencode/bin:$PATH
+
+export TERM=xterm-256color
+
+# export NVM_DIR="$HOME/.nvm"
+
+# AI
+# jcom-androidTV_do_local
+# export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+# export JAVA_HOME="/usr/local/opt/openjdk@8"
+export GRADLE_HOME="${HOME}/.gradle/wrapper/dists/gradle-3.5-all/xxxxxxxxxxxxx/gradle-3.5/bin"
+PATH=${PATH}:${GRADLE_HOME}
+
+export ANDROID_SDK_ROOT="${HOME}/Library/Android/sdk"
+export ANDROID_HOME="${HOME}/Library/Android/sdk"
+PATH=${PATH}:${ANDROID_SDK_ROOT}/platform-tools
+PATH=${PATH}:${ANDROID_SDK_ROOT}/tools
+export PATH="/usr/local/opt/openjdk@8/bin:$PATH"
+
+cordova_clean() {
+  echo "Removing all configs in corodova project"
+
+  rm -rf node_modules/
+  echo "Removed node_modules in corodova project"
+
+  rm -rf platforms/
+  echo "Removed platforms in corodova project"
+
+  rm -rf plugins/
+  echo "Removed plugins in corodova project"
+}
+
+export JAVA_HOME=/usr/local/opt/openjdk@17
+export PATH="/usr/local/opt/openjdk@17/bin:$PATH"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+nv () { NVIM_APPNAME="minimal-nvim" nvim }
+
 
