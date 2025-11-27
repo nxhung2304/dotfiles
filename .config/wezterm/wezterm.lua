@@ -20,16 +20,19 @@ config.inactive_pane_hsb = {
 }
 
 config.window_padding = {
-	left = 0,
-	right = 0,
-	top = 0,
-	bottom = 0,
+	left = 5,
+	right = 5,
+	top = 5,
+	bottom = 5,
 }
 
 -- Font
 config.font = wezterm.font("JetBrainsMonoNL Nerd Font")
 config.font_size = 13.5
 config.line_height = 1.4
+
+-- Scroll
+config.scrollback_lines = 5000
 
 -- Keys
 config.keys = {
