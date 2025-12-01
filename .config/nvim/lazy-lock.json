@@ -48,5 +48,6 @@
   "tree-sitter-embedded-template": { "branch": "master", "commit": "332262529bc51abf5746317b2255ccc2fff778f8" },
   "vim-rails": { "branch": "master", "commit": "b0a5c76f86ea214ade36ab0b811e730c3f0add67" },
   "vim-visual-multi": { "branch": "master", "commit": "a6975e7c1ee157615bbc80fc25e4392f71c344d4" },
+  "vscode-diff.nvim": { "branch": "main", "commit": "1cde497f876e1d959b1d008aca70f48bf9848513" },
   "which-key.nvim": { "branch": "main", "commit": "370ec46f710e058c9c1646273e6b225acf47cbed" }
 }
