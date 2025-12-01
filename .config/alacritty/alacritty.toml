@@ -10,7 +10,7 @@ dynamic_padding = false
 # Font
 [font]
 normal = { family = "JetBrainsMonoNL Nerd Font", style = "Regular" }
-size = 14
+size = 14.5
 offset = { x = 0, y = 0 }
 glyph_offset = { x = 0, y = 0 }
 
