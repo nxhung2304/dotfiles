@@ -19,6 +19,7 @@ return {
 		indent = { enabled = true },
 		explorer = { enabled = true },
 		statuscolumn = { enabled = true },
+		rename = { enabled = true },
 	},
 	keys = {
 		-- Search

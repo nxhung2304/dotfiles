@@ -55,6 +55,7 @@ return {
 	{
 		"olimorris/codecompanion.nvim",
 		tag = "v17.33.0",
+		cmd = { "CodeCompanionChat", "CodeCompanionActions" },
 		opts = {
 			strategies = {
 				inline = {

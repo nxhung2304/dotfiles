@@ -2,9 +2,9 @@ local components = {}
 local hi_pattern = "%%#%s#%s%%*"
 
 function components.xcode_device()
-  if not vim.g.xcodebuild_platform then
-    return ""
-  end
+	if not vim.g.xcodebuild_platform then
+		return ""
+	end
 
 	if vim.g.xcodebuild_platform == "macOS" then
 		return " macOS"

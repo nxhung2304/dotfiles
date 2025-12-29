@@ -104,5 +104,8 @@ return {
 				},
 			})
 		end,
+		keys = {
+			{ "<leader>gd", "<cmd>CodeDiff<cr>", desc = "Code diff" },
+		},
 	},
 }

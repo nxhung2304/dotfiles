@@ -18,6 +18,7 @@ return {
 			{ "<leader>F", desc = "Flutter" },
 			{ "<leader>r", desc = "Rails" },
 			{ "<leader>u", desc = "UI" },
+			{ "<leader>a", desc = "AI" },
 		})
 
 		wk.setup(opts)
