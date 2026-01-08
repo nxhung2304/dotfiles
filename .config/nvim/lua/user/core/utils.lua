@@ -43,18 +43,20 @@ M.get_filepath_with_navic = function()
 	local filenameColor = "#b8bb26"
 	local pathColor = "#928374"
 
+	-- Highlight groups (giữ nguyên)
 	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
 	vim.api.nvim_set_hl(0, "WinBarPath", { fg = pathColor })
 	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = filenameColor, bold = true })
 
+	-- Split path và filename
 	local path_parts = vim.split(filepath, "/")
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
 
+	-- File icon từ nvim-web-devicons
 	local devicons = require("nvim-web-devicons")
 	local file_icon, icon_color = devicons.get_icon_color(filename, vim.fn.expand("%:e"))
-
 	if icon_color then
 		vim.api.nvim_set_hl(0, "WinBarFileIcon", { fg = icon_color })
 		file_icon = "%#WinBarFileIcon#" .. (file_icon or "") .. "%*"
@@ -62,42 +64,27 @@ M.get_filepath_with_navic = function()
 		file_icon = file_icon or ""
 	end
 
-	local icons = require("user.core.configs").icons.kind
+	-- Xây dựng colored_filepath
 	local colored_filepath = ""
-
 	if path ~= "" then
-		colored_filepath = "%#WinBarPath#"
-			.. path
-			.. "/%#WinBarFilename#"
-			.. " "
-			.. file_icon
-			.. " "
-			.. filename
-			.. "%*"
+		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename# " .. file_icon .. " " .. filename .. "%*"
 	else
 		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
 
+	local icons = require("user.core.configs").icons.kind
 	if require("nvim-navic").is_available() then
 		local data = require("nvim-navic").get_data()
 		if data and #data > 0 then
-			local context_string = ""
-			local first_context = data[1]
-			local first_name = first_context.name
-			local first_kind = first_context.kind
-			local first_icon = icons[first_kind] or " "
-			local highlighted_first = "%#NavicHighlight1#" .. first_icon .. first_name .. "%*"
-			context_string = highlighted_first
-
-			if #data >= 2 then
-				local second_context = data[2]
-				local second_name = second_context.name
-				local second_kind = second_context.kind
-				local second_icon = icons[second_kind] or " "
-				local highlighted_second = "%#NavicHighlight2#" .. second_icon .. second_name .. "%*"
-				context_string = context_string .. " > " .. highlighted_second
+			local context_parts = {}
+			for i, context in ipairs(data) do
+				local name = context.name
+				local kind = context.kind
+				local icon = icons[kind] or " "
+				local highlight_group = (i % 2 == 1) and "NavicHighlight1" or "NavicHighlight2" -- Xen kẽ màu
+				table.insert(context_parts, "%#" .. highlight_group .. "#" .. icon .. name .. "%*")
 			end
-
+			local context_string = table.concat(context_parts, " > ")
 			return colored_filepath .. " > " .. context_string
 		end
 	end

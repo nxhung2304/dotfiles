@@ -8,34 +8,7 @@ return {
 			{
 				"SmiteshP/nvim-navic",
 				opts = {
-					icons = {
-						File = "",
-						Module = "",
-						Namespace = "",
-						Package = "",
-						Class = "",
-						Method = "",
-						Property = "",
-						Field = "",
-						Constructor = "",
-						Enum = "",
-						Interface = "",
-						Function = "",
-						Variable = "",
-						Constant = "",
-						String = "",
-						Number = "",
-						Boolean = "",
-						Array = "",
-						Object = "",
-						Key = "",
-						Null = "",
-						EnumMember = "",
-						Struct = "",
-						Event = "",
-						Operator = "",
-						TypeParameter = "",
-					},
+					icons = {},
 					highlight = true,
 				},
 			},
@@ -86,6 +59,7 @@ return {
 				"cssls",
 				"kotlin_language_server",
 				"ruby_lsp",
+				"ts_ls",
 			}
 
 			local lspconfig = require("lspconfig")
@@ -130,6 +104,7 @@ return {
 				"typescript_language_server",
 				"vue-language-server",
 				"ruby-lsp",
+				"vtsls",
 			},
 			ui = {
 				border = "rounded",
