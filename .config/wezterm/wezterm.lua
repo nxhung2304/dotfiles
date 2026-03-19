@@ -8,7 +8,7 @@ end
 
 -- Appearance
 config.color_scheme = "GruvboxDark"
-config.window_decorations = "NONE"
+config.window_decorations = "RESIZE"
 
 config.window_background_opacity = 0.85
 
