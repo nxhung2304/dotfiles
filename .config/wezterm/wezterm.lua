@@ -8,9 +8,9 @@ end
 
 -- Appearance
 config.color_scheme = "GruvboxDark"
-config.window_decorations = "RESIZE | TITLE"
+config.window_decorations = "NONE"
 
-config.window_background_opacity = 1
+config.window_background_opacity = 0.85
 
 config.enable_tab_bar = false
 
@@ -28,7 +28,7 @@ config.window_padding = {
 
 -- Font
 config.font = wezterm.font("JetBrainsMonoNL Nerd Font")
-config.font_size = 13.5
+config.font_size = 13.0
 config.line_height = 1.4
 
 -- Scroll
