@@ -95,3 +95,8 @@ export SDKMAN_DIR="$HOME/.sdkman"
 nv () { NVIM_APPNAME="minimal-nvim" nvim }
 
 
+export PATH="/usr/local/opt/postgresql@16/bin:$PATH"
+
+# Disable GSS encryption mode
+export PGGSSENCMODE=disable
+export PATH="$HOME/.local/bin:$PATH"
