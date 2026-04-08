@@ -108,4 +108,31 @@ return {
 			{ "<leader>gd", "<cmd>CodeDiff<cr>", desc = "Code diff" },
 		},
 	},
+	{
+		"akinsho/git-conflict.nvim",
+		version = "*",
+		lazy = true,
+		event = "User GitConflictDetected",
+		opts = {
+			disable_diagnostics = true,
+		},
+		init = function()
+			vim.api.nvim_create_autocmd("BufReadPost", {
+				callback = function(args)
+					local lines = vim.api.nvim_buf_get_lines(args.buf, 0, -1, false)
+
+					for _, line in ipairs(lines) do
+						if line:match("^<<<<<<<") then
+							vim.api.nvim_exec_autocmds("User", {
+								pattern = "GitConflictDetected",
+								modeline = false,
+							})
+
+							break
+						end
+					end
+				end,
+			})
+		end,
+	},
 }
