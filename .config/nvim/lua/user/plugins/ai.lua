@@ -51,5 +51,47 @@ return {
 				vim.cmd.echo("Copilot auto-trigger: " .. (is_auto and "ON" or "OFF"))
 			end, { desc = "Toggle Copilot auto-trigger" })
 		end,
-	}
+	},
+	{
+		"olimorris/codecompanion.nvim",
+		keys = {
+			{ "<leader>ac", "<cmd>CodeCompanionChat Toggle<cr>", mode = { "n", "v" }, desc = "Toggle chat" },
+			{ "<leader>aa", "<cmd>CodeCompanionChat Add<cr>", mode = "v", desc = "Add selection to chat" },
+			{ "<leader>ai", "<cmd>CodeCompanion<cr>", mode = { "n", "v" }, desc = "Inline assist" },
+			{ "<leader>ap", "<cmd>CodeCompanionActions<cr>", mode = { "n", "v" }, desc = "Action picker" },
+		},
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-treesitter/nvim-treesitter",
+			{
+				"MeanderingProgrammer/render-markdown.nvim",
+				ft = { "markdown", "codecompanion" },
+			},
+			{
+				"echasnovski/mini.diff",
+				config = function()
+					require("mini.diff").setup({ view = { style = "sign" } })
+				end,
+			},
+		},
+		config = function()
+			require("codecompanion").setup({
+				strategies = {
+					chat = { adapter = "claude_code" },
+					inline = { adapter = "copilot" },
+					agent = { adapter = "claude_code" },
+				},
+				display = {
+					chat = {
+						render_headers = true,
+						show_references = true,
+						show_settings = false,
+					},
+					diff = {
+						provider = "mini_diff",
+					},
+				},
+			})
+		end,
+	},
 }
