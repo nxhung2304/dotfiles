@@ -59,6 +59,17 @@ function components.git_branch()
 	return result
 end
 
+-- Diagnostic status (nvim 0.12+)
+function components.diagnostic_status()
+	local status = vim.diagnostic.status(0)
+
+	if status == "" then
+		return ""
+	end
+
+	return hi_pattern:format("DiagnosticWarn", "  " .. status .. " ")
+end
+
 -- LSP clients
 function components.lsp_clients()
 	local buf_clients = vim.lsp.get_clients({ bufnr = 0 })
@@ -130,6 +141,7 @@ local statusline = {
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("xcode_device")%}',
+	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
@@ -137,3 +149,4 @@ local statusline = {
 }
 
 return statusline
+
