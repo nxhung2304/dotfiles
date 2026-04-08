@@ -19,6 +19,10 @@ keymap("x", "J", ":move '>+1<CR>gv-gv", { desc = "Move current line to down" })
 keymap("x", "K", ":move '<-2<CR>gv-gv", { desc = "Move current line to up" })
 
 keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>")
+-- nvim 0.12 built-in LSP keymaps (no override needed):
+--   grt → vim.lsp.buf.type_definition()
+--   grx → vim.lsp.codelens.run()
+--   v_an / v_in → treesitter incremental selection
 
 keymap(
 	"n",
