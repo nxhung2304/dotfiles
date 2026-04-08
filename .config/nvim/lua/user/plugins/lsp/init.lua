@@ -13,35 +13,30 @@ return {
 				},
 			},
 		},
-		opts = function()
-			return {
-				diagnostics = {
-					-- disable virtual text
-					virtual_text = true,
-					-- show signs
-					signs = {
-						active = Configs.icons.diagnostics,
-					},
-					update_in_insert = true,
-					underline = true,
-					severity_sort = true,
-					float = {
-						focusable = false,
-						style = "minimal",
-						border = "rounded",
-						source = "always",
-						header = "",
-						prefix = "",
-					},
-				},
-				inlay_hints = { enabled = true },
-			}
-		end,
 		config = function()
 			-- diagnostics
-			for _, sign in ipairs(Configs.icons.diagnostics) do
-				vim.fn.sign_define(sign.name, { texthl = sign.name, text = sign.text, numhl = "" })
-			end
+			vim.diagnostic.config({
+				virtual_text = true,
+				signs = {
+					text = {
+						[vim.diagnostic.severity.ERROR] = Configs.icons.diagnostics[1].text,
+						[vim.diagnostic.severity.WARN] = Configs.icons.diagnostics[2].text,
+						[vim.diagnostic.severity.HINT] = Configs.icons.diagnostics[3].text,
+						[vim.diagnostic.severity.INFO] = Configs.icons.diagnostics[4].text,
+					},
+				},
+				update_in_insert = true,
+				underline = true,
+				severity_sort = true,
+				float = {
+					focusable = false,
+					style = "minimal",
+					border = "rounded",
+					source = "always",
+					header = "",
+					prefix = "",
+				},
+			})
 
 			-- attach servers
 			local servers = {
