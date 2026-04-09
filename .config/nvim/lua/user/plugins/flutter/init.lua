@@ -23,23 +23,6 @@ return {
 					project_config = false,
 				},
 			},
-
-			-- debugger = {
-			-- 	enabled = false,
-			-- 	exception_breakpoints = {},
-			-- 	evaluate_to_string_in_debug_views = true,
-			-- },
-			debugger = {
-				enabled = true, -- Enable DAP integration
-				run_via_dap = true, -- Run Flutter apps qua DAP thay vì plenary job (cho hot reload/debug tốt hơn)
-				exception_breakpoints = {}, -- Tùy chỉnh nếu cần stop on exceptions
-				evaluate_to_string_in_debug_views = true,
-				register_configurations = function(_)
-					-- Tự động load từ DAP configs ở trên, hoặc từ .vscode/launch.json
-					require("dap.ext.vscode").load_launchjs()
-				end,
-			},
-
 			flutter_lookup_cmd = nil,
 			fvm = true,
 
