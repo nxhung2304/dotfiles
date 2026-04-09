@@ -31,7 +31,7 @@ function _G._statusline_component(name)
 end
 
 function components.position()
-	return hi_pattern:format("Search", "  %3l:%-2c ")
+	return "%3l:%-2c"
 end
 
 -- Git branch
@@ -60,14 +60,61 @@ function components.git_branch()
 end
 
 -- Diagnostic status (nvim 0.12+)
+-- function components.diagnostic_status()
+-- 	local status = vim.diagnostic.status(0)
+--
+-- 	if status == "" then
+-- 		return ""
+-- 	end
+--
+-- 	return hi_pattern:format("DiagnosticWarn", "  " .. status .. " ")
+-- end
 function components.diagnostic_status()
-	local status = vim.diagnostic.status(0)
+	local diagnostics = vim.diagnostic.get(0)
 
-	if status == "" then
+	if not diagnostics or vim.tbl_isempty(diagnostics) then
 		return ""
 	end
 
-	return hi_pattern:format("DiagnosticWarn", "  " .. status .. " ")
+	local counts = {
+		errors = 0,
+		warnings = 0,
+		info = 0,
+		hints = 0,
+	}
+
+	for _, diagnostic in ipairs(diagnostics) do
+		if diagnostic.severity == vim.diagnostic.severity.ERROR then
+			counts.errors = counts.errors + 1
+		elseif diagnostic.severity == vim.diagnostic.severity.WARN then
+			counts.warnings = counts.warnings + 1
+		elseif diagnostic.severity == vim.diagnostic.severity.INFO then
+			counts.info = counts.info + 1
+		elseif diagnostic.severity == vim.diagnostic.severity.HINT then
+			counts.hints = counts.hints + 1
+		end
+	end
+
+	local parts = {}
+
+	if counts.errors > 0 then
+		table.insert(parts, "%#DiagnosticError# " .. counts.errors)
+	end
+	if counts.warnings > 0 then
+		table.insert(parts, "%#DiagnosticWarn# " .. counts.warnings)
+	end
+	if counts.info > 0 then
+		table.insert(parts, "%#DiagnosticInfo# " .. counts.info)
+	end
+	if counts.hints > 0 then
+		table.insert(parts, "%#DiagnosticHint#󰌵 " .. counts.hints)
+	end
+
+	if #parts == 0 then
+		return ""
+	end
+
+	return "  " .. table.concat(parts, " ") .. " %*"
 end
 
 -- LSP clients
@@ -138,10 +185,9 @@ end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
+	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	"%r",
 	"%=",
-	'%{%v:lua._statusline_component("xcode_device")%}',
-	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
@@ -149,4 +195,3 @@ local statusline = {
 }
 
 return statusline
-

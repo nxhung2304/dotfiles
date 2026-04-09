@@ -6,11 +6,14 @@ return {
 		"GrugFar",
 	},
 	config = function()
-		-- optional setup call to override plugin options
-		-- alternatively you can set options with vim.g.grug_far = { ... }
+		vim.api.nvim_set_hl(0, "GrugFarMatch", { link = "Search" })
+		vim.api.nvim_set_hl(0, "GrugFarReplace", { link = "DiffChange" })
 		require("grug-far").setup({
-			-- options, see Configuration section below
-			-- there are no required options atm
+			minSearchChars = 1, -- cho phép search 1 ký tự
+
+			prefills = {
+				flags = '--hidden',
+			},
 		})
 	end,
 	keys = {
