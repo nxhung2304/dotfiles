@@ -22,13 +22,11 @@ return {
 		},
 		attach_mode = "global", -- luôn sync theo buffer hiện tại
 
-		show_guides = true, -- vẽ tree nhìn rõ hơn
+		show_guides = true,
 
 		highlight_closest = true,
 
-		open_automatic = true,
-
-		autojump = true,
+		autojump = false,
 		highlight_on_hover = true,
 		highlight_on_jump = 250,
 		highlight = {

@@ -1,1 +1,1 @@
-return { "nvim-tree/nvim-web-devicons", opts = {} }
+return { "nvim-mini/mini.icons", opts = {} }
