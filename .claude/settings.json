@@ -1,0 +1,67 @@
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "328eb6cb9a4140ed9a73484d55ac9dc4.HxUIjzYdtV21QTVA",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.7",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.1"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__pencil"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title \"✅ $(basename \"$PWD\")\" -message 'CC - Task done' -sound default"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title \"🔔 $(basename \"$PWD\")\" -message 'CC - Need user input' -sound Basso"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /Users/rightsvn-hung/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "cc-auto-workflow": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/nxhung2304/cc-auto-workflow-plugin.git"
+      }
+    },
+    "auto-workflow": {
+      "source": {
+        "source": "github",
+        "repo": "nxhung2304/cc-auto-workflow-plugin"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "autoMemoryEnabled": false,
+  "model": "haiku"
+}

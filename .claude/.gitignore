@@ -1,0 +1,29 @@
+# Sensitive and temporary files
+history.jsonl
+stats-cache.json
+settings.local.json
+*.DS_Store
+
+# Cache and temporary data
+cache/
+shell-snapshots/
+sessions/
+session-env/
+projects/
+telemetry/
+todos/
+paste-cache/
+file-history/
+backups/
+debug/
+
+# Stats
+statsig/
+
+# Plugin cache and third-party marketplaces
+plugins/*.json
+plugins/marketplaces/
+plugins/*.tmp
+
+plans/
+tasks/
