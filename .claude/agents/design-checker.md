@@ -17,3 +17,4 @@ Nhiệm vụ:
   - Recommended changes: ...
 
 Chỉ kiểm tra khi task mention color hoặc design token.
+

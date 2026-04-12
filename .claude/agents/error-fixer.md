@@ -19,3 +19,4 @@ Khi được gọi:
   - Remaining issues: ...
 
 Không thay đổi logic ngoài việc fix lỗi. Không commit.
+
