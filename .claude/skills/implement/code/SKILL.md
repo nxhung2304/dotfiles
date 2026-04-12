@@ -1,4 +1,5 @@
 ---
+allowed-tools: Agent, Read, Write, Edit, Grep, Glob, Bash
 description: Thực hiện Implementation Checklist.
 ---
 
