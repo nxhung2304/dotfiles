@@ -5,6 +5,7 @@ return {
   },
   opts = {
     server = {
+      override = false,
       enabled = false,
     },
   },
