@@ -3,5 +3,9 @@ return {
   ft = {
     "css", "eruby", "html"
   },
-  opts = {}
+  opts = {
+    server = {
+      enabled = false,
+    },
+  },
 }

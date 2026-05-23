@@ -1,7 +1,7 @@
 return {
 	{
 		"tpope/vim-rails",
-		ft = { "ruby", "yaml", "erb" },
+		lazy = false,
 		keys = {
 			{ "<leader>rc", "<cmd>Vcontroller<cr>", desc = "Open Controller" },
 			{ "<leader>rm", "<cmd>Vmodel<cr>", desc = "Open Model" },
