@@ -2,10 +2,10 @@ title = "Naminthewind"
 
 # Font configuration
 font-family = JetBrains Mono
-font-size = 13
+font-size = 14
 
 # Line height (spacing between lines)
-adjust-cell-height = 40%
+adjust-cell-height = 20%
 
 # Theme - Gruvbox Dark
 background = 282828
@@ -41,8 +41,9 @@ cursor-invert-fg-bg = true
 adjust-cursor-thickness = 2
 
 # Window và UI enhancements
-window-padding-x = 8
-window-padding-y = 8
+window-padding-x = 0
+window-padding-y = 0
+window-padding-balance = true
 window-decoration = true
 window-title-font-family = JetBrains Mono
 window-save-state = always
