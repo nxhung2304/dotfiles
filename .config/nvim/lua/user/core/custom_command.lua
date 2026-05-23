@@ -30,6 +30,38 @@ vim.api.nvim_create_user_command("CopyCurrentDiagnostic", function()
 	end
 end, {})
 
+vim.api.nvim_create_user_command("LspInfo", function()
+	local clients = vim.lsp.get_clients({ bufnr = 0 })
+	if #clients == 0 then
+		vim.notify("No LSP clients attached to current buffer", vim.log.levels.INFO)
+		return
+	end
+	local lines = { "LSP clients for " .. vim.fn.expand("%:t") .. ":", "" }
+	for _, client in ipairs(clients) do
+		table.insert(lines, string.format("  [%d] %s", client.id, client.name))
+		table.insert(lines, string.format("      root: %s", client.root_dir or "(none)"))
+		table.insert(lines, "")
+	end
+	vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO)
+end, { desc = "Show active LSP clients for current buffer" })
+
+vim.api.nvim_create_user_command("LspLog", function()
+	vim.cmd("edit " .. vim.lsp.get_log_path())
+end, { desc = "Open LSP log file" })
+
+vim.api.nvim_create_user_command("LspRestart", function()
+	local clients = vim.lsp.get_clients({ bufnr = 0 })
+	local names = {}
+	for _, client in ipairs(clients) do
+		table.insert(names, client.name)
+		client:stop()
+	end
+	vim.defer_fn(function()
+		vim.cmd("edit")
+	end, 500)
+	vim.notify("Restarting: " .. table.concat(names, ", "), vim.log.levels.INFO)
+end, { desc = "Restart LSP clients for current buffer" })
+
 vim.api.nvim_create_user_command("FlutterLspRestartSmart", function()
 	vim.cmd("LspRestart")
 
