@@ -9,6 +9,9 @@ keymap("n", "<C-j>", "<C-w>j")
 keymap("n", "<C-k>", "<C-w>k")
 keymap("n", "<C-l>", "<C-w>l")
 
+keymap("n", "<C-u>", "<C-u>zz")
+keymap("n", "<C-d>", "<C-d>zz")
+
 keymap("v", "y", "ygv<Esc>", { desc = "Yank and hold current cursor" })
 
 keymap("i", "jk", "<ESC>")
