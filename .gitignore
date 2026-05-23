@@ -4,3 +4,7 @@ backups/
 
 .claude/settings_z.json
 .claude/ide/
+
+.config/github-copilot/apps.json
+.config/iterm2/
+.config/flutter/

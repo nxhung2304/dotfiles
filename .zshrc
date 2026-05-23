@@ -140,3 +140,7 @@ alias ip="ipconfig getifaddr en0"
 
 # Dev
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
+alias cc="claude"
+
+alias ffd="fvm flutter devices"
+alias ffr="fvm flutter run"
