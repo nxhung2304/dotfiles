@@ -15,7 +15,7 @@ Skills là các tác vụ có thể gọi lại thông qua lệnh `/skill-name` 
 | Skill | Mô tả | Kích hoạt |
 |-------|-------|-----------|
 | `commit` | Tạo git commit chuyên nghiệp với bullet points và Co-Authored-By | `commit` hoặc `/commit` |
-| `review-code` | Review code theo project rules | `review-code` hoặc `/review-code` |
+| `review-branch` | Review code theo project rules | `review-branch` hoặc `/review-branch` |
 | `review-specs` | Review spec về tính hoàn chỉnh và rõ ràng | `review-specs` hoặc `/review-specs` |
 | `generate-issues` | Tạo issues từ specs/story.md | `generate-issues` hoặc `/generate-issues` |
 | `sync-github-issues` | Sync local issues sang GitHub Issues | `sync-github-issues` |
@@ -59,7 +59,7 @@ Agents là các chuyên gia có khả năng và tools riêng:
 ### 1. Code Review Flow
 ```
 user: "review code issue"
-  → Skill: review-code
+  → Skill: review-branch
     → Agent: rule-lookup (tra cứu rules)
     → Agent: code-reviewer (review theo rules)
 ```
@@ -78,7 +78,7 @@ user: "implement feature X"
 ### 3. Quality Check Flow
 ```
 user: "quality issue"
-  → Skill: review-code / implement/quality
+  → Skill: review-branch / implement/quality
     → Agent: rule-lookup
     → Agent: code-reviewer
 ```

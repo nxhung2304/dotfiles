@@ -1,7 +1,7 @@
 ---
-name: review-code
+name: review-branch
 allowed-tools: Read, Grep, Glob, Write, Bash(ls:*), Bash(git:*)
-description: Review code against project rules. Use when user asks "review code, review-code issue #11"
+description: Review code against project rules. Use when user asks "review code, review-branch issue #11"
 ---
 
 Đọc code từ branch/files → So sánh với rules → Ghi feedback vào `specs/comments/[ISSUE-NUMBER]-code-review.md`

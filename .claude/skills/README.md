@@ -30,7 +30,7 @@
 | Skill | Description |
 | :--- | :--- |
 | **[review-specs](./review-specs/SKILL.md)** | Review specifications for completeness and clarity. Analyzes acceptance criteria, checklists, design refs, and edge cases. Saves feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md`. |
-| **[review-code](./review-code/SKILL.md)** | Review code against project rules (core.md, code-rules/, specs/rules/). Generates actionable feedback in `specs/comments/[ISSUE-NUMBER]-code-review.md`. |
+| **[review-branch](./review-branch/SKILL.md)** | Review code against project rules (core.md, code-rules/, specs/rules/). Generates actionable feedback in `specs/comments/[ISSUE-NUMBER]-code-review.md`. |
 
 ### 🚀 Implementation Pipeline
 

@@ -9,7 +9,7 @@
 | Command | Description |
 |---------|-------------|
 | `/implement #[issue]` | Implement issue từ `specs/story/[issue]-*.md` |
-| `/review-code #[issue]` | Review code cho issue đã implement |
+| `/review-branch #[issue]` | Review code cho issue đã implement |
 | `/review-specs` | Review specification file |
 | `/generate-issues` | Tạo issues từ `specs/story.md` |
 
@@ -69,7 +69,7 @@ project-root/
 
 ```bash
 # User calls:
-/review-code 12
+/review-branch 12
 
 # Flow:
 1. Read spec: specs/story/12-*.md
