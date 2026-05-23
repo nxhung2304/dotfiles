@@ -1,15 +1,20 @@
 return {
 	"stevearc/conform.nvim",
 	opts = {
+		formatters = {
+			rubocop = {
+				args = { "--auto-correct", "--format", "quiet", "--stderr", "--stdin", "$FILENAME" },
+			},
+		},
 		formatters_by_ft = {
 			lua = { "stylua" },
 			python = { "isort", "black" },
-			javascript = { { "prettierd", "prettier" } },
+			javascript = { "prettierd", "prettier", stop_after_first = true },
 			ruby = {
 				"rubocop",
 			},
 			eruby = {
-				"prettier",
+				"htmlbeautifier",
 			},
 			html = {
 				"prettier",
@@ -27,8 +32,8 @@ return {
 				"prettier",
 			},
 			swift = {
-				"swiftformat"
-			}
+				"swiftformat",
+			},
 		},
 	},
 	event = { "BufWritePre" },
