@@ -15,8 +15,6 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 	pattern = "*",
 	callback = function()
 		if vim.fn.mode() ~= "c" then
-			vim.o.autoread = true
-			vim.opt.updatetime = 1000
 			vim.cmd("checktime")
 		end
 	end,

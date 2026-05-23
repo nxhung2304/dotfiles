@@ -47,6 +47,8 @@ vim.o.foldenable = true
 vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
 vim.o.swapfile = false -- disable swapfile
+vim.o.autoread = true
+vim.o.updatetime = 250
 
 
 vim.o.statusline = table.concat(statusline, '')
