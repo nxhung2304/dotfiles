@@ -27,5 +27,8 @@
   },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
-  "hasCompletedOnboarding": true
+  "hasCompletedOnboarding": true,
+  "enabledPlugins": {
+    "lua-lsp@claude-plugins-official": true
+  }
 }
