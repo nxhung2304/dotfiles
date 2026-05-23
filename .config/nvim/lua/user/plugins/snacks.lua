@@ -48,6 +48,13 @@ return {
 			desc = "Find files",
 		},
 		{
+			"<leader>si",
+			function()
+				Snacks.picker.files({ cwd = "~/.config/nvim" })
+			end,
+			desc = "Find files in ~/.config/nvim",
+		},
+		{
 			"<leader>sr",
 			function()
 				Snacks.picker.recent({ filter = { cwd = true } })
