@@ -2,7 +2,7 @@ title = "Naminthewind"
 
 # Font configuration
 font-family = JetBrains Mono
-font-size = 14
+font-size = 15.5
 
 # Line height (spacing between lines)
 adjust-cell-height = 20%
@@ -50,7 +50,7 @@ window-save-state = always
 window-step-resize = true
 
 # Transparency và blur effects (macOS)
-background-opacity = 0.9
+background-opacity = 1.0
 background-blur-radius = 20
 
 # Font rendering improvements
