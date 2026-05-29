@@ -25,10 +25,12 @@
     "type": "command",
     "command": "bash /Users/rightsvn-hung/.claude/statusline-command.sh"
   },
+  "enabledPlugins": {
+    "lua-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true
+  },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
-  "hasCompletedOnboarding": true,
-  "enabledPlugins": {
-    "lua-lsp@claude-plugins-official": true
-  }
+  "hasCompletedOnboarding": true
 }
