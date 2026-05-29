@@ -17,7 +17,11 @@ return {
 		config = function()
 			-- diagnostics
 			vim.diagnostic.config({
-				virtual_text = true,
+				virtual_text = {
+					prefix = "", -- Could be '■', '▎', 'x', etc.
+					source = "if_many", -- Show source 'always', 'if_many', or 'never'
+					spacing = 4,
+				},
 				signs = {
 					text = {
 						[vim.diagnostic.severity.ERROR] = Configs.icons.diagnostics[1].text,
@@ -42,7 +46,7 @@ return {
 			-- attach servers
 			local servers = {
 				-- "ruby_lsp",
-        "solargraph",
+				"solargraph",
 				"bashls",
 				"cssls",
 				"emmet_ls",
@@ -94,7 +98,7 @@ return {
 				"phpactor",
 				"pyright",
 				-- "ruby-lsp",
-        "solargraph",
+				"solargraph",
 				"tailwindcss-language-server",
 				"typescript-language-server",
 				"vtsls",
