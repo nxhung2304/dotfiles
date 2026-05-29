@@ -144,3 +144,4 @@ alias cc="claude"
 
 alias ffd="fvm flutter devices"
 alias ffr="fvm flutter run"
+alias ffpg="fvm flutter pub get"
