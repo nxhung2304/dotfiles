@@ -470,7 +470,7 @@ vim.schedule(function()
 	require("user.core.sidebar").register({
 		id        = "git",
 		label     = "Git",
-		icon      = "",
+		icon      = "󰊢 (G)",
 		open      = M.open,
 		close     = M.close,
 		is_open   = function() return base.is_valid(state) end,

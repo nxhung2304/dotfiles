@@ -7,7 +7,7 @@ return {
 		require("user.core.sidebar").register({
 			id    = "files",
 			label = "Files",
-			icon  = "",
+			icon  = "󰉋",
 			open = function()
 				vim.cmd("NvimTreeOpen")
 			end,

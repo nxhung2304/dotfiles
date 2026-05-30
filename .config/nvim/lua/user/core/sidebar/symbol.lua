@@ -399,7 +399,7 @@ vim.schedule(function()
 	require("user.core.sidebar").register({
 		id = "lsp",
 		label = "LSP",
-		icon = "",
+		icon = "󰘦 (L)",
 		open = M.open,
 		close = M.close,
 		is_open = function() return base.is_valid(state) end,
