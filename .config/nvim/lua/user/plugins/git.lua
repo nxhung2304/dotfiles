@@ -40,7 +40,9 @@ return {
 		opts = {
 			integrations = {
 				snacks = true,
+				codediff = true,
 			},
+			diff_viewer = "codediff",
 			disable_line_numbers = false,
 			disable_relative_line_numbers = false,
 		},
@@ -63,7 +65,7 @@ return {
 		"esmuellert/codediff.nvim",
 		dependencies = { "MunifTanjim/nui.nvim" },
 		config = function()
-			require("vscode-diff").setup({
+			require("codediff").setup({
 				-- Highlight configuration
 				highlights = {
 					-- Line-level: accepts highlight group names or hex colors (e.g., "#2ea043")
@@ -89,17 +91,26 @@ return {
 				-- Keymaps in diff view
 				keymaps = {
 					view = {
-						quit = "q", -- Close diff tab
-						toggle_explorer = "<leader>b", -- Toggle explorer visibility (explorer mode only)
-						next_hunk = "]c", -- Jump to next change
-						prev_hunk = "[c", -- Jump to previous change
-						next_file = "]f", -- Next file in explorer mode
-						prev_file = "[f", -- Previous file in explorer mode
+						quit = "q",
+						toggle_layout = "t", -- chuyển side <-> inline dễ dàng
+						next_hunk = "]g",
+						prev_hunk = "[g",
+						next_file = "]f",
+						prev_file = "[f",
+						toggle_explorer = "<leader>b", -- toggle file explorer bên trái
+						focus_explorer = "<leader>e",
+						show_help = "g?", -- <-- rất quan trọng
+						toggle_stage = "-", -- stage/unstage file hiện tại
+						stage_hunk = "<leader>hs",
+						unstage_hunk = "<leader>hu",
+						discard_hunk = "<leader>hr",
 					},
 					explorer = {
-						select = "<CR>", -- Open diff for selected file
-						hover = "K", -- Show file diff preview
-						refresh = "R", -- Refresh git status
+						select = "<CR>",
+						hover = "K", -- preview diff khi hover
+						refresh = "R",
+						width = 45,
+						auto_refresh = true,
 					},
 				},
 			})
@@ -109,24 +120,4 @@ return {
 			{ "<leader>gh", "<cmd>CodeDiff history<cr>", desc = "Commit history" },
 		},
 	},
-	-- {
-	-- 	dir = "~/Dev/personal/conflict.nvim",
-	-- 	config = function()
-	-- 		require("conflict").setup({
-	-- 			ui = {
-	-- 				markers = true,
-	-- 			},
-	-- 		})
-	-- 	end,
-	-- },
-	-- {
-	-- 	dir = "~/Dev/personal/commit.nvim",
-	-- 	config = function()
-	-- 		require("commit").setup({
-	-- 			provider = "ollama",
-	-- 			model = "gemma2:2b", -- or qwen, mistral, etc.
-	-- 			base_url = "http://203.171.31.46:11434",
-	-- 		})
-	-- 	end,
-	-- },
 }

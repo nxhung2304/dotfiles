@@ -11,7 +11,7 @@ return {
 		"preservim/vimux",
 		lazy = false,
 		config = function()
-			vim.g["VimuxOrientation"] = "v"
+			vim.g["VimuxOrientation"] = "h"
 			vim.g["VimuxHeight"] = "33"
 		end,
 	},
