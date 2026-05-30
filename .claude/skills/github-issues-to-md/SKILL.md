@@ -32,7 +32,10 @@ Source: GitHub
 
 4. Save file:
    - Path: `specs/issues/#{number}.md`
-   - Overwrite nếu đã tồn tại
+   - If file already exists: read it and check for local edits (any section beyond the base metadata/body)
+     - If local edits detected → warn user and ask: "File already exists with local changes. Overwrite? (yes/no)"
+     - If no local edits → overwrite silently
+     - If user says no → skip and log
 
 5. Output summary:
    - Saved: specs/issues/#{number}.md
