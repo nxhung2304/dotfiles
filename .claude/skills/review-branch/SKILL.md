@@ -76,4 +76,5 @@ Apply rules loaded in step 1 across 4 areas:
 - Use targeted section reads from the index — do NOT read full rule files unless necessary
 
 ## Write to file
-- After review, write markdown file to specs/comments/[issue-branch]-title.md
+- After review, write markdown file to `specs/comments/[issue-branch]-title.md`
+- If the file already exists, append a timestamp suffix: `[issue-branch]-title-YYYYMMDD-HHMMSS.md` to avoid silent overwrite
