@@ -8,8 +8,8 @@ description: Sync local issue files to GitHub Issues. Use when user asks "sync i
 
 **Steps:**
 1. Verify MCP: `mcp__github__list_issues(per_page: 1)`
-2. Find files to sync (CẢ HAI điều kiện):
-   - Has: `Review: Approved`
+2. Find files to sync (CẢ HAI điều kiện — case-insensitive match):
+   - Has: `Review:` followed by `Approved` (any casing, any surrounding whitespace)
    - Has: `GitHub Issue: —` (no number yet)
 3. For each file:
    - Parse title, labels (phase-N + metadata labels), body
