@@ -115,3 +115,13 @@ After drafting, verify:
 - [ ] Consistent terminology
 - [ ] Concrete examples included
 - [ ] References one level deep
+
+## Validate after creation
+
+After writing the skill files, run the structural validator:
+
+```bash
+python3 .claude/skills/.system/skill-creator/scripts/quick_validate.py .claude/skills/<skill-name>/
+```
+
+Fix any reported issues before presenting the skill to the user.
