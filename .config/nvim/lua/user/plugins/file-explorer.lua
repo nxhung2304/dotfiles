@@ -5,17 +5,11 @@ return {
 		vim.g.loaded_netrwPlugin = 1
 
 		require("user.core.sidebar").register({
-			id = "files",
+			id    = "files",
 			label = "Files",
-			icon = "",
+			icon  = "",
 			open = function()
 				vim.cmd("NvimTreeOpen")
-				vim.schedule(function()
-					local ok, view = pcall(require, "nvim-tree.view")
-					if not ok then return end
-					local win = view.get_winnr()
-					if win then require("user.core.sidebar").set_tabbar(win) end
-				end)
 			end,
 			close = function() vim.cmd("NvimTreeClose") end,
 			is_open = function()
@@ -43,6 +37,12 @@ return {
 		},
 		renderer = {
 			icons = {
+				show = {
+					file         = true,
+					folder       = true,
+					folder_arrow = true,
+					git          = true,
+				},
 				glyphs = {
 					default = "",
 					symlink = "",
@@ -66,7 +66,8 @@ return {
 			},
 		},
 		git = {
-			ignore = false,
+			ignore        = false,
+			show_on_dirs  = false,
 		},
 		view = {
 			relativenumber = true,
