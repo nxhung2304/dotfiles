@@ -183,9 +183,24 @@ function components.indent_info()
 	return hi_pattern:format("Special", "  " .. indent_info)
 end
 
+vim.api.nvim_create_autocmd({ "RecordingEnter", "RecordingLeave" }, {
+	callback = function()
+		vim.cmd("redrawstatus")
+	end,
+})
+
+function components.macro()
+	local register = vim.fn.reg_recording()
+	if register == "" then
+		return ""
+	end
+	return hi_pattern:format("WarningMsg", "  Recording @" .. register .. "  ")
+end
+
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
+	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("indent_info")%}',

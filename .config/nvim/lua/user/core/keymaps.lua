@@ -72,6 +72,11 @@ vim.keymap.set("n", "<leader>ud", function()
 	end
 end, { desc = "Toggle sorted diagnostics" })
 
+-- Macro
+keymap("n", "Q", "@q", { desc = "Replay macro @q" })
+keymap("x", "Q", ":norm @q<CR>", { desc = "Replay macro on selection" })
+keymap("n", "<leader>q", "@@", { desc = "Replay last macro" })
+
 vim.api.nvim_create_autocmd("BufWritePost", {
 	callback = function()
 		local qf_winid = vim.fn.getqflist({ winid = 0 }).winid
