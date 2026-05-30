@@ -35,34 +35,8 @@ return {
 		},
 	},
 	{
-		"NeogitOrg/neogit",
-		cmd = "Neogit",
-		opts = {
-			integrations = {
-				snacks = true,
-				codediff = true,
-			},
-			diff_viewer = "codediff",
-			disable_line_numbers = false,
-			disable_relative_line_numbers = false,
-		},
-		keys = {
-			{ "<Leader>go", "<cmd>Neogit<cr>", desc = "Open Neogit" },
-		},
-		config = function(opts)
-			require("neogit").setup(opts)
-
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = { "NeogitStatus", "NeogitCommitMessage", "NeogitPopup" },
-				callback = function()
-					vim.wo.number = true
-					vim.wo.relativenumber = true
-				end,
-			})
-		end,
-	},
-	{
 		"esmuellert/codediff.nvim",
+		cmd          = { "CodeDiff" },
 		dependencies = { "MunifTanjim/nui.nvim" },
 		config = function()
 			require("codediff").setup({
