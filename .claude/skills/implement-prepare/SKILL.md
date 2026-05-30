@@ -21,7 +21,8 @@ Các bước:
 - IMPORTANT: Use GitHub Issue number (e.g., #26 → 26), NOT spec filename prefix (000)
 
 3. Tạo branch
-- feature/hung-#[ACTUAL-GITHUB-ISSUE-NUMBER]-[slug-title-from-metadata]
+- Derive username: run `git config user.name | tr '[:upper:]' '[:lower:]' | tr ' ' '-'`
+- feature/[username]-#[ACTUAL-GITHUB-ISSUE-NUMBER]-[slug-title-from-metadata]
 - slug phải là tiếng anh
 
 4. Notify Slack bắt đầu (tuỳ chọn — chỉ thực hiện nếu `slack-channel-id` có trong CLAUDE.md)
