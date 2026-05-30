@@ -5,6 +5,8 @@ description: Transform PRD into PR-sized tasks using tracer-bullet vertical slic
 
 # PRD to Story
 
+> **Shortcut skill** — combines `prd-to-plan` + `plan-to-story` in one pass. Use for small/medium features where you don't need to persist the intermediate plan file. For large features or when you want to review/adjust the plan before tasking, run `prd-to-plan` → `plan-to-story` separately. Output goes to `specs/story.md` directly (no `plans/` file created).
+
 Transform a PRD into concrete, PR-sized implementation tasks in one unified workflow.
 
 ## What this skill does
