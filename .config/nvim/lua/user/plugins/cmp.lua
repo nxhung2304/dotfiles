@@ -70,13 +70,21 @@ return {
 				},
 				formatting = {
 					fields = { "kind", "abbr", "menu" },
-					format = function(entry, vim_item)
-						local kind =
-							require("lspkind").cmp_format({ mode = "symbol_text", maxwidth = 50 })(entry, vim_item)
-						local strings = vim.split(kind.kind, "%s", { trimempty = true })
-						kind.kind = " " .. (strings[1] or "") .. " "
-						kind.menu = "    (" .. (strings[2] or "") .. ")"
-						return kind
+					format = function(_, vim_item)
+						local icons = {
+							Text = "󰉿", Method = "󰆧", Function = "󰊕", Constructor = "",
+							Field = "󰜢", Variable = "󰀫", Class = "󰠱", Interface = "",
+							Module = "", Property = "󰜢", Unit = "󰑭", Value = "󰎠",
+							Enum = "", Keyword = "󰌋", Snippet = "", Color = "󰏘",
+							File = "󰈙", Reference = "󰈇", Folder = "󰉋", EnumMember = "",
+							Constant = "󰏿", Struct = "󰙅", Event = "", Operator = "󰆕",
+							TypeParameter = "",
+						}
+						local kind_name = vim_item.kind or ""
+						vim_item.kind = " " .. (icons[kind_name] or "󰉿") .. " "
+						vim_item.menu = "    (" .. kind_name .. ")"
+						if #vim_item.abbr > 50 then vim_item.abbr = vim_item.abbr:sub(1, 50) end
+						return vim_item
 					end,
 				},
 				sources = {
