@@ -76,11 +76,6 @@ vim.keymap.set("n", "<leader>ud", function()
 	end
 end, { desc = "Toggle sorted diagnostics" })
 
--- Symbol sidebar (native LSP)
-keymap("n", "<leader>uo", function()
-	require("user.symbol_sidebar").toggle()
-end, { desc = "Toggle symbol sidebar" })
-
 -- Restart
 keymap("n", "<leader>R", function()
 	local file = vim.fn.expand("%:p")

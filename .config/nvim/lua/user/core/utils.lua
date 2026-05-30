@@ -68,7 +68,7 @@ M.get_filepath_with_navic = function()
 		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
 
-	local ok, sidebar = pcall(require, "user.symbol_sidebar")
+	local ok, sidebar = pcall(require, "user.core.sidebar.symbol")
 	if ok then
 		local crumb = sidebar.get_breadcrumb()
 		if crumb and crumb ~= "" then
@@ -101,7 +101,7 @@ M.lsp_on_attach = function(client, bufnr)
 	end
 
 	if client.server_capabilities.documentSymbolProvider then
-		require("user.symbol_sidebar").attach(bufnr)
+		require("user.core.sidebar.symbol").attach(bufnr)
 	end
 end
 

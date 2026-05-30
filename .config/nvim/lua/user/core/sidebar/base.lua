@@ -1,0 +1,99 @@
+local M = {}
+
+local WIDTH = 52
+local WIN_HL = "Normal:NormalFloat,WinSeparator:SymbolSidebarBorder"
+
+function M.is_valid(state)
+	return state.sidebar_buf
+		and vim.api.nvim_buf_is_valid(state.sidebar_buf)
+		and state.sidebar_win
+		and vim.api.nvim_win_is_valid(state.sidebar_win)
+end
+
+function M.find_target_win(state)
+	if state.source_win and vim.api.nvim_win_is_valid(state.source_win) then
+		return state.source_win
+	end
+	for _, win in ipairs(vim.api.nvim_list_wins()) do
+		if win ~= state.sidebar_win
+			and vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
+			return win
+		end
+	end
+end
+
+-- opts: { filetype, statusline?, cursorline?, winhighlight? }
+function M.open_win(state, opts)
+	state.source_win = vim.api.nvim_get_current_win()
+	if vim.bo[vim.api.nvim_win_get_buf(state.source_win)].buftype ~= "" then
+		for _, win in ipairs(vim.api.nvim_list_wins()) do
+			if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == "" then
+				state.source_win = win; break
+			end
+		end
+	end
+
+	state.sidebar_buf = vim.api.nvim_create_buf(false, true)
+	vim.bo[state.sidebar_buf].buftype    = "nofile"
+	vim.bo[state.sidebar_buf].bufhidden  = "wipe"
+	vim.bo[state.sidebar_buf].filetype   = opts.filetype
+	vim.bo[state.sidebar_buf].modifiable = false
+
+	vim.cmd("topleft vsplit")
+	state.sidebar_win = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(state.sidebar_win, state.sidebar_buf)
+	vim.api.nvim_win_set_width(state.sidebar_win, WIDTH)
+
+	vim.wo[state.sidebar_win].number         = true
+	vim.wo[state.sidebar_win].relativenumber = true
+	vim.wo[state.sidebar_win].signcolumn     = "no"
+	vim.wo[state.sidebar_win].wrap           = false
+	vim.wo[state.sidebar_win].winfixwidth    = true
+	vim.wo[state.sidebar_win].cursorline     = opts.cursorline ~= false
+	vim.wo[state.sidebar_win].winhighlight   = opts.winhighlight or WIN_HL
+
+	if opts.statusline then
+		vim.wo[state.sidebar_win].statusline = opts.statusline
+	end
+end
+
+function M.set_lines(state, lines)
+	if not M.is_valid(state) then return end
+	vim.bo[state.sidebar_buf].modifiable = true
+	vim.api.nvim_buf_set_lines(state.sidebar_buf, 0, -1, false, lines)
+	vim.bo[state.sidebar_buf].modifiable = false
+end
+
+function M.close(state)
+	if state.sidebar_win and vim.api.nvim_win_is_valid(state.sidebar_win) then
+		vim.api.nvim_win_close(state.sidebar_win, true)
+	end
+	state.sidebar_buf = nil
+	state.sidebar_win = nil
+	vim.api.nvim_clear_autocmds({ group = state.augroup })
+end
+
+-- extra() is called after base state cleanup inside the WinClosed callback
+function M.on_win_closed(state, extra)
+	vim.api.nvim_create_autocmd("WinClosed", {
+		group    = state.augroup,
+		pattern  = tostring(state.sidebar_win),
+		once     = true,
+		callback = function()
+			state.sidebar_buf = nil
+			state.sidebar_win = nil
+			vim.api.nvim_clear_autocmds({ group = state.augroup })
+			if extra then extra() end
+		end,
+	})
+end
+
+-- q / > / <lt> keymaps shared by every panel
+function M.add_common_keymaps(state, close_fn)
+	local opts = { buffer = state.sidebar_buf, nowait = true }
+	vim.keymap.set("n", "q",    close_fn, opts)
+	vim.keymap.set("n", ">",    function() require("user.core.sidebar").resize(4)  end, opts)
+	vim.keymap.set("n", "<lt>", function() require("user.core.sidebar").resize(-4) end, opts)
+end
+
+return M
