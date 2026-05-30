@@ -19,9 +19,9 @@ Systematically clarify issue requirements through targeted questioning until req
 ### 1. Read & explore first
 
 Read the issue file, then explore the codebase to answer what can be answered without asking:
-- Existing models, schemas, factories/fixtures, tests related to this issue
+- Existing models/entities/schemas, test data (fixtures/factories/seeds/mocks), and tests related to this issue
 - Project conventions file (`CLAUDE.md`, `CONTRIBUTING.md`, `README.md`, etc.)
-- Dependency manifest (`Gemfile`, `package.json`, `pubspec.yaml`, `go.mod`, `requirements.txt`, etc.)
+- Dependency manifest (`Gemfile`, `package.json`, `pubspec.yaml`, `go.mod`, `requirements.txt`, `Cargo.toml`, etc.)
 
 If a question can be answered by reading the codebase — read the codebase instead of asking.
 Only ask the user about things that cannot be determined from code.
@@ -52,20 +52,22 @@ Work down the decision tree one branch at a time:
 - What is the default value? Does it match the happy-path creation flow?
 - Which transitions are automatic (system-triggered) vs manual (user/admin action)?
 - Which states are terminal (no further transitions allowed)?
-- Test fixtures/factories: one variant per non-default state — list every state the tests will need
+- Test data: one variant per non-default state — list every state the tests will need (fixtures/factories/mocks/seeds depending on stack)
 
 **Authentication / session (any auth system)?**
 - Should non-active statuses block access? *(recommend: yes)*
 - What message or response should blocked actors see?
 - Does this overlap with an existing auth mechanism already in place?
 
-**Soft / logical delete?**
+**Soft / logical delete (any language/framework)?**
 - Does a `deleted` / `archived` / `inactive` state overlap with a soft-delete mechanism, or do they serve different purposes?
 - After logical delete, can the record be restored? By whom?
+- Framework note: Rails → `paranoia`/`discard`; Flutter → flag field in local DB; Node → `deletedAt` timestamp pattern
 
-**Association / relationship (foreign key, join table, embedded)?**
+**Association / relationship (foreign key, join table, embedded, reference)?**
 - On parent delete: restrict (block deletion), cascade (delete children), or nullify (clear reference)?
 - Is the relationship nullable or required?
+- Framework note: adapt terminology — Rails uses foreign keys; MongoDB uses embedded documents; Flutter/Dart uses nested objects or ID references
 
 **Validation / constraint?**
 - At which layer: data store, domain/model, API/controller, or UI? *(recommend: data store + domain as safety net, UI for UX)*
@@ -109,7 +111,7 @@ For **every action**, systematically ask:
 ### 4. Detect and resolve contradictions
 
 Watch for these automatically:
-- Data-store default ≠ fixture/factory default with no documented reason
+- Data-store/persistence default ≠ test data default with no documented reason
 - State values inconsistent with project convention
 - Validation at domain layer but no data-store constraint (or vice versa)
 - State transitions in the spec that don't match the stated business rules
@@ -122,7 +124,7 @@ Surface contradictions directly: *"X says A but Y implies B — which is correct
 After all questions are resolved, update the issue file:
 - **Key decisions** — every decision made, with its rationale
 - **Flow diagram** — ASCII state transitions or request/action flow matching confirmed behaviour
-- **Snippets** — fixture/factory variants skeleton updated with all confirmed states
+- **Snippets** — test data variants skeleton updated with all confirmed states (use the project's convention: fixtures/factories/mocks/seeds)
 - **Notes** — gotchas, deferred decisions, dependency gaps
 
 Do not change Status, Metadata, or GitHub Issue number.
