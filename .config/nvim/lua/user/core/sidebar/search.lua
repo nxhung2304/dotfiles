@@ -16,6 +16,10 @@ end
 vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
 setup_hl()
 
+-- persists across open/close
+local history     = {}   -- list of past query strings, newest at end
+local history_idx = 0    -- 0 = not browsing; N = pointing at history[N]
+
 local state = {
 	sidebar_buf = nil,
 	sidebar_win = nil,
@@ -25,6 +29,7 @@ local state = {
 	include = "",
 	exclude = "",
 	folder  = "",
+	hidden  = true,
 	results   = {},   -- { path, lnum, col, text }
 	entries   = {},   -- line index -> entry
 	collapsed = {},   -- path -> true when folded
@@ -51,6 +56,7 @@ local function run_search()
 		"--no-heading", "--color=never", "--smart-case",
 		"--max-count=200",
 	}
+	if state.hidden then table.insert(args, "--hidden") end
 
 	for pat in state.include:gmatch("[^,]+") do
 		pat = pat:match("^%s*(.-)%s*$")
@@ -83,6 +89,13 @@ local function run_search()
 	state.results  = results
 	state.collapsed = {}
 	state.excluded  = {}
+
+	-- push to history (deduplicate consecutive identical queries)
+	if state.query ~= "" and history[#history] ~= state.query then
+		table.insert(history, state.query)
+		if #history > 3 then table.remove(history, 1) end
+	end
+	history_idx = 0
 end
 
 -- Find first occurrence of query in text, respecting smart-case.
@@ -112,6 +125,8 @@ local function render()
 		table.insert(lines,   f.label .. ": " .. state[f.key])
 		table.insert(entries, { type = "field", key = f.key })
 	end
+	table.insert(lines,   "Hidden : " .. (state.hidden and "on" or "off"))
+	table.insert(entries, { type = "toggle", key = "hidden" })
 
 	-- Separator
 	table.insert(lines,   string.rep("─", 48))
@@ -181,7 +196,7 @@ local function render()
 						excl_key = res_key, excluded = res_excl,
 					})
 
-					if not truncated and not res_excl then
+					if not res_excl then
 						local ms, me = find_match(trimmed, state.query)
 						if ms then
 							table.insert(match_hls, {
@@ -203,7 +218,7 @@ local function render()
 	vim.api.nvim_buf_clear_namespace(state.sidebar_buf, ns, 0, -1)
 	for i, entry in ipairs(entries) do
 		local row = i - 1
-		if entry.type == "field" then
+		if entry.type == "field" or entry.type == "toggle" then
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarLabel", row, 0, LABEL_W)
 		elseif entry.type == "file" then
 			local hl = entry.excluded and "SearchSidebarExcluded" or "SearchSidebarFile"
@@ -225,6 +240,16 @@ local function render()
 	end
 
 	require("user.core.sidebar").set_tabbar(state.sidebar_win)
+end
+
+local function scroll_to_results()
+	if not base.is_valid(state) then return end
+	for i, entry in ipairs(state.entries) do
+		if entry.type == "summary" or entry.type == "file" or entry.type == "hint" then
+			vim.api.nvim_win_set_cursor(state.sidebar_win, { i, 0 })
+			return
+		end
+	end
 end
 
 -- Toggle fold for the file that owns the entry at the current cursor line.
@@ -312,9 +337,89 @@ local function do_replace()
 		failed > 0 and (" (" .. failed .. " errors)") or ""))
 	run_search()
 	render()
+	scroll_to_results()
 end
 
-local FIELD_KEY = { query = "s", replace = "r", include = "i", exclude = "x", folder = "d" }
+local FIELD_KEY = { query = "s", replace = "r", include = "i", exclude = "e", folder = "f" }
+
+local function open_help()
+	local map = {
+		{ "Fields", "" },
+		{ "s",  "set search query" },
+		{ "r",  "set replace text" },
+		{ "i",  "set include globs  (*.lua,*.ts)" },
+		{ "e",  "set exclude globs  (dist/)" },
+		{ "f",  "set folder scope" },
+		{ "H",  "toggle hidden files (dotfiles)" },
+		{ "", "" },
+		{ "Navigation", "" },
+		{ "<CR>", "jump to result / edit field" },
+		{ "[",  "older search history" },
+		{ "]",  "newer search history" },
+		{ "z",  "fold/unfold file" },
+		{ "Z",  "fold/unfold all files" },
+		{ "", "" },
+		{ "Exclude", "" },
+		{ "D",  "toggle exclude result/file" },
+		{ "D",  "(visual) toggle exclude range" },
+		{ "u",  "undo last exclude change" },
+		{ "", "" },
+		{ "Replace", "" },
+		{ "R",  "replace all non-excluded results" },
+		{ "", "" },
+		{ "Misc", "" },
+		{ "q",  "close sidebar" },
+		{ "?",  "toggle this help" },
+	}
+
+	local width = 46
+	local lines, hl_keys = {}, {}
+	for _, row in ipairs(map) do
+		local key, desc = row[1], row[2]
+		if desc == "" then
+			table.insert(lines, key == "" and "" or ("  " .. key))
+			table.insert(hl_keys, key ~= "" and #lines or nil)
+		else
+			local pad = string.rep(" ", 8 - vim.fn.strdisplaywidth(key))
+			table.insert(lines, "  " .. key .. pad .. desc)
+			table.insert(hl_keys, { line = #lines - 1, key_end = 2 + #key })
+		end
+	end
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.bo[buf].modifiable = false
+
+	local height = #lines
+	local row    = math.floor((vim.o.lines   - height) / 2)
+	local col    = math.floor((vim.o.columns - width)  / 2)
+
+	local win = vim.api.nvim_open_win(buf, true, {
+		relative  = "editor",
+		width     = width,
+		height    = height,
+		row       = row,
+		col       = col,
+		style     = "minimal",
+		border    = "rounded",
+		title     = " Search Sidebar — Keys ",
+		title_pos = "center",
+	})
+
+	local ns_h = vim.api.nvim_create_namespace("SearchSidebarHelpHl")
+	for _, info in ipairs(hl_keys) do
+		if type(info) == "table" then
+			vim.api.nvim_buf_add_highlight(buf, ns_h, "SearchSidebarKey", info.line, 2, info.key_end)
+		elseif type(info) == "number" then
+			vim.api.nvim_buf_add_highlight(buf, ns_h, "Title", info - 1, 0, -1)
+		end
+	end
+
+	local close = function() if vim.api.nvim_win_is_valid(win) then vim.api.nvim_win_close(win, true) end end
+	for _, key in ipairs({ "q", "?", "<Esc>" }) do
+		vim.keymap.set("n", key, close, { buffer = buf, nowait = true })
+	end
+end
 
 local function setup_keymaps()
 	local opts = { buffer = state.sidebar_buf, nowait = true }
@@ -331,6 +436,7 @@ local function setup_keymaps()
 				if not base.is_valid(state) then return end
 				if key ~= "replace" then run_search() end
 				render()
+				if key ~= "replace" then scroll_to_results() end
 				vim.api.nvim_set_current_win(state.sidebar_win)
 			end)
 		end
@@ -339,8 +445,31 @@ local function setup_keymaps()
 	vim.keymap.set("n", "s", edit_field("query"),  opts)
 	vim.keymap.set("n", "r", edit_field("replace"), opts)
 	vim.keymap.set("n", "i", edit_field("include"), opts)
-	vim.keymap.set("n", "x", edit_field("exclude"), opts)
-	vim.keymap.set("n", "d", edit_field("folder"),  opts)
+	vim.keymap.set("n", "e", edit_field("exclude"), opts)
+	vim.keymap.set("n", "f", edit_field("folder"),  opts)
+
+	vim.keymap.set("n", "H", function()
+		state.hidden = not state.hidden
+		run_search()
+		render()
+		scroll_to_results()
+	end, opts)
+
+	-- history navigation: [ = older, ] = newer
+	local function nav_history(dir)
+		if #history == 0 then return end
+		local next_idx = history_idx + dir
+		if next_idx < 1 then next_idx = 1 end
+		if next_idx > #history then next_idx = #history end
+		if next_idx == history_idx then return end
+		history_idx = next_idx
+		state.query = history[history_idx]
+		run_search()
+		render()
+		scroll_to_results()
+	end
+	vim.keymap.set("n", "[", function() nav_history(-1) end, opts)
+	vim.keymap.set("n", "]", function() nav_history(1)  end, opts)
 
 	vim.keymap.set("n", "<CR>", function()
 		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
@@ -349,6 +478,8 @@ local function setup_keymaps()
 		if entry.type == "field" then
 			local k = FIELD_KEY[entry.key]
 			if k then vim.api.nvim_feedkeys(k, "n", true) end
+		elseif entry.type == "toggle" then
+			vim.api.nvim_feedkeys("H", "n", true)
 		elseif entry.type == "file" then
 			-- <CR> on file header toggles fold
 			toggle_fold_at_cursor()
@@ -414,6 +545,7 @@ local function setup_keymaps()
 	end, opts)
 
 	vim.keymap.set("n", "R", do_replace, opts)
+	vim.keymap.set("n", "?", open_help, opts)
 	base.add_common_keymaps(state, M.close)
 end
 
@@ -423,20 +555,16 @@ function M.open()
 		filetype   = "SearchSidebar",
 		statusline = " "
 			.. k .. "s" .. h .. ":search  "
-			.. k .. "r" .. h .. ":replace  "
-			.. k .. "i" .. h .. ":incl  "
-			.. k .. "x" .. h .. ":excl  "
-			.. k .. "d" .. h .. ":folder  "
-			.. k .. "z" .. h .. ":fold  "
-			.. k .. "Z" .. h .. ":fold all  "
-			.. k .. "D" .. h .. ":exclude  "
-			.. k .. "R" .. h .. ":replace!",
+			.. k .. "R" .. h .. ":replace!  "
+			.. k .. "H" .. h .. ":hidden  "
+			.. k .. "?" .. h .. ":help",
 		cursorline = true,
 	})
 
 	setup_keymaps()
 	run_search()
 	render()
+	scroll_to_results()
 	vim.api.nvim_set_current_win(state.sidebar_win)
 
 	base.on_win_closed(state, function() state.entries = {} end)
