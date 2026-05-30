@@ -1,11 +1,16 @@
 {
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/code-rules/**)"
+    ]
+  },
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "terminal-notifier -title \"✅ $(basename \"$PWD\")\" -message 'CC - Task done' -sound default"
+            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'"
           }
         ]
       }
@@ -15,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "terminal-notifier -title \"🔔 $(basename \"$PWD\")\" -message 'CC - Need user input' -sound Basso"
+            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'"
           }
         ]
       }
@@ -30,12 +35,8 @@
     "ruby-lsp@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true
   },
-  "permissions": {
-    "allow": [
-      "Read(~/.claude/code-rules/**)"
-    ]
-  },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
+  "theme": "dark",
   "hasCompletedOnboarding": true
 }
