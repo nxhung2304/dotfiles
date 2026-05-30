@@ -8,3 +8,10 @@ Interview me relentlessly about every aspect of this plan until we reach a share
 Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead.
+
+**Termination:** Stop when one of these conditions is met:
+- All branches of the decision tree have been resolved
+- The user explicitly signals completion ("done", "proceed", "that's enough", "ship it")
+- You have asked 15+ questions with no unresolved branches remaining
+
+When done, output a **Decision Summary** — a bullet list of every decision made with its rationale — so the user can paste it into their spec.
