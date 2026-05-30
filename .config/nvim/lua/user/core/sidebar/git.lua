@@ -355,30 +355,37 @@ local function setup_keymaps()
 		vim.cmd("edit " .. vim.fn.fnameescape(entry.path))
 		vim.cmd("CodeDiff")
 
-		-- After CodeDiff opens, watch WinEnter: ignore events while the user
-		-- is still inside CodeDiff windows; the first event on any other
-		-- window means CodeDiff is fully gone → return to sidebar.
+		-- nui.nvim creates windows asynchronously, so wait 80 ms before
+		-- snapshotting CodeDiff's windows. Then poll every 100 ms; once all
+		-- CodeDiff windows are gone, give it another 50 ms to finish its own
+		-- focus-restoration, then take over and focus the sidebar.
 		local sidebar = state.sidebar_win
-		vim.schedule(function()
+		vim.defer_fn(function()
 			local diff_wins = {}
 			for _, w in ipairs(vim.api.nvim_list_wins()) do
 				if not before[w] then diff_wins[w] = true end
 			end
 			if not next(diff_wins) then return end
 
-			local aug = vim.api.nvim_create_augroup("GitSidebarDiffReturn", { clear = true })
-			vim.api.nvim_create_autocmd("WinEnter", {
-				group = aug,
-				callback = function()
-					local cur = vim.api.nvim_get_current_win()
-					if diff_wins[cur] then return end          -- still inside CodeDiff
-					vim.api.nvim_clear_autocmds({ group = aug })
-					if cur ~= sidebar and vim.api.nvim_win_is_valid(sidebar) then
-						vim.api.nvim_set_current_win(sidebar)
-					end
-				end,
-			})
-		end)
+			local function poll(n)
+				if n <= 0 then return end
+				if not vim.api.nvim_win_is_valid(sidebar) then return end
+				local alive = false
+				for w in pairs(diff_wins) do
+					if vim.api.nvim_win_is_valid(w) then alive = true; break end
+				end
+				if alive then
+					vim.defer_fn(function() poll(n - 1) end, 100)
+				else
+					vim.defer_fn(function()
+						if vim.api.nvim_win_is_valid(sidebar) then
+							vim.api.nvim_set_current_win(sidebar)
+						end
+					end, 50)
+				end
+			end
+			poll(300)   -- up to 30 s
+		end, 80)
 	end, opts)
 
 	-- Stage / Unstage single file
