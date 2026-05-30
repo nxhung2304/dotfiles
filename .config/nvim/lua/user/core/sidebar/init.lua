@@ -157,6 +157,7 @@ function M.setup_keymaps()
   map("<leader>3",  function() M.switch("search") end, "Sidebar: Search")
   map("<leader>4",  function() M.switch("lsp")    end, "Sidebar: LSP")
   map("<leader>5",  function() M.switch("marks")  end, "Sidebar: Marks")
+  map("<leader>6",  function() M.switch("github") end, "Sidebar: GitHub")
   map("<leader>ut", function() M.toggle()         end, "Toggle sidebar")
 end
 

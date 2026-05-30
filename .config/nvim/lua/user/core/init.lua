@@ -9,4 +9,5 @@ require "user.core.sidebar.git"
 require "user.core.sidebar.search"
 require "user.core.sidebar.symbol"
 require "user.core.sidebar.marks"
+require "user.core.sidebar.github"
 sidebar.setup_keymaps()
