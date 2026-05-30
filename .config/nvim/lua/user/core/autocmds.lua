@@ -80,6 +80,17 @@ vim.api.nvim_create_autocmd("WinEnter", {
 	end,
 })
 
+-- Auto-save on InsertLeave
+vim.api.nvim_create_autocmd("InsertLeave", {
+	desc = "Auto-save on leaving insert mode",
+	callback = function()
+		if vim.bo.modified and vim.bo.buftype == "" and not vim.bo.readonly then
+			vim.cmd.update()
+			vim.notify("saved at " .. vim.fn.strftime("%H:%M:%S"), vim.log.levels.INFO, { title = "AutoSave" })
+		end
+	end,
+})
+
 -- Disable render-markdown in diff windows (e.g. codediff preview) to prevent flickering
 vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 	desc = "Disable render-markdown in diff windows",

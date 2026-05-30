@@ -38,23 +38,20 @@ end
 
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-	local aquaColor = "#83a598"
 	local orangeColor = "#d65d0e"
+	local aquaColor = "#83a598"
 	local filenameColor = "#b8bb26"
 	local pathColor = "#928374"
 
-	-- Highlight groups (giữ nguyên)
 	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
 	vim.api.nvim_set_hl(0, "WinBarPath", { fg = pathColor })
 	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = filenameColor, bold = true })
 
-	-- Split path và filename
 	local path_parts = vim.split(filepath, "/")
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
 
-	-- File icon từ nvim-web-devicons
 	local devicons = require("nvim-web-devicons")
 	local file_icon, icon_color = devicons.get_icon_color(filename, vim.fn.expand("%:e"))
 	if icon_color then
@@ -64,7 +61,6 @@ M.get_filepath_with_navic = function()
 		file_icon = file_icon or ""
 	end
 
-	-- Xây dựng colored_filepath
 	local colored_filepath = ""
 	if path ~= "" then
 		colored_filepath = "%#WinBarPath#" .. path .. "/%#WinBarFilename# " .. file_icon .. " " .. filename .. "%*"
@@ -72,20 +68,11 @@ M.get_filepath_with_navic = function()
 		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
 
-	local icons = require("user.core.configs").icons.kind
-	if require("nvim-navic").is_available() then
-		local data = require("nvim-navic").get_data()
-		if data and #data > 0 then
-			local context_parts = {}
-			for i, context in ipairs(data) do
-				local name = context.name
-				local kind = context.kind
-				local icon = icons[kind] or " "
-				local highlight_group = (i % 2 == 1) and "NavicHighlight1" or "NavicHighlight2" -- Xen kẽ màu
-				table.insert(context_parts, "%#" .. highlight_group .. "#" .. icon .. name .. "%*")
-			end
-			local context_string = table.concat(context_parts, " > ")
-			return colored_filepath .. " > " .. context_string
+	local ok, sidebar = pcall(require, "user.symbol_sidebar")
+	if ok then
+		local crumb = sidebar.get_breadcrumb()
+		if crumb and crumb ~= "" then
+			return colored_filepath .. crumb
 		end
 	end
 
@@ -94,7 +81,6 @@ end
 
 M.lsp_on_attach = function(client, bufnr)
 	local keymap = M.keymap
-	local navic = require("nvim-navic")
 
 	-- Enable completion triggered by <c-x><c-o>
 	vim.api.nvim_buf_set_option(bufnr, "omnifunc", "v:lua.vim.lsp.omnifunc")
@@ -109,13 +95,13 @@ M.lsp_on_attach = function(client, bufnr)
 		vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
 			buffer = bufnr,
 			callback = function()
-				vim.lsp.codelens.refresh({ bufnr = bufnr })
+				vim.lsp.codelens.refresh()
 			end,
 		})
 	end
 
 	if client.server_capabilities.documentSymbolProvider then
-		navic.attach(client, bufnr)
+		require("user.symbol_sidebar").attach(bufnr)
 	end
 end
 

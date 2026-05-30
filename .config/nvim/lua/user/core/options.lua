@@ -53,3 +53,16 @@ vim.o.updatetime = 250
 
 vim.o.statusline = table.concat(statusline, '')
 vim.opt.showtabline = 0
+
+-- Native OSC52 clipboard (Neovim 0.10+)
+vim.g.clipboard = {
+	name = "OSC 52",
+	copy = {
+		["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+		["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+	},
+	paste = {
+		["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+		["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+	},
+}

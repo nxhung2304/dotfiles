@@ -4,6 +4,10 @@ local keymap = utils.keymap
 keymap("n", "<C-s>", "<cmd>:w!<cr>", { desc = "Save file" })
 keymap("i", "<C-s>", "<cmd>:w!<cr>", { desc = "Save file" })
 
+-- Clipboard via OSC52
+keymap("n", "<leader>cc", '"+y', { desc = "Copy to clipboard (OSC52)" })
+keymap("v", "<leader>cc", '"+y', { desc = "Copy selection to clipboard (OSC52)" })
+
 keymap("n", "<C-h>", "<C-w>h")
 keymap("n", "<C-j>", "<C-w>j")
 keymap("n", "<C-k>", "<C-w>k")
@@ -83,6 +87,7 @@ keymap("n", "<leader>R", function()
 	if file ~= "" then
 		vim.fn.writefile({ file }, vim.fn.stdpath("cache") .. "/restart_file")
 	end
+	vim.cmd("silent! wall")
 	vim.cmd("restart")
 end, { desc = "Restart Neovim and reopen last file" })
 
