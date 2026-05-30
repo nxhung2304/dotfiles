@@ -4,8 +4,9 @@ allowed-tools: Agent, Read, Write, Edit, Grep, Glob, Bash
 description: Thực hiện Implementation Checklist.
 ---
 
-- Đọc spec → tuần tự làm từng item trong Checklist
-- **ALWAYS** trước khi code bất kỳ item nào: gọi **rule-lookup** subagent với từ khóa item (bắt buộc, không skip)
+- Đọc spec → extract tất cả keywords từ Checklist
+- **Gọi rule-lookup MỘT LẦN** ở đầu với toàn bộ keywords — cache kết quả, dùng cho toàn bộ session (không gọi lại cho từng item)
+- Tuần tự làm từng item trong Checklist theo thứ tự
 - Nếu UI/color: gọi **design-checker** subagent
 - Sau mỗi item lớn: gọi **code-reviewer** subagent để verify
 - Không over-engineer, không code ngoài spec
