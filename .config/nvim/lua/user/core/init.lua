@@ -5,8 +5,8 @@ require "user.core.autocmds"
 
 -- Load sidebar panels so they register themselves at startup
 local sidebar = require "user.core.sidebar"
-require "user.core.sidebar.search"
 require "user.core.sidebar.git"
--- require "user.core.sidebar.diagnostics"
+require "user.core.sidebar.search"
 require "user.core.sidebar.symbol"
+require "user.core.sidebar.marks"
 sidebar.setup_keymaps()
