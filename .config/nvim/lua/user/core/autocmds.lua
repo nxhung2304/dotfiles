@@ -2,6 +2,21 @@ local function augroup(name)
 	return vim.api.nvim_create_augroup("lazyvim_" .. name, { clear = true })
 end
 
+vim.api.nvim_create_autocmd("VimEnter", {
+	callback = function()
+		local marker = vim.fn.stdpath("cache") .. "/restart_file"
+		if vim.fn.filereadable(marker) == 1 then
+			local file = vim.fn.readfile(marker)[1]
+			vim.fn.delete(marker)
+			if file and file ~= "" and vim.fn.filereadable(file) == 1 then
+				vim.schedule(function()
+					vim.cmd("edit " .. vim.fn.fnameescape(file))
+				end)
+			end
+		end
+	end,
+})
+
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight text on yank",
 	pattern = "*",
@@ -62,6 +77,22 @@ vim.api.nvim_create_autocmd("WinEnter", {
 	group = "CenterCursor",
 	callback = function()
 		vim.cmd("normal! zz")
+	end,
+})
+
+-- Disable render-markdown in diff windows (e.g. codediff preview) to prevent flickering
+vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
+	desc = "Disable render-markdown in diff windows",
+	callback = function()
+		local ok, rm = pcall(require, "render-markdown")
+		if not ok then
+			return
+		end
+		if vim.wo.diff then
+			rm.disable()
+		elseif vim.bo.filetype == "markdown" then
+			rm.enable()
+		end
 	end,
 })
 

@@ -72,6 +72,20 @@ vim.keymap.set("n", "<leader>ud", function()
 	end
 end, { desc = "Toggle sorted diagnostics" })
 
+-- Symbol sidebar (native LSP)
+keymap("n", "<leader>uo", function()
+	require("user.symbol_sidebar").toggle()
+end, { desc = "Toggle symbol sidebar" })
+
+-- Restart
+keymap("n", "<leader>R", function()
+	local file = vim.fn.expand("%:p")
+	if file ~= "" then
+		vim.fn.writefile({ file }, vim.fn.stdpath("cache") .. "/restart_file")
+	end
+	vim.cmd("restart")
+end, { desc = "Restart Neovim and reopen last file" })
+
 -- Macro
 keymap("n", "Q", "@q", { desc = "Replay macro @q" })
 keymap("x", "Q", ":norm @q<CR>", { desc = "Replay macro on selection" })

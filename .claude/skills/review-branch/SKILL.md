@@ -1,6 +1,6 @@
 ---
 name: review-branch
-allowed-tools: Read, Write, Grep, Glob, Bash(ls:*), Bash(git:*)
+allowed-tools: Read, Write, Grep, Glob, Bash(ls:*), Bash(git:*), Bash(mkdir:*)
 description: Review code changes between two branches for clean code, style conventions, security vulnerabilities, and performance issues. Use when user asks "review code", "review my branch", "review-branch", or "review <branch> against <base>".
 ---
 
@@ -16,13 +16,15 @@ Example: `/review-branch feature/auth main`
 
 ### 1. Load rules (token-efficient)
 
-**Always load:**
-- `.claude/code-rules/core.md` (always, ~17 lines)
-- `.claude/code-rules/index.md` (keyword map for targeted reads)
+**Always load (global rules at `~/.claude/code-rules/`):**
+- `~/.claude/code-rules/core.md` (always, ~17 lines)
+- `~/.claude/code-rules/index.md` (keyword map for targeted reads)
 
 **Then load only sections relevant to the diff's file types** using the index keyword map.
 
-**Also check `specs/code-rules/` in project root** — if it exists, read any `.md` files there as project-specific overrides.
+**Also check project-level overrides (in order):**
+- `.claude/code-rules/` in project root — if it exists, load `core.md` and `index.md` there
+- `specs/code-rules/` in project root — if it exists, read any `.md` files there as project-specific overrides
 
 ### 2. Diff the branch
 

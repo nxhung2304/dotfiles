@@ -1,6 +1,6 @@
 ---
 name: generate-issues
-allowed-tools: Grep, Bash(touch:*), Bash(mkdir -p *), Bash(ls:*), Bash(find:*), Read, Edit, Write
+allowed-tools: Grep, Bash(touch:*), Bash(mkdir -p *), Bash(cat:*), Bash(ls:*), Bash(find:*), Read, Edit, Write
 description: Create issues from specs/story.md. Use when user asks "Generate issues, generate issue [number].[title]"
 ---
 
@@ -28,10 +28,9 @@ Read `specs/story.md` → Parse tasks → Create individual issue files in `spec
    - File paths to create/modify
    - Key decisions/constraints (e.g. "validate at the model layer, not the controller", "use a join table, not a JSON column")
    - Code snippets for every non-obvious part (model callbacks, validations, query scopes, controller filters) using **skeleton style**:
-     - Method signature + empty body
-     - Numbered comments inside/above the method describing each step to implement
+     - One-line comment above the method describing what it does
+     - Method signature + empty body — NO numbered steps, NO implementation inside
      - Test stubs: `test "description" do` with empty body
-     - No implementation code — the implementer writes the body from the comments
 6. **Flow Diagram**: Always include an ASCII diagram in the Step-by-step Guide that shows:
    - For models: state machine / enum transitions (e.g. `draft → reviewing → published`)
    - For controllers/API: request → auth check → business logic → response flow

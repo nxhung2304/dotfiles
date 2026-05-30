@@ -6,13 +6,6 @@ return {
 		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
 			"williamboman/mason.nvim",
-			{
-				"SmiteshP/nvim-navic",
-				opts = {
-					icons = {},
-					highlight = true,
-				},
-			},
 		},
 		config = function()
 			-- diagnostics

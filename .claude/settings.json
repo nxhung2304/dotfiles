@@ -30,6 +30,11 @@
     "ruby-lsp@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": true
   },
+  "permissions": {
+    "allow": [
+      "Read(~/.claude/code-rules/**)"
+    ]
+  },
   "effortLevel": "medium",
   "autoMemoryEnabled": false,
   "hasCompletedOnboarding": true

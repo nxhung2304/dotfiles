@@ -49,12 +49,8 @@ Example shapes to use:
 
 **Non-obvious snippets:**
 ```
-# Skeleton style — method signature + numbered step comments, no implementation body.
-# Test stubs: name describes the scenario, body is empty.
-
+# [what this method does]
 def method_name
-  # 1. first step
-  # 2. second step
 end
 
 test "scenario description" do
