@@ -19,6 +19,7 @@ return {
 			{ "<leader>r", desc = "Rails" },
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>t", desc = "Test" },
+			{ "<leader>q", desc = "Macro" },
 		})
 
 		wk.setup(opts)
