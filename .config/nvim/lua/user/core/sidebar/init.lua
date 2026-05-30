@@ -39,28 +39,16 @@ end
 function M.tabbar()
   if #_panels == 0 then return "" end
 
-  -- Build labels and find max display width
-  local labels = {}
-  local max_w  = 0
-  for _, p in ipairs(_panels) do
-    local count = p.get_count and p.get_count()
-    local badge = (count and count > 0) and (" (" .. count .. ")") or ""
-    local label = (p.icon ~= "" and (p.icon .. " ") or "") .. p.label .. badge
-    local w     = vim.fn.strdisplaywidth(label)
-    if w > max_w then max_w = w end
-    table.insert(labels, label)
-  end
-
-  -- Each tab: 1 (indicator) + 1 (lpad) + max_w + 1 (rpad) = fixed width
   local parts = {}
-  for i, p in ipairs(_panels) do
-    local label   = labels[i]
-    local pad     = max_w - vim.fn.strdisplaywidth(label)
-    local padded  = label .. string.rep(" ", pad)
+  for _, p in ipairs(_panels) do
+    local no_badge = p.id == "files" or p.id == "lsp"
+    local count = (not no_badge) and p.get_count and p.get_count()
+    local badge = (count and count > 0) and (" (" .. count .. ")") or ""
+    local label = p.label .. badge
     if p.id == _active_id then
-      table.insert(parts, "%#SidebarTabSel#  " .. padded .. " %*")
+      table.insert(parts, "%#SidebarTabSel# " .. label .. " %*")
     else
-      table.insert(parts, "%#SidebarTabNC#  " .. padded .. " %*")
+      table.insert(parts, "%#SidebarTabNC# " .. label .. " %*")
     end
   end
   return table.concat(parts, "%#SidebarTabNC#│") .. "%="
@@ -73,10 +61,16 @@ function M.set_tabbar(win, extra)
   if extra and extra ~= "" then
     bar = bar .. "%#SidebarTabHint#" .. extra .. " "
   end
+  -- suppress all autocmds so plugins (e.g. NvimTree) don't react to the winbar write
+  local saved = vim.o.eventignore
+  vim.o.eventignore = "all"
   vim.api.nvim_set_option_value("winbar", bar, { win = win })
+  vim.o.eventignore = saved
 end
 
-function M.switch(id)
+function M.switch(id, opts)
+  opts = opts or {}
+  local focus = opts.focus ~= false
   local _, panel = find(id)
   if not panel then return end
 
@@ -86,10 +80,12 @@ function M.switch(id)
     local win = panel.get_win and panel.get_win()
     if win then
       M.set_tabbar(win)
-      vim.api.nvim_set_current_win(win)
+      if focus then vim.api.nvim_set_current_win(win) end
     end
     return
   end
+
+  local caller_win = vim.api.nvim_get_current_win()
 
   -- Collect currently open panels before opening the new one
   local to_close = {}
@@ -108,14 +104,18 @@ function M.switch(id)
     p.close()
   end
 
-  -- Re-focus the new panel after everything settles (handles panels like
-  -- NvimTree that don't guarantee focus after open())
   vim.schedule(function()
-    if _active_id ~= id then return end  -- user switched again in the meantime
+    if _active_id ~= id then return end
     local win = panel.get_win and panel.get_win()
     if win and vim.api.nvim_win_is_valid(win) then
       M.set_tabbar(win)
-      vim.api.nvim_set_current_win(win)
+    end
+    if focus then
+      if win and vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_set_current_win(win)
+      end
+    elseif vim.api.nvim_win_is_valid(caller_win) then
+      vim.api.nvim_set_current_win(caller_win)
     end
   end)
 end
@@ -153,9 +153,10 @@ function M.setup_keymaps()
     vim.keymap.set("n", lhs, rhs, { desc = desc })
   end
   map("<leader>1",  function() M.switch("files")  end, "Sidebar: Files")
-  map("<leader>2",  function() M.switch("search") end, "Sidebar: Search")
-  map("<leader>3",  function() M.switch("git")    end, "Sidebar: Git")
+  map("<leader>2",  function() M.switch("git")    end, "Sidebar: Git")
+  map("<leader>3",  function() M.switch("search") end, "Sidebar: Search")
   map("<leader>4",  function() M.switch("lsp")    end, "Sidebar: LSP")
+  map("<leader>5",  function() M.switch("marks")  end, "Sidebar: Marks")
   map("<leader>ut", function() M.toggle()         end, "Toggle sidebar")
 end
 
