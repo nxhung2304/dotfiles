@@ -85,6 +85,9 @@ return {
 	},
 	keys = {
 		{ "<leader>e", function() require("user.core.sidebar").toggle() end, desc = "Toggle sidebar" },
-		{ "<leader>.", "<cmd>NvimTreeFindFile<cr>", desc = "Find file in NvimTree" },
+		{ "<leader>.", function()
+			require("user.core.sidebar").switch("files", { focus = false })
+			vim.schedule(function() vim.cmd("NvimTreeFindFile") end)
+		end, desc = "Find file in NvimTree" },
 	},
 }
