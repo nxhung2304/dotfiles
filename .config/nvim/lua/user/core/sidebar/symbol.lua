@@ -397,9 +397,10 @@ end
 -- Register with sidebar manager (deferred so user.sidebar is definitely loaded)
 vim.schedule(function()
 	require("user.core.sidebar").register({
-		id = "lsp",
-		label = "LSP",
-		icon = "󰘦 (L)",
+		id       = "lsp",
+		label    = "LSP",
+		icon     = "󰘦 (L)",
+		no_badge = true,
 		open = M.open,
 		close = M.close,
 		is_open = function() return base.is_valid(state) end,

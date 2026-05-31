@@ -5,9 +5,10 @@ return {
 		vim.g.loaded_netrwPlugin = 1
 
 		require("user.core.sidebar").register({
-			id    = "files",
-			label = "Files",
-			icon  = "󰉋",
+			id       = "files",
+			label    = "Files",
+			icon     = "󰉋",
+			no_badge = true,
 			open = function()
 				vim.cmd("NvimTreeOpen")
 			end,

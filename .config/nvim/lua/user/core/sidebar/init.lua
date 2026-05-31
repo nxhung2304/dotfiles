@@ -41,8 +41,7 @@ function M.tabbar()
 
   local parts = {}
   for _, p in ipairs(_panels) do
-    local no_badge = p.id == "files" or p.id == "lsp"
-    local count = (not no_badge) and p.get_count and p.get_count()
+    local count = (not p.no_badge) and p.get_count and p.get_count()
     local badge = (count and count > 0) and (" (" .. count .. ")") or ""
     local label = p.label .. badge
     if p.id == _active_id then
@@ -130,6 +129,17 @@ function M.prev()
   local idx = active_idx()
   local prev_panel = _panels[((idx - 2 + #_panels) % #_panels) + 1]
   if prev_panel then M.switch(prev_panel.id) end
+end
+
+function M.refresh_tabbar()
+  for _, p in ipairs(_panels) do
+    if p.is_open() then
+      local win = p.get_win and p.get_win()
+      if win and vim.api.nvim_win_is_valid(win) then
+        M.set_tabbar(win)
+      end
+    end
+  end
 end
 
 function M.toggle()
