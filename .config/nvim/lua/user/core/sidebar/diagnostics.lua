@@ -1,13 +1,7 @@
 local M = {}
 local base = require("user.core.sidebar.base")
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_win  = nil,
-	entries     = {},
-	augroup     = vim.api.nvim_create_augroup("DiagSidebar", { clear = true }),
-}
+local state = base.new_state("DiagSidebar")
 
 local SEV = vim.diagnostic.severity
 local sev_order  = { SEV.ERROR, SEV.WARN, SEV.HINT, SEV.INFO }
@@ -16,13 +10,10 @@ local sev_icon   = { [SEV.ERROR] = "󰅚 ", [SEV.WARN] = "󰀦 ", [SEV.HINT] = "
 local sev_hl     = { [SEV.ERROR] = "DiagnosticError", [SEV.WARN] = "DiagnosticWarn",
                      [SEV.HINT]  = "DiagnosticHint",  [SEV.INFO] = "DiagnosticInfo" }
 
-local function setup_hl()
-	vim.api.nvim_set_hl(0, "DiagSidebarKey",      { link = "Function", default = true })
-	vim.api.nvim_set_hl(0, "DiagSidebarHintDesc", { link = "Comment",  default = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
-setup_hl()
+base.setup_hl({
+	{ "DiagSidebarKey",      { link = "Function", default = true } },
+	{ "DiagSidebarHintDesc", { link = "Comment",  default = true } },
+})
 
 local ns = vim.api.nvim_create_namespace("DiagSidebarHl")
 local _count_cache = nil
@@ -142,10 +133,7 @@ function M.open()
 	base.on_win_closed(state, function() state.entries = {} end)
 end
 
-function M.close()
-	base.close(state)
-	state.entries = {}
-end
+M.close = base.make_close(state)
 
 vim.api.nvim_create_autocmd("DiagnosticChanged", {
 	group    = vim.api.nvim_create_augroup("DiagSidebarCount", { clear = true }),

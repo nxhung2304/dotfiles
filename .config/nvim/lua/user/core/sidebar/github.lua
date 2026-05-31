@@ -2,13 +2,7 @@
 local M = {}
 local base = require("user.core.sidebar.base")
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_win  = nil,
-	entries     = {},
-	augroup     = vim.api.nvim_create_augroup("GithubSidebar", { clear = true }),
-}
+local state = base.new_state("GithubSidebar")
 
 local ns      = vim.api.nvim_create_namespace("GithubSidebarHl")
 local _prs    = nil   -- nil=not loaded, false=error, table=loaded
@@ -256,15 +250,13 @@ local function setup_keymaps()
 	local opts = { buffer = state.sidebar_buf, nowait = true }
 
 	vim.keymap.set("n", "<CR>", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "item" then return end
 		open_item(entry)
 	end, opts)
 
 	vim.keymap.set("n", "o", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "item" then return end
 		local url = entry.item.url
 		if not url or url == "" then return end
@@ -300,10 +292,7 @@ function M.open()
 	end
 end
 
-function M.close()
-	base.close(state)
-	state.entries = {}
-end
+M.close = base.make_close(state)
 
 -- ── register ──────────────────────────────────────────────────────────────────
 

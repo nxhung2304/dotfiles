@@ -1,13 +1,7 @@
 local M = {}
 local base = require("user.core.sidebar.base")
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_win  = nil,
-	entries     = {},
-	augroup     = vim.api.nvim_create_augroup("GitSidebar", { clear = true }),
-}
+local state = base.new_state("GitSidebar")
 
 local diff_state = {
 	active    = false,
@@ -16,19 +10,16 @@ local diff_state = {
 	entry_idx = nil,
 }
 
-local function setup_hl()
-	vim.api.nvim_set_hl(0, "GitSidebarModified", { link = "DiagnosticWarn",  default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarAdded",    { link = "DiagnosticHint",  default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarDeleted",  { link = "DiagnosticError", default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarStaged",   { link = "DiagnosticHint",  default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarKey",           { link = "Function",   default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarHintDesc",      { link = "Comment",    default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarBranchCurrent", { link = "Statement",  default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarStashRef",      { link = "Comment",    default = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
-setup_hl()
+base.setup_hl({
+	{ "GitSidebarModified",      { link = "DiagnosticWarn",  default = true } },
+	{ "GitSidebarAdded",         { link = "DiagnosticHint",  default = true } },
+	{ "GitSidebarDeleted",       { link = "DiagnosticError", default = true } },
+	{ "GitSidebarStaged",        { link = "DiagnosticHint",  default = true } },
+	{ "GitSidebarKey",           { link = "Function",        default = true } },
+	{ "GitSidebarHintDesc",      { link = "Comment",         default = true } },
+	{ "GitSidebarBranchCurrent", { link = "Statement",       default = true } },
+	{ "GitSidebarStashRef",      { link = "Comment",         default = true } },
+})
 
 
 local function file_icon(path)
@@ -259,14 +250,6 @@ render = function()
 	end
 
 	require("user.core.sidebar").set_tabbar(state.sidebar_win)
-end
-
--- ── Cursor helper ──
-
-local function cursor_entry()
-	if not base.is_valid(state) then return nil, nil end
-	local line = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-	return state.entries[line], line
 end
 
 -- ── Commit buffer ──
@@ -599,7 +582,7 @@ local function setup_keymaps()
 	local opts = { buffer = state.sidebar_buf, nowait = true }
 
 	vim.keymap.set("n", "<CR>", function()
-		local entry, line = cursor_entry()
+		local entry, line = base.cursor_entry(state)
 		if not entry then return end
 		if entry.type == "file" then
 			open_file_diff(entry, line)
@@ -620,14 +603,14 @@ local function setup_keymaps()
 
 	-- Stage / Unstage single file
 	vim.keymap.set("n", "s", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "file" or entry.staged ~= false then return end
 		git_run({ "add", entry.path })
 		refresh()
 	end, opts)
 
 	vim.keymap.set("n", "u", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "file" or entry.staged ~= true then return end
 		git_run({ "restore", "--staged", entry.path })
 		refresh()
@@ -651,7 +634,7 @@ local function setup_keymaps()
 
 	-- Stash actions
 	vim.keymap.set("n", "a", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "stash" then return end
 		local choice = vim.fn.confirm("Apply '" .. entry.ref .. "' (keep in stash list)?", "&Yes\n&No", 1)
 		if choice ~= 1 then return end
@@ -659,7 +642,7 @@ local function setup_keymaps()
 	end, opts)
 
 	vim.keymap.set("n", "d", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "stash" then return end
 		local choice = vim.fn.confirm("Drop '" .. entry.ref .. "'?", "&Yes\n&No", 2)
 		if choice ~= 1 then return end
@@ -668,7 +651,7 @@ local function setup_keymaps()
 
 	-- Discard
 	vim.keymap.set("n", "x", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "file" or entry.staged ~= false then return end
 		local label  = entry.status == "?" and "Delete untracked file" or "Discard changes to"
 		local choice = vim.fn.confirm(label .. " " .. entry.path .. "?", "&Yes\n&No", 2)
@@ -713,7 +696,7 @@ local function setup_keymaps()
 	vim.keymap.set("n", "F", function() git_async({ "fetch" }, "Fetch") end, opts)
 
 	vim.keymap.set("n", "z", function()
-		local entry = cursor_entry()
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "header" or not entry.section then return end
 		fold_state[entry.section] = not fold_state[entry.section]
 		render()
@@ -769,6 +752,11 @@ function M.open()
 end
 
 function M.close()
+	if diff_state.active then close_diff() end
+	diff_state.active    = false
+	diff_state.left_win  = nil
+	diff_state.right_win = nil
+	diff_state.entry_idx = nil
 	base.close(state)
 	state.entries = {}
 end

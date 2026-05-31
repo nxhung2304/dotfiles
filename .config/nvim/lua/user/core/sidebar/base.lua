@@ -1,6 +1,6 @@
 local M = {}
 
-local WIDTH  = 52
+local WIDTH  = 55
 local WIN_HL = "Normal:NormalFloat,WinSeparator:SymbolSidebarBorder"
 
 
@@ -122,6 +122,44 @@ function M.add_common_keymaps(state, close_fn)
 	vim.keymap.set("n", "q",    close_fn, opts)
 	vim.keymap.set("n", ">",    function() require("user.core.sidebar").resize(4)  end, opts)
 	vim.keymap.set("n", "<lt>", function() require("user.core.sidebar").resize(-4) end, opts)
+end
+
+-- Factory: returns a new per-panel state table with standard base fields.
+function M.new_state(augroup_name)
+	return {
+		sidebar_buf = nil,
+		sidebar_win = nil,
+		source_win  = nil,
+		entries     = {},
+		augroup     = vim.api.nvim_create_augroup(augroup_name, { clear = true }),
+	}
+end
+
+-- Returns a close function for panels whose only cleanup is base.close + entries reset.
+function M.make_close(state)
+	return function()
+		M.close(state)
+		state.entries = {}
+	end
+end
+
+-- Returns the entry and 1-based line at the sidebar cursor, or nil, nil.
+function M.cursor_entry(state)
+	if not M.is_valid(state) then return nil, nil end
+	local line = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
+	return state.entries[line], line
+end
+
+-- Define highlight groups and re-apply them on every ColorScheme change.
+-- defs: list of { "HlGroupName", { attrs } }
+function M.setup_hl(defs)
+	local function apply()
+		for _, d in ipairs(defs) do
+			vim.api.nvim_set_hl(0, d[1], d[2])
+		end
+	end
+	vim.api.nvim_create_autocmd("ColorScheme", { callback = apply })
+	apply()
 end
 
 return M

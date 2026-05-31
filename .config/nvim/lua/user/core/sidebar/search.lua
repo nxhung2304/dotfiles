@@ -3,19 +3,16 @@ local base = require("user.core.sidebar.base")
 
 local ns = vim.api.nvim_create_namespace("SearchSidebar")
 
-local function setup_hl()
-	vim.api.nvim_set_hl(0, "SearchSidebarLabel",    { link = "Function",  default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarFile",     { link = "Directory", default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarCount",    { link = "Comment",   default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarMatch",    { link = "Search",    default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarKey",      { link = "Function",  default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarHint",     { link = "Comment",   default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarExcluded", { link = "Comment",   default = true })
-	vim.api.nvim_set_hl(0, "SearchSidebarHistory", { link = "Special",   default = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
-setup_hl()
+base.setup_hl({
+	{ "SearchSidebarLabel",    { link = "Function",  default = true } },
+	{ "SearchSidebarFile",     { link = "Directory", default = true } },
+	{ "SearchSidebarCount",    { link = "Comment",   default = true } },
+	{ "SearchSidebarMatch",    { link = "Search",    default = true } },
+	{ "SearchSidebarKey",      { link = "Function",  default = true } },
+	{ "SearchSidebarHint",     { link = "Comment",   default = true } },
+	{ "SearchSidebarExcluded", { link = "Comment",   default = true } },
+	{ "SearchSidebarHistory",  { link = "Special",   default = true } },
+})
 
 -- persists across open/close AND across sessions (per-project)
 local history     = {}   -- list of past query strings, newest at end
@@ -31,23 +28,18 @@ end
 
 load_history()
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_win  = nil,
-	query   = "",
-	replace = "",
-	include = "",
-	exclude = "",
-	folder  = "",
-	hidden  = true,
-	results   = {},   -- { path, lnum, col, text }
-	entries   = {},   -- line index -> entry
-	collapsed = {},   -- path -> true when folded
-	excluded  = {},   -- key -> true: path for whole-file, path.."\0"..lnum for single result
-	excl_history = {},  -- undo stack of excluded snapshots
-	augroup = vim.api.nvim_create_augroup("SearchSidebar", { clear = true }),
-}
+local state = vim.tbl_extend("force", base.new_state("SearchSidebar"), {
+	query        = "",
+	replace      = "",
+	include      = "",
+	exclude      = "",
+	folder       = "",
+	hidden       = true,
+	results      = {},   -- { path, lnum, col, text }
+	collapsed    = {},   -- path -> true when folded
+	excluded     = {},   -- key -> true: path for whole-file, path.."\0"..lnum for single result
+	excl_history = {},   -- undo stack of excluded snapshots
+})
 
 local FIELDS = {
 	{ key = "query",   label = "Search ", prompt = "Search: " },
@@ -400,15 +392,9 @@ end
 
 -- Toggle fold for the file that owns the entry at the current cursor line.
 local function toggle_fold_at_cursor()
-	local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-	local entry = state.entries[line]
+	local entry = base.cursor_entry(state)
 	if not entry then return end
-	local path
-	if entry.type == "file" then
-		path = entry.path
-	elseif entry.type == "result" then
-		path = entry.path
-	end
+	local path = entry.path
 	if path then
 		state.collapsed[path] = not state.collapsed[path] or nil
 		render()
@@ -614,8 +600,7 @@ local function setup_keymaps()
 	vim.keymap.set("n", "]", function() nav_history(1)  end, opts)
 
 	vim.keymap.set("n", "<CR>", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry then return end
 		if entry.type == "field" then
 			local k = FIELD_KEY[entry.key]
@@ -718,10 +703,7 @@ function M.open()
 	base.on_win_closed(state, function() state.entries = {} end)
 end
 
-function M.close()
-	base.close(state)
-	state.entries = {}
-end
+M.close = base.make_close(state)
 
 vim.schedule(function()
 	require("user.core.sidebar").register({

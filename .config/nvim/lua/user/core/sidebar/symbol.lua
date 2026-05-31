@@ -22,27 +22,23 @@ local ns_kinds  = vim.api.nvim_create_namespace("SymbolSidebarKinds")
 local ns_cursor = vim.api.nvim_create_namespace("SymbolSidebarCursor")
 
 local function setup_highlights()
-	vim.api.nvim_set_hl(0, "SymbolSidebarMethod",  { link = "Function" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarType",    { link = "Type" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarConst",   { link = "Constant" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarField",   { link = "Identifier" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarVar",     { link = "Normal" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarCurrent", { link = "PmenuSel" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarWinBar",  { link = "FloatTitle" })
-	vim.api.nvim_set_hl(0, "SymbolSidebarBorder",  { link = "FloatBorder" })
+	vim.api.nvim_set_hl(0, "SymbolSidebarMethod",  { link = "Function",    default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarType",    { link = "Type",        default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarConst",   { link = "Constant",    default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarField",   { link = "Identifier",  default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarVar",     { link = "Normal",      default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarCurrent", { link = "PmenuSel",    default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarWinBar",  { link = "FloatTitle",  default = true })
+	vim.api.nvim_set_hl(0, "SymbolSidebarBorder",  { link = "FloatBorder", default = true })
 end
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_buf = nil,
-	source_win = nil,
-	locations = {}, -- maps sidebar line -> { lnum, col, hl }
+local state = vim.tbl_extend("force", base.new_state("SymbolSidebar"), {
+	source_buf  = nil,
+	locations   = {},   -- maps sidebar line -> { lnum, col, hl }
 	raw_symbols = {},
 	method_only = true,
-	filter = "",
-	augroup = vim.api.nvim_create_augroup("SymbolSidebar", { clear = true }),
-}
+	filter      = "",
+})
 
 local breadcrumb_cache = {} -- { [bufnr] = symbols }
 

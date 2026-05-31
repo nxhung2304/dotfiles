@@ -3,29 +3,20 @@ local base = require("user.core.sidebar.base")
 
 local ns = vim.api.nvim_create_namespace("MarksSidebar")
 
-local function setup_hl()
-	vim.api.nvim_set_hl(0, "MarksSidebarIndex",  { link = "Function",  default = true })
-	vim.api.nvim_set_hl(0, "MarksSidebarFile",   { link = "Directory", default = true })
-	vim.api.nvim_set_hl(0, "MarksSidebarActive", { link = "Search",    default = true })
-	vim.api.nvim_set_hl(0, "MarksSidebarKey",    { link = "Function",  default = true })
-	vim.api.nvim_set_hl(0, "MarksSidebarHint",   { link = "Comment",   default = true })
-end
-
-vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
-setup_hl()
+base.setup_hl({
+	{ "MarksSidebarIndex",  { link = "Function",  default = true } },
+	{ "MarksSidebarFile",   { link = "Directory", default = true } },
+	{ "MarksSidebarActive", { link = "Search",    default = true } },
+	{ "MarksSidebarKey",    { link = "Function",  default = true } },
+	{ "MarksSidebarHint",   { link = "Comment",   default = true } },
+})
 
 -- Per-project marks: { path, lnum }
 local marks    = {}
 local _cwd     = nil   -- project root the current marks belong to
 local _nav_idx = 0     -- last jumped-to index for <C-n>/<C-p>
 
-local state = {
-	sidebar_buf = nil,
-	sidebar_win = nil,
-	source_win  = nil,
-	entries     = {},
-	augroup     = vim.api.nvim_create_augroup("MarksSidebar", { clear = true }),
-}
+local state = base.new_state("MarksSidebar")
 
 -- ── persistence ────────────────────────────────────────────────────────────
 
@@ -40,20 +31,8 @@ end
 
 -- ── helpers ─────────────────────────────────────────────────────────────────
 
-local function current_win()
-	local win = state.source_win
-	if not (win and vim.api.nvim_win_is_valid(win)) then
-		for _, w in ipairs(vim.api.nvim_list_wins()) do
-			if vim.bo[vim.api.nvim_win_get_buf(w)].buftype == "" then
-				win = w; break
-			end
-		end
-	end
-	return win
-end
-
 local function current_file()
-	local win = current_win()
+	local win = base.find_target_win(state)
 	if not win then return nil end
 	local buf  = vim.api.nvim_win_get_buf(win)
 	local name = vim.api.nvim_buf_get_name(buf)
@@ -71,7 +50,7 @@ end
 -- ── public API ──────────────────────────────────────────────────────────────
 
 function M.add(path)
-	local win  = current_win()
+	local win  = base.find_target_win(state)
 	local lnum = win and vim.api.nvim_win_get_cursor(win)[1] or 1
 	path = path or current_file()
 	if not path then
@@ -213,8 +192,7 @@ local function setup_keymaps()
 	local opts = { buffer = state.sidebar_buf, nowait = true }
 
 	vim.keymap.set("n", "<CR>", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "mark" then return end
 		M.jump(entry.idx)
 	end, opts)
@@ -222,22 +200,19 @@ local function setup_keymaps()
 	vim.keymap.set("n", "a", function() M.add() end, opts)
 
 	vim.keymap.set("n", "d", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "mark" then return end
 		M.remove(entry.path)
 	end, opts)
 
 	vim.keymap.set("n", "J", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "mark" then return end
 		move_mark(entry.idx, entry.idx + 1)
 	end, opts)
 
 	vim.keymap.set("n", "K", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "mark" then return end
 		move_mark(entry.idx, entry.idx - 1)
 	end, opts)
@@ -275,10 +250,7 @@ function M.open()
 	base.on_win_closed(state, function() state.entries = {} end)
 end
 
-function M.close()
-	base.close(state)
-	state.entries = {}
-end
+M.close = base.make_close(state)
 
 -- ── project switching ────────────────────────────────────────────────────────
 
