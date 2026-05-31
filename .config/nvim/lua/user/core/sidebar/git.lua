@@ -21,8 +21,10 @@ local function setup_hl()
 	vim.api.nvim_set_hl(0, "GitSidebarAdded",    { link = "DiagnosticHint",  default = true })
 	vim.api.nvim_set_hl(0, "GitSidebarDeleted",  { link = "DiagnosticError", default = true })
 	vim.api.nvim_set_hl(0, "GitSidebarStaged",   { link = "DiagnosticHint",  default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarKey",      { link = "Function",        default = true })
-	vim.api.nvim_set_hl(0, "GitSidebarHintDesc", { link = "Comment",         default = true })
+	vim.api.nvim_set_hl(0, "GitSidebarKey",           { link = "Function",   default = true })
+	vim.api.nvim_set_hl(0, "GitSidebarHintDesc",      { link = "Comment",    default = true })
+	vim.api.nvim_set_hl(0, "GitSidebarBranchCurrent", { link = "Statement",  default = true })
+	vim.api.nvim_set_hl(0, "GitSidebarStashRef",      { link = "Comment",    default = true })
 end
 
 vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
@@ -84,6 +86,33 @@ local function parse_status()
 end
 
 
+local BRANCH_LIMIT = 8
+
+local function parse_branches()
+	local current  = vim.trim(git_run({ "branch", "--show-current" }))
+	local all      = git_run_lines({ "branch", "--sort=-committerdate", "--format=%(refname:short)" })
+	local branches = {}
+	for _, b in ipairs(all) do
+		if b ~= "" then
+			table.insert(branches, { name = b, is_current = (b == current) })
+			if #branches >= BRANCH_LIMIT then break end
+		end
+	end
+	return branches
+end
+
+local function parse_stashes()
+	local raw     = git_run_lines({ "stash", "list" })
+	local stashes = {}
+	for _, line in ipairs(raw) do
+		local ref, msg = line:match("^(stash@{%d+}):%s*(.+)$")
+		if ref then
+			table.insert(stashes, { ref = ref, message = msg })
+		end
+	end
+	return stashes
+end
+
 function M.get_count()
 	if _count_cache ~= nil then return _count_cache > 0 and _count_cache or nil end
 	local lines = git_run_lines({ "status", "--porcelain" })
@@ -105,7 +134,7 @@ end
 
 local render  -- forward declaration
 
-local fold_state = { staged = false, changes = false, commits = false }
+local fold_state = { staged = false, changes = false, commits = false, branches = false, stashes = false }
 
 local function refresh()
 	_count_cache = nil
@@ -171,6 +200,42 @@ render = function()
 		end
 	end
 
+	-- ── Branches ──
+	local branches = parse_branches()
+	if #branches > 0 then
+		table.insert(lines, ""); table.insert(entries, { type = "empty" })
+		local bicon  = fold_state.branches and "▸" or "▾"
+		local blabel = #branches >= BRANCH_LIMIT and ("Recent branches (top " .. BRANCH_LIMIT .. ")") or ("Branches (" .. #branches .. ")")
+		table.insert(lines,   bicon .. " " .. blabel)
+		table.insert(entries, { type = "header", section = "branches" })
+		if not fold_state.branches then
+			for _, b in ipairs(branches) do
+				local marker = b.is_current and "* " or "  "
+				table.insert(lines,   "  " .. marker .. b.name)
+				table.insert(entries, { type = "branch", name = b.name, is_current = b.is_current })
+			end
+		end
+	end
+
+	-- ── Stashes ──
+	local stashes = parse_stashes()
+	if #stashes > 0 then
+		table.insert(lines, ""); table.insert(entries, { type = "empty" })
+		local sicon = fold_state.stashes and "▸" or "▾"
+		table.insert(lines,   sicon .. " Stashes (" .. #stashes .. ")")
+		table.insert(entries, { type = "header", section = "stashes" })
+		if not fold_state.stashes then
+			for _, st in ipairs(stashes) do
+				local msg = st.message
+				if vim.fn.strdisplaywidth(msg) > 38 then
+					msg = msg:sub(1, 37) .. "…"
+				end
+				table.insert(lines,   "  " .. st.ref .. " " .. msg)
+				table.insert(entries, { type = "stash", ref = st.ref, message = st.message, ref_len = #st.ref })
+			end
+		end
+	end
+
 	state.entries = entries
 	base.set_lines(state, lines)
 
@@ -184,6 +249,12 @@ render = function()
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, text_hl, i - 1, 5, -1)
 		elseif entry.type == "commit" then
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "Comment", i - 1, 2, 9)
+		elseif entry.type == "branch" then
+			if entry.is_current then
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "GitSidebarBranchCurrent", i - 1, 0, -1)
+			end
+		elseif entry.type == "stash" then
+			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "GitSidebarStashRef", i - 1, 2, 2 + entry.ref_len)
 		end
 	end
 
@@ -315,6 +386,14 @@ local function open_help()
 		{ "P",    "push" },
 		{ "p",    "pull" },
 		{ "F",    "fetch" },
+		{},
+		{ "Branch" },
+		{ "<CR>", "checkout branch" },
+		{},
+		{ "Stash" },
+		{ "<CR>", "pop stash  (apply + drop)" },
+		{ "a",    "apply stash  (keep in list)" },
+		{ "d",    "drop stash" },
 		{},
 		{ "Misc" },
 		{ "r",    "refresh" },
@@ -521,8 +600,22 @@ local function setup_keymaps()
 
 	vim.keymap.set("n", "<CR>", function()
 		local entry, line = cursor_entry()
-		if not entry or entry.type ~= "file" then return end
-		open_file_diff(entry, line)
+		if not entry then return end
+		if entry.type == "file" then
+			open_file_diff(entry, line)
+		elseif entry.type == "branch" then
+			if entry.is_current then
+				vim.notify("Already on branch '" .. entry.name .. "'", vim.log.levels.INFO)
+				return
+			end
+			local choice = vim.fn.confirm("Checkout '" .. entry.name .. "'?", "&Yes\n&No", 1)
+			if choice ~= 1 then return end
+			git_async({ "checkout", entry.name }, "Checkout " .. entry.name)
+		elseif entry.type == "stash" then
+			local choice = vim.fn.confirm("Pop '" .. entry.ref .. "'? (apply + drop)", "&Yes\n&No", 1)
+			if choice ~= 1 then return end
+			git_async({ "stash", "pop", entry.ref }, "Stash pop")
+		end
 	end, opts)
 
 	-- Stage / Unstage single file
@@ -554,6 +647,23 @@ local function setup_keymaps()
 		end
 		git_run({ "restore", "--staged", "." })
 		refresh()
+	end, opts)
+
+	-- Stash actions
+	vim.keymap.set("n", "a", function()
+		local entry = cursor_entry()
+		if not entry or entry.type ~= "stash" then return end
+		local choice = vim.fn.confirm("Apply '" .. entry.ref .. "' (keep in stash list)?", "&Yes\n&No", 1)
+		if choice ~= 1 then return end
+		git_async({ "stash", "apply", entry.ref }, "Stash apply")
+	end, opts)
+
+	vim.keymap.set("n", "d", function()
+		local entry = cursor_entry()
+		if not entry or entry.type ~= "stash" then return end
+		local choice = vim.fn.confirm("Drop '" .. entry.ref .. "'?", "&Yes\n&No", 2)
+		if choice ~= 1 then return end
+		git_async({ "stash", "drop", entry.ref }, "Stash drop")
 	end, opts)
 
 	-- Discard
@@ -665,7 +775,12 @@ end
 
 vim.api.nvim_create_autocmd({ "BufWritePost", "FocusGained" }, {
 	group    = vim.api.nvim_create_augroup("GitSidebarCount", { clear = true }),
-	callback = function() _count_cache = nil end,
+	callback = function()
+		_count_cache = nil
+		vim.schedule(function()
+			require("user.core.sidebar").refresh_tabbar()
+		end)
+	end,
 })
 
 vim.schedule(function()
