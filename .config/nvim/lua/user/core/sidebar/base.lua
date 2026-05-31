@@ -1,7 +1,8 @@
 local M = {}
 
-local WIDTH = 52
+local WIDTH  = 52
 local WIN_HL = "Normal:NormalFloat,WinSeparator:SymbolSidebarBorder"
+
 
 function M.is_valid(state)
 	return state.sidebar_buf
@@ -65,12 +66,13 @@ function M.set_lines(state, lines)
 end
 
 function M.close(state)
-	if state.sidebar_win and vim.api.nvim_win_is_valid(state.sidebar_win) then
-		vim.api.nvim_win_close(state.sidebar_win, true)
-	end
+	local win = state.sidebar_win
+	if not (win and vim.api.nvim_win_is_valid(win)) then return end
+
 	state.sidebar_buf = nil
 	state.sidebar_win = nil
 	vim.api.nvim_clear_autocmds({ group = state.augroup })
+	vim.api.nvim_win_close(win, true)
 end
 
 -- extra() is called after base state cleanup inside the WinClosed callback
@@ -86,6 +88,32 @@ function M.on_win_closed(state, extra)
 			if extra then extra() end
 		end,
 	})
+end
+
+-- ── per-project JSON persistence ────────────────────────────────────────────
+-- namespace: a short directory name, e.g. "marks_sidebar", "search_sidebar"
+-- cwd: optional override; defaults to vim.fn.getcwd()
+
+function M.project_file(namespace, cwd)
+	local dir = vim.fn.stdpath("data") .. "/" .. namespace
+	vim.fn.mkdir(dir, "p")
+	local key = (cwd or vim.fn.getcwd()):gsub("/", "%%")
+	return dir .. "/" .. key .. ".json"
+end
+
+function M.save_project_data(namespace, data, cwd)
+	local ok, encoded = pcall(vim.fn.json_encode, data)
+	if not ok then return end
+	local f = io.open(M.project_file(namespace, cwd), "w")
+	if f then f:write(encoded); f:close() end
+end
+
+function M.load_project_data(namespace, cwd)
+	local f = io.open(M.project_file(namespace, cwd), "r")
+	if not f then return nil end
+	local raw = f:read("*a"); f:close()
+	local ok, decoded = pcall(vim.fn.json_decode, raw)
+	return (ok and type(decoded) == "table") and decoded or nil
 end
 
 -- q / > / <lt> keymaps shared by every panel

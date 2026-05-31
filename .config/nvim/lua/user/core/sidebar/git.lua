@@ -9,6 +9,13 @@ local state = {
 	augroup     = vim.api.nvim_create_augroup("GitSidebar", { clear = true }),
 }
 
+local diff_state = {
+	active    = false,
+	left_win  = nil,
+	right_win = nil,
+	entry_idx = nil,
+}
+
 local function setup_hl()
 	vim.api.nvim_set_hl(0, "GitSidebarModified", { link = "DiagnosticWarn",  default = true })
 	vim.api.nvim_set_hl(0, "GitSidebarAdded",    { link = "DiagnosticHint",  default = true })
@@ -22,10 +29,6 @@ vim.api.nvim_create_autocmd("ColorScheme", { callback = setup_hl })
 setup_hl()
 
 
-local status_icons = {
-	M = "󰏫 ", A = "󰱒 ", D = "󰍷 ", R = "󰁕 ", C = "󰁕 ", ["?"] = "󰝒 ",
-}
-
 local function file_icon(path)
 	local ok, devicons = pcall(require, "nvim-web-devicons")
 	if not ok then return "  " end
@@ -37,10 +40,32 @@ end
 
 local _count_cache = nil
 
+-- ── Git helpers ──
+
+local function git_run(args)
+	return vim.fn.system(vim.list_extend({ "git", "-C", vim.fn.getcwd() }, args))
+end
+
+local function git_run_lines(args)
+	return vim.fn.systemlist(vim.list_extend({ "git", "-C", vim.fn.getcwd() }, args))
+end
+
+-- ── Floating window helper ──
+
+local function center_float(buf, width, height, title)
+	local row = math.floor((vim.o.lines   - height) / 2)
+	local col = math.floor((vim.o.columns - width)  / 2)
+	return vim.api.nvim_open_win(buf, true, {
+		relative = "editor", width = width, height = height,
+		row = row, col = col, style = "minimal", border = "rounded",
+		title = title, title_pos = "center",
+	})
+end
+
+-- ── Status parsing ──
+
 local function parse_status()
-	local raw = vim.fn.systemlist(
-		"git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " status --porcelain 2>/dev/null"
-	)
+	local raw = git_run_lines({ "status", "--porcelain" })
 	local staged, unstaged = {}, {}
 	for _, line in ipairs(raw) do
 		if #line >= 4 then
@@ -58,29 +83,11 @@ local function parse_status()
 	return staged, unstaged
 end
 
-local function get_branch_info()
-	local cwd    = vim.fn.shellescape(vim.fn.getcwd())
-	local branch = vim.fn.system("git -C " .. cwd .. " rev-parse --abbrev-ref HEAD 2>/dev/null"):gsub("%s+$", "")
-	if branch == "" or branch:match("^fatal") then return nil end
-
-	local ab     = vim.fn.system("git -C " .. cwd .. " rev-list --left-right --count HEAD...@{upstream} 2>/dev/null"):gsub("%s+$", "")
-	local ahead, behind = ab:match("(%d+)%s+(%d+)")
-
-	local info = " " .. branch
-	if ahead and behind then
-		local a, b = tonumber(ahead), tonumber(behind)
-		if a and a > 0 then info = info .. " ↑" .. a end
-		if b and b > 0 then info = info .. " ↓" .. b end
-	end
-	return info
-end
 
 function M.get_count()
 	if _count_cache ~= nil then return _count_cache > 0 and _count_cache or nil end
-	local r = vim.fn.system(
-		"git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " status --porcelain 2>/dev/null | wc -l"
-	)
-	_count_cache = tonumber(r:match("%d+")) or 0
+	local lines = git_run_lines({ "status", "--porcelain" })
+	_count_cache = #lines
 	return _count_cache > 0 and _count_cache or nil
 end
 
@@ -94,7 +101,18 @@ local function format_path(path)
 	return "…/" .. parts[#parts - 2] .. "/" .. parts[#parts - 1] .. "/" .. parts[#parts]
 end
 
-local function render()
+-- ── Render ──
+
+local render  -- forward declaration
+
+local fold_state = { staged = false, changes = false, commits = false }
+
+local function refresh()
+	_count_cache = nil
+	render()
+end
+
+render = function()
 	if not base.is_valid(state) then return end
 	local staged, unstaged = parse_status()
 
@@ -108,30 +126,49 @@ local function render()
 	local lines   = {}
 	local entries = {}
 
-	local function add_section(title, files, is_staged)
-		table.insert(lines,   title .. " (" .. #files .. ")")
-		table.insert(entries, { type = "header" })
-
+	local function add_section(title, key, files, is_staged)
+		local icon = fold_state[key] and "▸" or "▾"
+		table.insert(lines,   icon .. " " .. title .. " (" .. #files .. ")")
+		table.insert(entries, { type = "header", section = key })
+		if fold_state[key] then return end
 		if #files == 0 then
 			table.insert(lines,   "  no files")
 			table.insert(entries, { type = "empty" })
 		else
 			for _, f in ipairs(files) do
-				local icon, icon_hl = file_icon(f.path)
-				local display        = format_path(f.path)
-				table.insert(lines,   "  " .. icon .. " " .. display)
+				local ficon, icon_hl = file_icon(f.path)
+				local display         = format_path(f.path)
+				table.insert(lines,   "  " .. ficon .. " " .. display)
 				table.insert(entries, { type = "file", path = f.path, status = f.status, staged = is_staged, icon_hl = icon_hl })
 			end
 		end
 	end
 
-	add_section("▾ Staged", staged, true)
+	add_section("Staged", "staged", staged, true)
 	table.insert(lines, ""); table.insert(entries, { type = "empty" })
-	add_section("▾ Changes", unstaged, false)
+	add_section("Changes", "changes", unstaged, false)
 
 	if total == 0 then
 		lines   = { "  clean" }
 		entries = { { type = "empty" } }
+	end
+
+	-- ── Recent commits (always at bottom) ──
+	local commits = git_run_lines({ "log", "-5", "--format=%h %s" })
+	if #commits > 0 then
+		table.insert(lines, ""); table.insert(entries, { type = "empty" })
+		local cicon = fold_state.commits and "▸" or "▾"
+		table.insert(lines,   cicon .. " Recent commits")
+		table.insert(entries, { type = "header", section = "commits" })
+		if not fold_state.commits then
+			for _, raw in ipairs(commits) do
+				local hash, msg = raw:match("^(%S+)%s+(.+)$")
+				if hash then
+					table.insert(lines,   "  " .. hash .. " " .. msg)
+					table.insert(entries, { type = "commit", hash = hash })
+				end
+			end
+		end
 	end
 
 	state.entries = entries
@@ -145,11 +182,23 @@ local function render()
 			local text_hl = entry.staged and "GitSidebarStaged" or "Normal"
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, entry.icon_hl or "Normal", i - 1, 2, 5)
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, text_hl, i - 1, 5, -1)
+		elseif entry.type == "commit" then
+			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "Comment", i - 1, 2, 9)
 		end
 	end
 
-	require("user.core.sidebar").set_tabbar(state.sidebar_win, get_branch_info())
+	require("user.core.sidebar").set_tabbar(state.sidebar_win)
 end
+
+-- ── Cursor helper ──
+
+local function cursor_entry()
+	if not base.is_valid(state) then return nil, nil end
+	local line = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
+	return state.entries[line], line
+end
+
+-- ── Commit buffer ──
 
 -- Opens a floating scratch buffer for composing a commit message.
 -- <CR> (normal) or <C-s> (insert) to commit; q to cancel.
@@ -159,29 +208,14 @@ local function open_commit_buf(amend)
 	vim.bo[buf].filetype = "gitcommit"
 
 	if amend then
-		local lines = vim.fn.systemlist(
-			"git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " log -1 --pretty=%B 2>/dev/null"
-		)
+		local lines = git_run_lines({ "log", "-1", "--pretty=%B" })
 		while #lines > 0 and lines[#lines] == "" do table.remove(lines) end
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	end
 
 	local width  = math.min(80, math.floor(vim.o.columns * 0.65))
 	local height = 12
-	local row    = math.floor((vim.o.lines - height) / 2)
-	local col    = math.floor((vim.o.columns - width) / 2)
-
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative  = "editor",
-		width     = width,
-		height    = height,
-		row       = row,
-		col       = col,
-		style     = "minimal",
-		border    = "rounded",
-		title     = amend and " Amend commit " or " Commit message ",
-		title_pos = "center",
-	})
+	local win    = center_float(buf, width, height, amend and " Amend commit " or " Commit message ")
 
 	vim.cmd("startinsert")
 
@@ -199,9 +233,8 @@ local function open_commit_buf(amend)
 		local f = io.open(tmpfile, "w")
 		if f then f:write(table.concat(lines, "\n") .. "\n"); f:close() end
 
-		local cwd = vim.fn.shellescape(vim.fn.getcwd())
-		local flag = amend and " commit --amend -F " or " commit -F "
-		local result = vim.fn.system("git -C " .. cwd .. flag .. vim.fn.shellescape(tmpfile))
+		local flag   = amend and { "commit", "--amend", "-F" } or { "commit", "-F" }
+		local result = git_run(vim.list_extend(flag, { tmpfile }))
 		vim.fn.delete(tmpfile)
 
 		local ok = vim.v.shell_error == 0
@@ -210,8 +243,7 @@ local function open_commit_buf(amend)
 			   or ("Commit failed:\n" .. result),
 			ok and vim.log.levels.INFO or vim.log.levels.ERROR
 		)
-		_count_cache = nil
-		vim.schedule(render)
+		vim.schedule(refresh)
 	end
 
 	local kopts = { buffer = buf, nowait = true }
@@ -222,12 +254,14 @@ local function open_commit_buf(amend)
 	end, kopts)
 end
 
+-- ── Async git ops ──
+
 local function git_async(args, label)
 	local cwd  = vim.fn.getcwd()
 	local errs = {}
 	vim.notify(label .. "...", vim.log.levels.INFO)
 	vim.fn.jobstart(
-		{ "git", "-C", cwd, unpack(args) },
+		{ "git", "-C", cwd, table.unpack(args) },
 		{
 			stderr_buffered = true,
 			on_stderr = function(_, data)
@@ -243,34 +277,46 @@ local function git_async(args, label)
 						local detail = #errs > 0 and (":\n" .. table.concat(errs, "\n")) or ""
 						vim.notify(label .. " failed" .. detail, vim.log.levels.ERROR)
 					end
-					_count_cache = nil
-					if base.is_valid(state) then render() end
+					if base.is_valid(state) then refresh() end
 				end)
 			end,
 		}
 	)
 end
 
+-- ── Help float ──
+
 local function open_help()
+	-- {} = blank line, { "Section" } = header, { "key", "desc" } = key entry
 	local map = {
-		{ "Stage / Unstage", "" },
-		{ "<CR>", "open file in editor" },
-		{ "d",    "open CodeDiff" },
+		{ "Sidebar" },
+		{ "<CR>", "open two-panel diff" },
 		{ "s",    "stage file" },
 		{ "u",    "unstage file" },
 		{ "S",    "stage all  (git add -A)" },
 		{ "U",    "unstage all" },
-		{ "", "" },
-		{ "Commit", "" },
+		{ "x",    "discard file changes" },
+		{ "X",    "discard all changes" },
+		{ "z",    "fold / unfold section" },
+		{},
+		{ "Diff view" },
+		{ "q",    "close diff" },
+		{ "]f",   "next file diff" },
+		{ "[f",   "prev file diff" },
+		{ "-",    "stage / unstage file" },
+		{ "]c",   "next hunk  (built-in)" },
+		{ "[c",   "prev hunk  (built-in)" },
+		{},
+		{ "Commit" },
 		{ "c",    "commit  (opens message buffer)" },
 		{ "C",    "amend last commit" },
-		{ "", "" },
-		{ "Remote", "" },
+		{},
+		{ "Remote" },
 		{ "P",    "push" },
 		{ "p",    "pull" },
 		{ "F",    "fetch" },
-		{ "", "" },
-		{ "Misc", "" },
+		{},
+		{ "Misc" },
 		{ "r",    "refresh" },
 		{ "q",    "close sidebar" },
 		{ ">/<",  "resize" },
@@ -278,17 +324,18 @@ local function open_help()
 	}
 
 	local width = 42
-	local lines, hl_keys = {}, {}
+	local lines, hl_ranges = {}, {}
 	for _, row in ipairs(map) do
-		local key, desc = row[1], row[2]
-		if desc == "" then
-			-- section header or blank
-			table.insert(lines, key == "" and "" or ("  " .. key))
-			table.insert(hl_keys, key ~= "" and #lines or nil)
+		if #row == 0 then
+			table.insert(lines, "")
+		elseif #row == 1 then
+			table.insert(lines, "  " .. row[1])
+			table.insert(hl_ranges, { type = "header", line = #lines - 1 })
 		else
+			local key, desc = row[1], row[2]
 			local pad = string.rep(" ", 6 - vim.fn.strdisplaywidth(key))
 			table.insert(lines, "  " .. key .. pad .. desc)
-			table.insert(hl_keys, { line = #lines - 1, key_end = 2 + #key })
+			table.insert(hl_ranges, { type = "key", line = #lines - 1, key_end = 2 + #key })
 		end
 	end
 
@@ -296,28 +343,13 @@ local function open_help()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	vim.bo[buf].modifiable = false
 
-	local height = #lines
-	local row    = math.floor((vim.o.lines   - height) / 2)
-	local col    = math.floor((vim.o.columns - width)  / 2)
-
-	local win = vim.api.nvim_open_win(buf, true, {
-		relative  = "editor",
-		width     = width,
-		height    = height,
-		row       = row,
-		col       = col,
-		style     = "minimal",
-		border    = "rounded",
-		title     = " Git Sidebar — Keys ",
-		title_pos = "center",
-	})
-
-	local ns_h = vim.api.nvim_create_namespace("GitSidebarHelpHl")
-	for _, info in ipairs(hl_keys) do
-		if type(info) == "table" then
+	local win    = center_float(buf, width, #lines, " Git Sidebar — Keys ")
+	local ns_h   = vim.api.nvim_create_namespace("GitSidebarHelpHl")
+	for _, info in ipairs(hl_ranges) do
+		if info.type == "key" then
 			vim.api.nvim_buf_add_highlight(buf, ns_h, "GitSidebarKey", info.line, 2, info.key_end)
-		elseif type(info) == "number" then
-			vim.api.nvim_buf_add_highlight(buf, ns_h, "Title", info - 1, 0, -1)
+		elseif info.type == "header" then
+			vim.api.nvim_buf_add_highlight(buf, ns_h, "Title", info.line, 0, -1)
 		end
 	end
 
@@ -327,112 +359,273 @@ local function open_help()
 	end
 end
 
+-- ── Diff helpers ──
+
+local function diff_file_entries()
+	local list = {}
+	for i, e in ipairs(state.entries) do
+		if e.type == "file" then table.insert(list, { idx = i, entry = e }) end
+	end
+	return list
+end
+
+local function diff_cur_pos(list)
+	for pos, fe in ipairs(list) do
+		if fe.idx == diff_state.entry_idx then return pos end
+	end
+end
+
+local function close_diff()
+	if not diff_state.active then return end
+	if diff_state.right_win and vim.api.nvim_win_is_valid(diff_state.right_win) then
+		vim.api.nvim_win_call(diff_state.right_win, function() vim.cmd("diffoff") end)
+	end
+	if diff_state.left_win and vim.api.nvim_win_is_valid(diff_state.left_win) then
+		vim.api.nvim_win_close(diff_state.left_win, true)
+	end
+	diff_state.active    = false
+	diff_state.left_win  = nil
+	diff_state.right_win = nil
+	diff_state.entry_idx = nil
+	if base.is_valid(state) then
+		vim.api.nvim_set_current_win(state.sidebar_win)
+	end
+end
+
+local function get_orig_lines(entry)
+	if entry.status == "?" then return nil end
+	local path = entry.path
+	local ref
+	if entry.staged then
+		ref = "HEAD:"
+	else
+		git_run({ "cat-file", "-e", ":0:" .. path })
+		ref = vim.v.shell_error == 0 and ":0:" or "HEAD:"
+	end
+	local lines = git_run_lines({ "show", ref .. path })
+	return vim.v.shell_error == 0 and lines or {}
+end
+
+local open_file_diff  -- forward declaration
+
+local function set_nav_maps(buf)
+	if not vim.api.nvim_buf_is_valid(buf) then return end
+	local nav = { buffer = buf, nowait = true }
+	vim.keymap.set("n", "]f", function()
+		local list = diff_file_entries()
+		local pos  = diff_cur_pos(list)
+		if not pos or pos >= #list then return end
+		open_file_diff(list[pos + 1].entry, list[pos + 1].idx)
+	end, nav)
+	vim.keymap.set("n", "[f", function()
+		local list = diff_file_entries()
+		local pos  = diff_cur_pos(list)
+		if not pos or pos <= 1 then return end
+		open_file_diff(list[pos - 1].entry, list[pos - 1].idx)
+	end, nav)
+end
+
+open_file_diff = function(entry, entry_idx)
+	if not entry.path or entry.path == "" then return end
+
+	-- Save right_win before close_diff clears it; reuse it as target so
+	-- find_target_win (which may return a stale nofile window) is bypassed.
+	local prev_right = diff_state.active and diff_state.right_win or nil
+	if diff_state.active then close_diff() end
+
+	local win = (prev_right and vim.api.nvim_win_is_valid(prev_right) and prev_right)
+		or base.find_target_win(state)
+	if not win then return end
+
+	-- Untracked files have no git history; diff against empty buffer so the
+	-- full file content shows as "added".
+	local orig_lines = entry.status == "?" and {} or get_orig_lines(entry)
+	local label      = entry.status == "?" and "[new file]"
+		or (entry.staged and "[HEAD]" or "[index]")
+
+	vim.api.nvim_set_current_win(win)
+	vim.cmd("edit " .. vim.fn.fnameescape(entry.path))
+	local right_win = vim.api.nvim_get_current_win()
+	local right_buf = vim.api.nvim_get_current_buf()
+
+	local orig_buf = vim.api.nvim_create_buf(false, true)
+	vim.bo[orig_buf].buftype   = "nofile"
+	vim.bo[orig_buf].bufhidden = "wipe"
+	vim.bo[orig_buf].swapfile  = false
+	local ft = vim.filetype.match({ filename = entry.path }) or ""
+	if ft ~= "" then pcall(function() vim.bo[orig_buf].filetype = ft end) end
+	vim.api.nvim_buf_set_name(orig_buf, entry.path .. " " .. label)
+	vim.api.nvim_buf_set_lines(orig_buf, 0, -1, false, orig_lines or {})
+	vim.bo[orig_buf].modifiable = false
+
+	vim.cmd("leftabove vsplit")
+	local left_win = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(left_win, orig_buf)
+
+	vim.api.nvim_win_call(left_win,  function() vim.cmd("diffthis") end)
+	vim.api.nvim_win_call(right_win, function() vim.cmd("diffthis") end)
+
+	diff_state.active    = true
+	diff_state.left_win  = left_win
+	diff_state.right_win = right_win
+	diff_state.entry_idx = entry_idx
+
+	-- Sync sidebar cursor to the current file without stealing focus
+	if base.is_valid(state) then
+		vim.api.nvim_win_set_cursor(state.sidebar_win, { entry_idx, 0 })
+	end
+
+	vim.api.nvim_set_current_win(right_win)
+
+	local kopts = { buffer = right_buf, nowait = true }
+
+	vim.keymap.set("n", "q", close_diff, kopts)
+
+	vim.keymap.set("n", "-", function()
+		local e = state.entries[diff_state.entry_idx]
+		if not e or e.type ~= "file" then return end
+		if e.staged then
+			git_run({ "restore", "--staged", e.path })
+		else
+			git_run({ "add", e.path })
+		end
+		refresh()
+	end, kopts)
+
+	-- Set on orig_buf immediately (nofile — no plugin will override it).
+	set_nav_maps(orig_buf)
+
+	-- Schedule for right_buf so we win over synchronous FileType/ftplugin autocmds.
+	-- Also re-apply on LspAttach since treesitter-textobjects maps ]f asynchronously.
+	vim.schedule(function() set_nav_maps(right_buf) end)
+	vim.api.nvim_create_autocmd("LspAttach", {
+		buffer   = right_buf,
+		once     = false,
+		callback = function() vim.schedule(function() set_nav_maps(right_buf) end) end,
+	})
+end
+
+-- ── Keymaps ──
+
 local function setup_keymaps()
 	local opts = { buffer = state.sidebar_buf, nowait = true }
 
 	vim.keymap.set("n", "<CR>", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry, line = cursor_entry()
 		if not entry or entry.type ~= "file" then return end
-		local win = base.find_target_win(state)
-		if win then
-			vim.api.nvim_set_current_win(win)
-			vim.cmd("edit " .. vim.fn.fnameescape(entry.path))
-		end
-	end, opts)
-
-	vim.keymap.set("n", "d", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
-		if not entry or entry.type ~= "file" then return end
-		local win = base.find_target_win(state)
-		if not win then return end
-
-		local before = {}
-		for _, w in ipairs(vim.api.nvim_list_wins()) do before[w] = true end
-
-		vim.api.nvim_set_current_win(win)
-		vim.cmd("edit " .. vim.fn.fnameescape(entry.path))
-		vim.cmd("CodeDiff")
-
-		-- nui.nvim creates windows asynchronously, so wait 80 ms before
-		-- snapshotting CodeDiff's windows. Then poll every 100 ms; once all
-		-- CodeDiff windows are gone, give it another 50 ms to finish its own
-		-- focus-restoration, then take over and focus the sidebar.
-		local sidebar = state.sidebar_win
-		vim.defer_fn(function()
-			local diff_wins = {}
-			for _, w in ipairs(vim.api.nvim_list_wins()) do
-				if not before[w] then diff_wins[w] = true end
-			end
-			if not next(diff_wins) then return end
-
-			local function poll(n)
-				if n <= 0 then return end
-				if not vim.api.nvim_win_is_valid(sidebar) then return end
-				local alive = false
-				for w in pairs(diff_wins) do
-					if vim.api.nvim_win_is_valid(w) then alive = true; break end
-				end
-				if alive then
-					vim.defer_fn(function() poll(n - 1) end, 100)
-				else
-					vim.defer_fn(function()
-						if vim.api.nvim_win_is_valid(sidebar) then
-							vim.api.nvim_set_current_win(sidebar)
-						end
-					end, 50)
-				end
-			end
-			poll(300)   -- up to 30 s
-		end, 80)
+		open_file_diff(entry, line)
 	end, opts)
 
 	-- Stage / Unstage single file
 	vim.keymap.set("n", "s", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = cursor_entry()
 		if not entry or entry.type ~= "file" or entry.staged ~= false then return end
-		vim.fn.system("git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " add " .. vim.fn.shellescape(entry.path))
-		_count_cache = nil
-		render()
+		git_run({ "add", entry.path })
+		refresh()
 	end, opts)
 
 	vim.keymap.set("n", "u", function()
-		local line  = vim.api.nvim_win_get_cursor(state.sidebar_win)[1]
-		local entry = state.entries[line]
+		local entry = cursor_entry()
 		if not entry or entry.type ~= "file" or entry.staged ~= true then return end
-		vim.fn.system("git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " restore --staged " .. vim.fn.shellescape(entry.path))
-		_count_cache = nil
-		render()
+		git_run({ "restore", "--staged", entry.path })
+		refresh()
 	end, opts)
 
 	-- Stage / Unstage all
 	vim.keymap.set("n", "S", function()
-		vim.fn.system("git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " add -A")
-		_count_cache = nil
-		render()
+		git_run({ "add", "-A" })
+		refresh()
 	end, opts)
 
 	vim.keymap.set("n", "U", function()
-		vim.fn.system("git -C " .. vim.fn.shellescape(vim.fn.getcwd()) .. " restore --staged .")
-		_count_cache = nil
-		render()
+		local staged, _ = parse_status()
+		if #staged == 0 then
+			vim.notify("No staged changes to unstage", vim.log.levels.WARN)
+			return
+		end
+		git_run({ "restore", "--staged", "." })
+		refresh()
+	end, opts)
+
+	-- Discard
+	vim.keymap.set("n", "x", function()
+		local entry = cursor_entry()
+		if not entry or entry.type ~= "file" or entry.staged ~= false then return end
+		local label  = entry.status == "?" and "Delete untracked file" or "Discard changes to"
+		local choice = vim.fn.confirm(label .. " " .. entry.path .. "?", "&Yes\n&No", 2)
+		if choice ~= 1 then return end
+		if entry.status == "?" then
+			git_run({ "clean", "-f", "--", entry.path })
+		else
+			git_run({ "restore", entry.path })
+		end
+		refresh()
+	end, opts)
+
+	vim.keymap.set("n", "X", function()
+		local choice = vim.fn.confirm("Discard ALL unstaged changes (and delete untracked)?", "&Yes\n&No", 2)
+		if choice ~= 1 then return end
+		git_run({ "restore", "." })
+		git_run({ "clean", "-fd", "." })
+		refresh()
 	end, opts)
 
 	-- Commit
-	vim.keymap.set("n", "c", function() open_commit_buf(false) end, opts)
-	vim.keymap.set("n", "C", function() open_commit_buf(true)  end, opts)
+	vim.keymap.set("n", "c", function()
+		local staged, _ = parse_status()
+		if #staged == 0 then
+			vim.notify("No staged changes to commit", vim.log.levels.WARN)
+			return
+		end
+		open_commit_buf(false)
+	end, opts)
+	vim.keymap.set("n", "C", function()
+		local has_commits = git_run({ "rev-parse", "HEAD" }):match("^%x+")
+		if not has_commits then
+			vim.notify("No commits to amend", vim.log.levels.WARN)
+			return
+		end
+		open_commit_buf(true)
+	end, opts)
 
 	-- Remote
 	vim.keymap.set("n", "P", function() git_async({ "push"  }, "Push")  end, opts)
 	vim.keymap.set("n", "p", function() git_async({ "pull"  }, "Pull")  end, opts)
 	vim.keymap.set("n", "F", function() git_async({ "fetch" }, "Fetch") end, opts)
 
+	vim.keymap.set("n", "z", function()
+		local entry = cursor_entry()
+		if not entry or entry.type ~= "header" or not entry.section then return end
+		fold_state[entry.section] = not fold_state[entry.section]
+		render()
+	end, opts)
+
 	vim.keymap.set("n", "r", function() render() end, opts)
 	vim.keymap.set("n", "?", open_help, opts)
+
+	-- Navigate between file diffs from the sidebar (safe from filetype overrides)
+	vim.keymap.set("n", "]f", function()
+		local list = diff_file_entries()
+		local pos  = diff_cur_pos(list)
+		if diff_state.active and pos and pos < #list then
+			local nxt = list[pos + 1]
+			open_file_diff(nxt.entry, nxt.idx)
+		end
+	end, opts)
+
+	vim.keymap.set("n", "[f", function()
+		local list = diff_file_entries()
+		local pos  = diff_cur_pos(list)
+		if diff_state.active and pos and pos > 1 then
+			local prv = list[pos - 1]
+			open_file_diff(prv.entry, prv.idx)
+		end
+	end, opts)
+
 	base.add_common_keymaps(state, M.close)
 end
+
+-- ── Public API ──
 
 function M.open()
 	local k, h = "%#GitSidebarKey#", "%#GitSidebarHintDesc#"
@@ -440,7 +633,7 @@ function M.open()
 		filetype   = "GitSidebar",
 		statusline = " "
 			.. k.."s"..h..":stage  "..k.."u"..h..":unstage  "
-			.. k.."c"..h..":commit  "..k.."d"..h..":diff  "
+			.. k.."c"..h..":commit  "..k.."<CR>"..h..":diff  "
 			.. k.."?"..h..":help",
 		cursorline = true,
 	})

@@ -29,34 +29,13 @@ local state = {
 
 -- ── persistence ────────────────────────────────────────────────────────────
 
-local data_dir = vim.fn.stdpath("data") .. "/marks_sidebar"
-
-local function project_file(cwd)
-	-- sanitise the path into a safe filename: replace / with %
-	local key = (cwd or vim.fn.getcwd()):gsub("/", "%%")
-	return data_dir .. "/" .. key .. ".json"
-end
-
 local function save()
-	vim.fn.mkdir(data_dir, "p")
-	local file = project_file(_cwd)
-	local ok, encoded = pcall(vim.fn.json_encode, marks)
-	if not ok then return end
-	local f = io.open(file, "w")
-	if f then f:write(encoded); f:close() end
+	base.save_project_data("marks_sidebar", marks, _cwd)
 end
 
 local function load(cwd)
 	_cwd  = cwd or vim.fn.getcwd()
-	marks = {}
-	local file = project_file(_cwd)
-	local f    = io.open(file, "r")
-	if not f then return end
-	local raw = f:read("*a"); f:close()
-	local ok, decoded = pcall(vim.fn.json_decode, raw)
-	if ok and type(decoded) == "table" then
-		marks = decoded
-	end
+	marks = base.load_project_data("marks_sidebar", _cwd) or {}
 end
 
 -- ── helpers ─────────────────────────────────────────────────────────────────
