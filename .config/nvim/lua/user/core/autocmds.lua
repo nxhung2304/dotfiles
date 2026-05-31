@@ -91,7 +91,7 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 	end,
 })
 
--- Disable render-markdown in diff windows (e.g. codediff preview) to prevent flickering
+-- Disable render-markdown in diff windows to prevent flickering
 vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 	desc = "Disable render-markdown in diff windows",
 	callback = function()

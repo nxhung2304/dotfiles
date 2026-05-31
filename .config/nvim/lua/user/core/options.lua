@@ -46,6 +46,9 @@ vim.o.foldlevelstart = 99
 vim.o.foldenable = true
 vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
+-- Diff: char-level highlight + better algorithm + aligned changed lines
+opt.diffopt:append({ "internal", "algorithm:histogram", "linematch:60", "indent-heuristic" })
+
 vim.o.swapfile = false -- disable swapfile
 vim.o.autoread = true
 vim.o.updatetime = 250

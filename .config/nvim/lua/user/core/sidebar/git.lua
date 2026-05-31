@@ -379,6 +379,7 @@ local function close_diff()
 	if not diff_state.active then return end
 	if diff_state.right_win and vim.api.nvim_win_is_valid(diff_state.right_win) then
 		vim.api.nvim_win_call(diff_state.right_win, function() vim.cmd("diffoff") end)
+		vim.wo[diff_state.right_win].signcolumn = "yes"
 	end
 	if diff_state.left_win and vim.api.nvim_win_is_valid(diff_state.left_win) then
 		vim.api.nvim_win_close(diff_state.left_win, true)
@@ -462,8 +463,16 @@ open_file_diff = function(entry, entry_idx)
 	local left_win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(left_win, orig_buf)
 
+	local function apply_diff_winopts(w)
+		vim.wo[w].foldlevel  = 999
+		vim.wo[w].wrap       = false
+		vim.wo[w].signcolumn = "no"
+	end
+
 	vim.api.nvim_win_call(left_win,  function() vim.cmd("diffthis") end)
 	vim.api.nvim_win_call(right_win, function() vim.cmd("diffthis") end)
+	apply_diff_winopts(left_win)
+	apply_diff_winopts(right_win)
 
 	diff_state.active    = true
 	diff_state.left_win  = left_win
