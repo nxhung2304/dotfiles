@@ -205,6 +205,18 @@ local function setup_keymaps()
 		M.remove(entry.path)
 	end, opts)
 
+	vim.keymap.set("n", "c", function()
+		if #marks == 0 then return end
+		vim.ui.input({ prompt = "Clear all marks? (y/N): " }, function(input)
+			if input and input:lower() == "y" then
+				marks = {}
+				save()
+				vim.notify("Marks: cleared all")
+				M.render()
+			end
+		end)
+	end, opts)
+
 	vim.keymap.set("n", "J", function()
 		local entry = base.cursor_entry(state)
 		if not entry or entry.type ~= "mark" then return end
@@ -231,6 +243,7 @@ function M.open()
 		statusline = " "
 			.. k .. "a" .. h .. ":add  "
 			.. k .. "d" .. h .. ":remove  "
+			.. k .. "c" .. h .. ":clear all  "
 			.. k .. "J/K" .. h .. ":reorder  "
 			.. k .. "1-9" .. h .. ":jump",
 		cursorline = true,

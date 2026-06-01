@@ -39,6 +39,7 @@ function M.open_win(state, opts)
 	vim.bo[state.sidebar_buf].bufhidden  = "wipe"
 	vim.bo[state.sidebar_buf].filetype   = opts.filetype
 	vim.bo[state.sidebar_buf].modifiable = false
+	vim.bo[state.sidebar_buf].undolevels = -1
 
 	vim.cmd("topleft vsplit")
 	state.sidebar_win = vim.api.nvim_get_current_win()
