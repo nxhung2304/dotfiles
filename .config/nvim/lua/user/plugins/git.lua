@@ -3,6 +3,36 @@ local map = Utils.keymap
 
 return {
 	{
+		"esmuellert/codediff.nvim",
+		cmd = "CodeDiff",
+		opts = {
+			diff = {
+				layout = "side-by-side",
+				jump_to_first_change = true,
+				cycle_next_hunk = true,
+				cycle_next_file = true,
+			},
+			explorer = {
+				position = "left",
+				width = 40,
+				auto_refresh = true,
+				view_mode = "list",
+			},
+			keymaps = {
+				view = {
+					quit = "q",
+					next_hunk = "]g",
+					prev_hunk = "[g",
+					next_file = "]f",
+					prev_file = "[f",
+					toggle_stage = "-",
+					toggle_layout = "t",
+					show_help = "g?",
+				},
+			},
+		},
+	},
+	{
 		"lewis6991/gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
 		opts = {
@@ -32,6 +62,17 @@ return {
 				use_focus = true,
 			},
 			current_line_blame_formatter = "<author>, <author_time:%R> - <summary>",
+		},
+	},
+	{
+		"NeogitOrg/neogit",
+		lazy = true,
+		dependencies = {
+			"m00qek/baleia.nvim", -- optional
+		},
+		cmd = "Neogit",
+		keys = {
+			{ "<leader>go", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
 		},
 	},
 }

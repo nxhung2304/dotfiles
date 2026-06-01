@@ -6,6 +6,33 @@ local function tmux_named_window(name, cmd)
 	vim.cmd(full)
 end
 
+local test_pane_id = nil
+local last_test_cmd = nil
+
+local function run_test(cmd)
+	last_test_cmd = cmd
+
+	-- Check if the tracked pane still exists
+	if test_pane_id then
+		local alive = vim.trim(vim.fn.system(
+			"tmux list-panes -a -F '#{pane_id}' 2>/dev/null | grep -qF '" .. test_pane_id .. "' && echo 1 || echo 0"
+		))
+		if alive ~= "1" then test_pane_id = nil end
+	end
+
+	if not test_pane_id then
+		local id = vim.trim(vim.fn.system("tmux new-window -n 'test' -P -F '#{pane_id}'"))
+		if vim.v.shell_error ~= 0 or id == "" then
+			vim.notify("Failed to open tmux window", vim.log.levels.ERROR)
+			return
+		end
+		test_pane_id = id
+	end
+
+	vim.fn.system("tmux send-keys -t " .. test_pane_id .. " " .. vim.fn.shellescape(cmd) .. " Enter")
+	vim.fn.system("tmux select-window -t " .. test_pane_id)
+end
+
 return {
 	{
 		"preservim/vimux",
@@ -26,7 +53,7 @@ return {
 				function()
 					local file = vim.fn.expand("%:p")
 					local line = vim.fn.line(".")
-					vim.cmd("VimuxRunCommand('bundle exec rails test " .. file .. ":" .. line .. "')")
+					run_test("bundle exec rails test " .. file .. ":" .. line)
 				end,
 				desc = "Test at Cursor",
 			},
@@ -34,12 +61,26 @@ return {
 				"<leader>tf",
 				function()
 					local file = vim.fn.expand("%:p")
-					vim.cmd("VimuxRunCommand('bundle exec rails test " .. file .. "')")
+					run_test("bundle exec rails test " .. file)
 				end,
 				desc = "Test File",
 			},
-			{ "<leader>ta", "<cmd>VimuxRunCommand('bundle exec rails test')<cr>", desc = "Test All" },
-			{ "<leader>tl", "<cmd>VimuxRunLastCommand<cr>", desc = "Rerun Last Test" },
+			{
+				"<leader>ta",
+				function() run_test("bundle exec rails test") end,
+				desc = "Test All",
+			},
+			{
+				"<leader>tl",
+				function()
+					if last_test_cmd then
+						run_test(last_test_cmd)
+					else
+						vim.notify("No previous test command", vim.log.levels.WARN)
+					end
+				end,
+				desc = "Rerun Last Test",
+			},
 			-- Navigation
 			{ "<leader>rc", "<cmd>Econtroller<cr>", desc = "Controller" },
 			{ "<leader>rm", "<cmd>Emodel<cr>", desc = "Model" },
