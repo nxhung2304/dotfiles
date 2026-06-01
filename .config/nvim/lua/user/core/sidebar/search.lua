@@ -329,14 +329,18 @@ local function render()
 			local file_excl  = state.excluded[path]
 			local count      = #by_file[path]
 			local rel        = vim.fn.fnamemodify(path, ":~:.")
-			local fold_icon  = collapsed and "▶ " or "▼ "
-			local count_str  = collapsed and (" (" .. count .. ")") or ""
-			local excl_mark  = file_excl and " 󰅗" or ""
+			local fold_icon      = collapsed and "▶ " or "▼ "
+			local ficon, icon_hl = base.file_icon(path)
+			local count_str      = collapsed and (" (" .. count .. ")") or ""
+			local excl_mark      = file_excl and " 󰅗" or ""
 
-			table.insert(lines,   fold_icon .. rel .. count_str .. excl_mark)
+			table.insert(lines,   fold_icon .. ficon .. " " .. rel .. count_str .. excl_mark)
 			table.insert(entries, {
 				type = "file", path = path, collapsed = collapsed,
 				excl_key = path, excluded = file_excl,
+				icon_start = #fold_icon,
+				icon_end   = #fold_icon + #ficon,
+				icon_hl    = icon_hl,
 			})
 
 			if not collapsed then
@@ -399,6 +403,9 @@ local function render()
 		elseif entry.type == "file" then
 			local hl = entry.excluded and "SearchSidebarExcluded" or "SearchSidebarFile"
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, hl, row, 0, -1)
+			if not entry.excluded and entry.icon_hl then
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, entry.icon_hl, row, entry.icon_start, entry.icon_end)
+			end
 		elseif entry.type == "history" then
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarHistory", row, 0, -1)
 		elseif entry.type == "summary" then
@@ -455,6 +462,10 @@ end
 local function do_replace()
 	if state.query == "" or state.replace == "" then
 		vim.notify("SearchSidebar: set both Search and Replace first", vim.log.levels.WARN)
+		return
+	end
+	if state.query == state.replace then
+		vim.notify("SearchSidebar: search and replace are identical", vim.log.levels.WARN)
 		return
 	end
 	if #state.results == 0 then
@@ -609,9 +620,11 @@ local function setup_keymaps()
 			-- defer so Neovim fully returns to normal mode before we block on rg
 			vim.schedule(function()
 				if not base.is_valid(state) then return end
-				if key ~= "replace" then run_search() end
-				render()
-				if key ~= "replace" then scroll_to_results() end
+				if key == "replace" then
+					if val ~= "" then do_replace() end
+					return
+				end
+				run_search(); render(); scroll_to_results()
 				vim.api.nvim_set_current_win(state.sidebar_win)
 			end)
 		end
@@ -772,7 +785,7 @@ vim.schedule(function()
 	require("user.core.sidebar").register({
 		id      = "search",
 		label   = "Search",
-		icon    = "󰍉 (S)",
+		icon    = "󰍉",
 		open    = M.open,
 		close   = M.close,
 		is_open = function() return base.is_valid(state) end,
