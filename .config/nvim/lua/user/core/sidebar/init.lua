@@ -41,9 +41,10 @@ function M.tabbar()
 
   local parts = {}
   for _, p in ipairs(_panels) do
-    local count = (not p.no_badge) and p.get_count and p.get_count()
-    local badge = (count and count > 0) and (" (" .. count .. ")") or ""
-    local label = p.label .. badge
+    local count  = (not p.no_badge) and p.get_count and p.get_count()
+    local badge  = (count and count > 0) and (" (" .. count .. ")") or ""
+    local prefix = p.icon and (p.icon .. " ") or ""
+    local label  = prefix .. p.label .. badge
     if p.id == _active_id then
       table.insert(parts, "%#SidebarTabSel# " .. label .. " %*")
     else
@@ -169,6 +170,8 @@ function M.setup_keymaps()
   -- map("<leader>4",  function() M.switch("lsp")    end, "Sidebar: LSP")
   -- map("<leader>6",  function() M.switch("github") end, "Sidebar: GitHub")
   map("<leader>ut", function() M.toggle()         end, "Toggle sidebar")
+  map("[s",         function() M.prev()           end, "Sidebar: prev panel")
+  map("]s",         function() M.next()           end, "Sidebar: next panel")
 end
 
 return M

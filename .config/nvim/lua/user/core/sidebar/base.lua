@@ -1,7 +1,7 @@
 local M = {}
 
 local WIDTH  = 55
-local WIN_HL = "Normal:NormalFloat,WinSeparator:SymbolSidebarBorder"
+local WIN_HL = "Normal:NormalFloat,WinSeparator:SidebarBorder"
 
 
 function M.is_valid(state)
@@ -144,6 +144,15 @@ function M.make_close(state)
 	end
 end
 
+function M.file_icon(path)
+	local ok, devicons = pcall(require, "nvim-web-devicons")
+	if not ok then return " ", "Normal" end
+	local fname = vim.fn.fnamemodify(path, ":t")
+	local ext   = vim.fn.fnamemodify(path, ":e")
+	local icon, hl = devicons.get_icon(fname, ext, { default = true })
+	return icon or " ", hl or "Normal"
+end
+
 -- Returns the entry and 1-based line at the sidebar cursor, or nil, nil.
 function M.cursor_entry(state)
 	if not M.is_valid(state) then return nil, nil end
@@ -162,5 +171,9 @@ function M.setup_hl(defs)
 	vim.api.nvim_create_autocmd("ColorScheme", { callback = apply })
 	apply()
 end
+
+M.setup_hl({
+	{ "SidebarBorder", { link = "WinSeparator", default = true } },
+})
 
 return M

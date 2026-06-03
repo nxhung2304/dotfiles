@@ -57,8 +57,21 @@ local FIELDS = vim.list_extend(vim.list_extend({}, MAIN_FIELDS), FILTER_FIELDS)
 
 local LABEL_W = 8
 
-local function run_search()
-	if state.query == "" then state.results = {}; return end
+local _search_job = nil
+
+local function run_search(cb)
+	if _search_job then
+		vim.fn.jobstop(_search_job)
+		_search_job = nil
+	end
+
+	if state.query == "" then
+		state.results   = {}
+		state.collapsed = {}
+		state.excluded  = {}
+		if cb then cb() end
+		return
+	end
 
 	local args = {
 		"rg", "--line-number", "--column",
@@ -73,45 +86,57 @@ local function run_search()
 	for pat in state.include:gmatch("[^,]+") do
 		pat = pat:match("^%s*(.-)%s*$")
 		if pat ~= "" then
-			table.insert(args, "--glob"); table.insert(args, vim.fn.shellescape(pat))
+			table.insert(args, "--glob"); table.insert(args, pat)
 		end
 	end
 
 	for pat in state.exclude:gmatch("[^,]+") do
 		pat = pat:match("^%s*(.-)%s*$")
 		if pat ~= "" then
-			table.insert(args, "--glob"); table.insert(args, vim.fn.shellescape("!" .. pat))
+			table.insert(args, "--glob"); table.insert(args, "!" .. pat)
 		end
 	end
 
 	table.insert(args, "--")
-	table.insert(args, vim.fn.shellescape(state.query))
+	table.insert(args, state.query)
 
 	local dir = state.folder ~= "" and (vim.fn.getcwd() .. "/" .. state.folder) or vim.fn.getcwd()
-	table.insert(args, vim.fn.shellescape(dir))
+	table.insert(args, dir)
 
-	local raw     = vim.fn.systemlist(table.concat(args, " "))
-	local results = {}
-	for _, line in ipairs(raw) do
-		local path, lnum, col, text = line:match("^(.-)%:(%d+)%:(%d+)%:(.*)$")
-		if path then
-			table.insert(results, { path = path, lnum = tonumber(lnum), col = tonumber(col), text = text })
-		end
-	end
-	state.results  = results
-	state.collapsed = {}
-	state.excluded  = {}
+	local result_lines = {}
+	_search_job = vim.fn.jobstart(args, {
+		stdout_buffered = true,
+		on_stdout = function(_, lines)
+			for _, line in ipairs(lines or {}) do
+				if line ~= "" then
+					local path, lnum, col, text = line:match("^(.-)%:(%d+)%:(%d+)%:(.*)$")
+					if path then
+						table.insert(result_lines, {
+							path = path, lnum = tonumber(lnum), col = tonumber(col), text = text,
+						})
+					end
+				end
+			end
+		end,
+		on_exit = function()
+			vim.schedule(function()
+				_search_job = nil
+				state.results   = result_lines
+				state.collapsed = {}
+				state.excluded  = {}
 
-	-- push to history (LRU dedup: remove any existing occurrence, append to end)
-	if state.query ~= "" then
-		for i = #history, 1, -1 do
-			if history[i] == state.query then table.remove(history, i) end
-		end
-		table.insert(history, state.query)
-		if #history > 3 then table.remove(history, 1) end
-		save_history()
-	end
-	history_idx = 0
+				for i = #history, 1, -1 do
+					if history[i] == state.query then table.remove(history, i) end
+				end
+				table.insert(history, state.query)
+				if #history > 3 then table.remove(history, 1) end
+				save_history()
+				history_idx = 0
+
+				if cb then cb() end
+			end)
+		end,
+	})
 end
 
 -- Find first occurrence of query in text, respecting smart-case.
@@ -128,7 +153,6 @@ local function find_match(text, query)
 	end
 end
 
--- Apply query→replace on a single line (respects smart-case).
 local function do_text_replace(text, query, replace)
 	local has_upper = query:match("[A-Z]")
 	local repl = replace:gsub("%%", "%%%%")
@@ -178,7 +202,6 @@ local function show_replace_preview(on_confirm)
 	add("  y / <CR>  confirm        q / <Esc>  cancel", "Comment")
 	add(string.rep("─", 64))
 
-	-- "  %4d - " → 2 + 4 + 3 = 9 bytes prefix; sign '-'/'+' is at byte 7 (0-indexed)
 	local PREFIX   = 9
 	local SIGN_COL = 7
 
@@ -190,7 +213,6 @@ local function show_replace_preview(on_confirm)
 			local replaced = do_text_replace(r.text, state.query, state.replace)
 			replaced = replaced:match("^%s*(.-)%s*$") or ""
 
-			-- removed line: plain text + sign + keyword highlight
 			add(string.format("  %4d - %s", r.lnum, orig))
 			local row_del = #lines - 1
 			word_hls[#word_hls+1] = { row = row_del, s = SIGN_COL, e = SIGN_COL + 1, hl = "DiffDelete" }
@@ -199,7 +221,6 @@ local function show_replace_preview(on_confirm)
 				word_hls[#word_hls+1] = { row = row_del, s = PREFIX + ms - 1, e = PREFIX + me, hl = "DiffDelete" }
 			end
 
-			-- added line: plain text + sign + replacement highlight
 			add(string.format("  %4d + %s", r.lnum, replaced))
 			local row_add = #lines - 1
 			word_hls[#word_hls+1] = { row = row_add, s = SIGN_COL, e = SIGN_COL + 1, hl = "DiffAdd" }
@@ -248,6 +269,63 @@ local function show_replace_preview(on_confirm)
 	for _, k in ipairs({ "n", "q", "<Esc>" }) do
 		vim.keymap.set("n", k, close_preview, { buffer = buf, nowait = true })
 	end
+end
+
+local function do_replace()
+	if state.query == "" or state.replace == "" then
+		vim.notify("SearchSidebar: set both Search and Replace first", vim.log.levels.WARN)
+		return
+	end
+	if state.query == state.replace then
+		vim.notify("SearchSidebar: search and replace are identical", vim.log.levels.WARN)
+		return
+	end
+	if #state.results == 0 then
+		vim.notify("SearchSidebar: run a search first", vim.log.levels.WARN)
+		return
+	end
+
+	local active = {}
+	for _, r in ipairs(state.results) do
+		local res_key = r.path .. "\0" .. r.lnum
+		if not state.excluded[r.path] and not state.excluded[res_key] then
+			table.insert(active, r)
+		end
+	end
+	if #active == 0 then
+		vim.notify("SearchSidebar: all results are excluded", vim.log.levels.WARN)
+		return
+	end
+
+	show_replace_preview(function()
+		local files = {}
+		for _, r in ipairs(active) do files[r.path] = true end
+		local file_list = vim.tbl_keys(files)
+
+		local escaped_q = vim.fn.escape(state.query,   "\\/.*~[]^$")
+		local escaped_r = vim.fn.escape(state.replace, "\\/&~")
+		local replaced, failed = 0, 0
+
+		for _, path in ipairs(file_list) do
+			local bufnr = vim.fn.bufadd(path)
+			vim.fn.bufload(bufnr)
+			local ok2, err = pcall(function()
+				vim.api.nvim_buf_call(bufnr, function()
+					vim.cmd(string.format("%%s/%s/%s/g", escaped_q, escaped_r))
+					vim.cmd("write")
+				end)
+			end)
+			if ok2 then replaced = replaced + 1
+			else
+				failed = failed + 1
+				vim.notify("Error in " .. path .. ": " .. tostring(err), vim.log.levels.ERROR)
+			end
+		end
+
+		vim.notify(string.format("Replaced in %d/%d files%s", replaced, #file_list,
+			failed > 0 and (" (" .. failed .. " errors)") or ""))
+		run_search(function() render(); scroll_to_results() end)
+	end)
 end
 
 local function render()
@@ -301,9 +379,11 @@ local function render()
 		if #history > 0 then
 			table.insert(lines,   "  Recent:")
 			table.insert(entries, { type = "hint" })
-			for i = #history, math.max(1, #history - 2), -1 do
-				table.insert(lines,   "    " .. history[i])
-				table.insert(entries, { type = "history", query = history[i] })
+			for d = 1, #history do
+				local q      = history[#history - d + 1]
+				local prefix = string.format("[%d] ", d)
+				table.insert(lines,   "  " .. prefix .. q)
+				table.insert(entries, { type = "history", query = q, key_end = 2 + #prefix })
 			end
 		end
 	elseif #state.results == 0 then
@@ -407,7 +487,8 @@ local function render()
 				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, entry.icon_hl, row, entry.icon_start, entry.icon_end)
 			end
 		elseif entry.type == "history" then
-			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarHistory", row, 0, -1)
+			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarKey",     row, 2, entry.key_end)
+			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarHistory", row, entry.key_end, -1)
 		elseif entry.type == "summary" then
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "SearchSidebarCount", row, 0, -1)
 		elseif entry.type == "result" then
@@ -459,73 +540,14 @@ local function jump_to(path, lnum, col)
 	end
 end
 
-local function do_replace()
-	if state.query == "" or state.replace == "" then
-		vim.notify("SearchSidebar: set both Search and Replace first", vim.log.levels.WARN)
-		return
-	end
-	if state.query == state.replace then
-		vim.notify("SearchSidebar: search and replace are identical", vim.log.levels.WARN)
-		return
-	end
-	if #state.results == 0 then
-		vim.notify("SearchSidebar: run a search first", vim.log.levels.WARN)
-		return
-	end
-
-	-- Collect only non-excluded results
-	local active = {}
-	for _, r in ipairs(state.results) do
-		local res_key = r.path .. "\0" .. r.lnum
-		if not state.excluded[r.path] and not state.excluded[res_key] then
-			table.insert(active, r)
-		end
-	end
-	if #active == 0 then
-		vim.notify("SearchSidebar: all results are excluded", vim.log.levels.WARN)
-		return
-	end
-
-	show_replace_preview(function()
-		local files = {}
-		for _, r in ipairs(active) do files[r.path] = true end
-		local file_list = vim.tbl_keys(files)
-
-		local escaped_q = vim.fn.escape(state.query,   "\\/.*~[]^$")
-		local escaped_r = vim.fn.escape(state.replace, "\\/&~")
-		local replaced, failed = 0, 0
-
-		for _, path in ipairs(file_list) do
-			local bufnr = vim.fn.bufadd(path)
-			vim.fn.bufload(bufnr)
-			local ok2, err = pcall(function()
-				vim.api.nvim_buf_call(bufnr, function()
-					vim.cmd(string.format("%%s/%s/%s/g", escaped_q, escaped_r))
-					vim.cmd("write")
-				end)
-			end)
-			if ok2 then replaced = replaced + 1
-			else
-				failed = failed + 1
-				vim.notify("Error in " .. path .. ": " .. tostring(err), vim.log.levels.ERROR)
-			end
-		end
-
-		vim.notify(string.format("Replaced in %d/%d files%s", replaced, #file_list,
-			failed > 0 and (" (" .. failed .. " errors)") or ""))
-		run_search()
-		render()
-		scroll_to_results()
-	end)
-end
-
 local FIELD_KEY = { query = "s", replace = "r", include = "i", exclude = "e", folder = "f" }
 
 local function open_help()
 	local map = {
 		{ "Fields", "" },
 		{ "s",    "set search query" },
-		{ "r",    "set replace text" },
+		{ "r",    "set replace text (triggers replace)" },
+		{ "C",    "reset search form" },
 		{ "t",    "toggle filters section" },
 		{ "i",    "set include globs  (*.lua,*.ts)" },
 		{ "e",    "set exclude globs  (dist/)" },
@@ -536,8 +558,6 @@ local function open_help()
 		{ "", "" },
 		{ "Navigation", "" },
 		{ "<CR>", "jump to result / edit field" },
-		{ "[",    "older search history" },
-		{ "]",    "newer search history" },
 		{ "z",    "fold/unfold file" },
 		{ "a",    "fold/unfold all files" },
 		{ "", "" },
@@ -545,9 +565,6 @@ local function open_help()
 		{ "d",    "toggle exclude result/file" },
 		{ "d",    "(visual) toggle exclude range" },
 		{ "u",    "undo last exclude change" },
-		{ "", "" },
-		{ "Replace", "" },
-		{ "x",    "preview diff then replace" },
 		{ "", "" },
 		{ "Misc", "" },
 		{ "q",    "close sidebar" },
@@ -617,20 +634,22 @@ local function setup_keymaps()
 			local ok, val = pcall(vim.fn.input, f.prompt, state[key])
 			if not ok then return end  -- user pressed <Esc>
 			state[key] = val
-			-- defer so Neovim fully returns to normal mode before we block on rg
 			vim.schedule(function()
 				if not base.is_valid(state) then return end
 				if key == "replace" then
 					if val ~= "" then do_replace() end
 					return
 				end
-				run_search(); render(); scroll_to_results()
-				vim.api.nvim_set_current_win(state.sidebar_win)
+				run_search(function()
+					if not base.is_valid(state) then return end
+					render(); scroll_to_results()
+					vim.api.nvim_set_current_win(state.sidebar_win)
+				end)
 			end)
 		end
 	end
 
-	vim.keymap.set("n", "s", edit_field("query"),  opts)
+	vim.keymap.set("n", "s", edit_field("query"),   opts)
 	vim.keymap.set("n", "r", edit_field("replace"), opts)
 	vim.keymap.set("n", "i", edit_field("include"), opts)
 	vim.keymap.set("n", "e", edit_field("exclude"), opts)
@@ -638,17 +657,17 @@ local function setup_keymaps()
 
 	vim.keymap.set("n", "h", function()
 		state.hidden = not state.hidden
-		run_search(); render(); scroll_to_results()
+		run_search(function() render(); scroll_to_results() end)
 	end, opts)
 
 	vim.keymap.set("n", "c", function()
 		state.case_sensitive = not state.case_sensitive
-		run_search(); render(); scroll_to_results()
+		run_search(function() render(); scroll_to_results() end)
 	end, opts)
 
 	vim.keymap.set("n", "w", function()
 		state.whole_word = not state.whole_word
-		run_search(); render(); scroll_to_results()
+		run_search(function() render(); scroll_to_results() end)
 	end, opts)
 
 	vim.keymap.set("n", "t", function()
@@ -656,21 +675,23 @@ local function setup_keymaps()
 		render()
 	end, opts)
 
-	-- history navigation: [ = older, ] = newer
-	local function nav_history(dir)
-		if #history == 0 then return end
-		local next_idx = history_idx + dir
-		if next_idx < 1 then next_idx = 1 end
-		if next_idx > #history then next_idx = #history end
-		if next_idx == history_idx then return end
-		history_idx = next_idx
-		state.query = history[history_idx]
-		run_search()
+	vim.keymap.set("n", "C", function()
+		if _search_job then vim.fn.jobstop(_search_job); _search_job = nil end
+		state.query         = ""
+		state.replace       = ""
+		state.include       = ""
+		state.exclude       = ""
+		state.folder        = ""
+		state.hidden        = true
+		state.case_sensitive = false
+		state.whole_word    = false
+		state.show_filters  = false
+		state.results       = {}
+		state.collapsed     = {}
+		state.excluded      = {}
+		state.excl_history  = {}
 		render()
-		scroll_to_results()
-	end
-	vim.keymap.set("n", "[", function() nav_history(-1) end, opts)
-	vim.keymap.set("n", "]", function() nav_history(1)  end, opts)
+	end, opts)
 
 	vim.keymap.set("n", "<CR>", function()
 		local entry = base.cursor_entry(state)
@@ -692,8 +713,11 @@ local function setup_keymaps()
 			state.query = entry.query
 			vim.schedule(function()
 				if not base.is_valid(state) then return end
-				run_search(); render(); scroll_to_results()
-				vim.api.nvim_set_current_win(state.sidebar_win)
+				run_search(function()
+					if not base.is_valid(state) then return end
+					render(); scroll_to_results()
+					vim.api.nvim_set_current_win(state.sidebar_win)
+				end)
 			end)
 		elseif entry.type == "file" then
 			toggle_fold_at_cursor()
@@ -757,7 +781,19 @@ local function setup_keymaps()
 		render()
 	end, opts)
 
-	vim.keymap.set("n", "x", do_replace, opts)
+	for n = 1, 3 do
+		vim.keymap.set("n", tostring(n), function()
+			local q = history[#history - n + 1]
+			if not q then return end
+			state.query = q
+			run_search(function()
+				if not base.is_valid(state) then return end
+				render(); scroll_to_results()
+				vim.api.nvim_set_current_win(state.sidebar_win)
+			end)
+		end, opts)
+	end
+
 	vim.keymap.set("n", "?", open_help, opts)
 	base.add_common_keymaps(state, M.close)
 end
@@ -771,9 +807,11 @@ function M.open()
 	})
 
 	setup_keymaps()
-	run_search()
 	render()
-	scroll_to_results()
+	run_search(function()
+		if not base.is_valid(state) then return end
+		render(); scroll_to_results()
+	end)
 	vim.api.nvim_set_current_win(state.sidebar_win)
 
 	base.on_win_closed(state, function() state.entries = {} end)

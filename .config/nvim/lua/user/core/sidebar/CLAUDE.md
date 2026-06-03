@@ -15,12 +15,12 @@ This directory implements a custom sidebar panel switcher for Neovim — no thir
 - `M.set_tabbar(win, extra)` — writes the winbar to a window while suppressing all autocmds (prevents NvimTree from reacting)
 - `M.toggle()`, `M.next()`, `M.prev()` — navigation helpers
 - `M.resize(delta)` — resizes the current sidebar window by `delta` columns (min 30)
-- `M.setup_keymaps()` — called once from `lua/user/core/init.lua`; binds `<leader>1`–`<leader>6` and `<leader>ut`
+- `M.setup_keymaps()` — called once from `lua/user/core/init.lua`; binds `<leader>1`–`<leader>4` and `<leader>ut` (lsp/github panels currently disabled)
 - `no_badge` — panels whose `id` is `"files"` or `"lsp"` never show count badges in the tabbar
 
 ### `base.lua` — Shared Panel Infrastructure
 Every panel gets a `state` table with `sidebar_buf`, `sidebar_win`, `source_win`, `entries`, `augroup`. Base provides:
-- `open_win(state, opts)` — creates a `topleft vsplit` at width 52 with standard window options (number, relativenumber, winfixwidth, etc.)
+- `open_win(state, opts)` — creates a `topleft vsplit` at width 52 with standard window options (number, relativenumber, winfixwidth, `undolevels=-1`, etc.)
 - `set_lines(state, lines)` — safely writes to the nofile buffer (toggles `modifiable`)
 - `close(state)` — closes window, wipes buf, clears augroup
 - `on_win_closed(state, extra)` — registers a `WinClosed` autocmd to clean up state when window is closed externally
@@ -36,9 +36,9 @@ Every panel gets a `state` table with `sidebar_buf`, `sidebar_win`, `source_win`
 | File | id | Highlights | Persistence | Notes |
 |---|---|---|---|---|
 | `git.lua` | `git` | `GitSidebar*` | — | Parses `git status --porcelain`; staged/unstaged/commits sections with fold (`z`); `s`/`u`/`S`/`U`/`x`/`X`/`c`/`C`/`p`/`P`/`F`/`<CR>`/`?` keymaps; inline two-panel diff with `]f`/`[f`/`-` nav; async push/pull/fetch via `jobstart` |
-| `search.lua` | `search` | `SearchSidebar*` | `search_sidebar/<cwd>.json` (history only) | Live grep via ripgrep; fields: query/replace/include/exclude/folder/hidden; per-project history with `<Up>`/`<Down>` browse; result collapsing (`Tab`); exclusion with undo (`e`/`E`/`U`) |
+| `search.lua` | `search` | `SearchSidebar*` | `search_sidebar/<cwd>.json` (history only) | Live grep via ripgrep; main fields: query/replace; filter fields (collapsible): include/exclude/folder; toggles: hidden(`h`), case-sensitive(`c`), whole-word(`w`), show-filters(`t`); per-project history with `[`/`]` browse; result collapsing (`z`); exclusion with undo (`d`/`u`); replace (`x`) |
 | `symbol.lua` | `lsp` | `SymbolSidebar*` | — | LSP `textDocument/documentSymbol`; filters Method/Constructor/Function/Class/Interface/Struct/Enum/Constant/Field/Variable; cursor-tracking highlight; `<CR>` jumps to symbol |
-| `marks.lua` | `marks` | `MarksSidebar*` | `marks_sidebar/<cwd>.json` | Per-project marks `{ path, lnum }`; `a`/`d`/`J`/`K`/`1-9` in sidebar; global `<leader>a` add, `<leader>md` remove, `<C-n>`/`<C-p>` cycle; auto-reload on `DirChanged` |
+| `marks.lua` | `marks` | `MarksSidebar*` | `marks_sidebar/<cwd>.json` | Per-project marks `{ path, lnum }`; `a`/`d`/`c`/`J`/`K`/`1-9` in sidebar (`c` clears all with confirm); global `<leader>a` add, `<leader>md` remove, `<C-n>`/`<C-p>` cycle; auto-reload on `DirChanged` |
 | `diagnostics.lua` | `diagnostics` | `DiagSidebar*` | — | All-buffer diagnostics grouped by severity (ERROR → WARN → HINT → INFO); `get_count()` shows badge; `<CR>` jumps to diagnostic location |
 | `github.lua` | `github` | uses snacks gh highlight groups | — | Fetches PRs/issues via `snacks.gh.api`; `<CR>` renders full item with comments; `o` opens in browser; `r` refreshes; `T` in item view translates to Vietnamese via `gemini --model gemini-2.0-flash` (streaming) |
 
@@ -72,7 +72,7 @@ Every panel gets a `state` table with `sidebar_buf`, `sidebar_win`, `source_win`
 1. Create `lua/user/core/sidebar/mypanel.lua` — implement `M.open()`, `M.close()`, `is_open()`, `get_win()` using `base` helpers.
 2. Call `require("user.core.sidebar").register({ id = "mypanel", label = "Label", icon = "…", … })` inside a `vim.schedule` block at the bottom of the file.
 3. Add `require "user.core.sidebar.mypanel"` to `lua/user/core/init.lua`.
-4. Add a `<leader>N` keymap in `init.lua:M.setup_keymaps()`.
+4. Add a `<leader>N` keymap in `init.lua:M.setup_keymaps()` (currently `<leader>5`+ are free).
 
 ## Key Conventions
 - Each panel owns its `state` as a module-local table; never share state across panels.

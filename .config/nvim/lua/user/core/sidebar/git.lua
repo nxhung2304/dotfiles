@@ -8,15 +8,6 @@ base.setup_hl({
 	{ "GitSidebarBranchCurrent", { link = "Statement",      default = true } },
 })
 
-local function file_icon(path)
-	local ok, devicons = pcall(require, "nvim-web-devicons")
-	if not ok then return "  " end
-	local fname = vim.fn.fnamemodify(path, ":t")
-	local ext   = vim.fn.fnamemodify(path, ":e")
-	local icon, hl = devicons.get_icon(fname, ext, { default = true })
-	return icon or " ", hl or "Normal"
-end
-
 local _count_cache = nil
 
 local function git_run_lines(args)
@@ -132,7 +123,7 @@ render = function()
 				table.insert(entries, { type = "empty" })
 			else
 				for _, f in ipairs(files) do
-					local ficon, icon_hl = file_icon(f.path)
+					local ficon, icon_hl = base.file_icon(f.path)
 					table.insert(lines,   "  " .. ficon .. " " .. format_path(f.path))
 					table.insert(entries, { type = "file", path = f.path, staged = is_staged, icon_hl = icon_hl })
 				end
@@ -299,7 +290,7 @@ vim.schedule(function()
 	require("user.core.sidebar").register({
 		id        = "git",
 		label     = "Git",
-		icon      = "󰊢 (G)",
+		icon      = "󰊢",
 		open      = M.open,
 		close     = M.close,
 		is_open   = function() return base.is_valid(state) end,

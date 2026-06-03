@@ -129,28 +129,26 @@ function M.render()
 	local lines, entries = {}, {}
 
 	if #marks == 0 then
-		table.insert(lines,   "  no marks yet")
-		table.insert(entries, { type = "hint" })
-		table.insert(lines,   "")
-		table.insert(entries, { type = "empty" })
-		table.insert(lines,   "  <leader>a  add current file")
-		table.insert(entries, { type = "hint" })
 	else
 		for i, mark in ipairs(marks) do
 			local rel     = vim.fn.fnamemodify(mark.path, ":~:.")
 			local parts   = vim.split(rel, "/", { plain = true })
 			local display = #parts <= 4 and rel
 				or ("…/" .. parts[#parts - 2] .. "/" .. parts[#parts - 1] .. "/" .. parts[#parts])
-			local is_active = (mark.path == active)
-			local prefix    = string.format(" [%d] ", i)
-			table.insert(lines,   prefix .. display .. ":" .. mark.lnum)
+			local is_active  = (mark.path == active)
+			local ficon, ihl = base.file_icon(mark.path)
+			local prefix     = string.format(" [%d] ", i)
+			table.insert(lines,   prefix .. ficon .. " " .. display .. ":" .. mark.lnum)
 			table.insert(entries, {
 				type       = "mark",
 				path       = mark.path,
 				idx        = i,
 				is_active  = is_active,
 				prefix_len = #prefix,
-				disp_len   = #prefix + #display,
+				icon_end   = #prefix + #ficon,
+				disp_start = #prefix + #ficon + 1,
+				disp_end   = #prefix + #ficon + 1 + #display,
+				icon_hl    = ihl,
 			})
 		end
 	end
@@ -165,9 +163,10 @@ function M.render()
 			if entry.is_active then
 				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarActive", row, 0, -1)
 			else
-				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarIndex", row, 0,               entry.prefix_len)
-				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarFile",  row, entry.prefix_len, entry.disp_len)
-				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarHint",  row, entry.disp_len,  -1)
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarIndex",        row, 0,                entry.prefix_len)
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, entry.icon_hl or "Normal",  row, entry.prefix_len, entry.icon_end)
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarFile",          row, entry.disp_start, entry.disp_end)
+				vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarHint",          row, entry.disp_end,   -1)
 			end
 		elseif entry.type == "hint" then
 			vim.api.nvim_buf_add_highlight(state.sidebar_buf, ns, "MarksSidebarHint", row, 0, -1)
@@ -237,15 +236,8 @@ local function setup_keymaps()
 end
 
 function M.open()
-	local k, h = "%#MarksSidebarKey#", "%#MarksSidebarHint#"
 	base.open_win(state, {
 		filetype   = "MarksSidebar",
-		statusline = " "
-			.. k .. "a" .. h .. ":add  "
-			.. k .. "d" .. h .. ":remove  "
-			.. k .. "c" .. h .. ":clear all  "
-			.. k .. "J/K" .. h .. ":reorder  "
-			.. k .. "1-9" .. h .. ":jump",
 		cursorline = true,
 	})
 
@@ -302,7 +294,7 @@ vim.schedule(function()
 	require("user.core.sidebar").register({
 		id        = "marks",
 		label     = "Marks",
-		icon      = "󰃀 (M)",
+		icon      = "󰃀",
 		open      = M.open,
 		close     = M.close,
 		is_open   = function() return base.is_valid(state) end,
