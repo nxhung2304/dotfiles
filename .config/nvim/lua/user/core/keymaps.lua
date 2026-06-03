@@ -27,12 +27,10 @@ keymap("x", "K", ":move '<-2<CR>gv-gv", { desc = "Move current line to up" })
 
 keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>")
 
-keymap(
-	"n",
-	"<C-f>",
-	"<cmd>silent !tmux neww '~/.local/bin/scripts/tmux-sessionizer'<CR>",
-	{ desc = "Find folders in ~/Dev" }
-)
+keymap("n", "<leader>cs", function()
+	local word = vim.fn.expand("<cword>")
+	vim.api.nvim_feedkeys(":%s/" .. vim.fn.escape(word, "/") .. "/", "n", false)
+end, { desc = "Substitute in file" })
 
 keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
 keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
@@ -77,7 +75,7 @@ vim.keymap.set("n", "<leader>ud", function()
 end, { desc = "Toggle sorted diagnostics" })
 
 -- Restart
-keymap("n", "<leader>R", function()
+keymap("n", "<leader>uR", function()
 	local file = vim.fn.expand("%:p")
 	if file ~= "" then
 		vim.fn.writefile({ file }, vim.fn.stdpath("cache") .. "/restart_file")
