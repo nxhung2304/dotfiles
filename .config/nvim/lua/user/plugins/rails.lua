@@ -60,10 +60,34 @@ local function console_send_selection()
 end
 
 local function routes_grep()
-	local default = vim.fn.expand("<cword>")
-	local term = vim.fn.input("routes grep: ", default)
-	if term == "" then return end
-	tmux_float("bundle exec rails routes | grep '" .. term:gsub("'", "'\\''") .. "' | less -R")
+	local tmpout = "/tmp/nvim_routes_sel.txt"
+	local script = "/tmp/nvim_routes_fzf.sh"
+	local qflag  = ""
+
+	-- Write to a script to avoid quoting hell inside tmux_float single-quote wrapping
+	vim.fn.writefile({
+		"#!/bin/sh",
+		"rm -f /tmp/nvim_routes_sel.txt",
+		"bundle exec rails routes | fzf --ansi --header-lines=1 --multi"
+			.. qflag
+			.. " --bind 'ctrl-q:select-all+accept' > /tmp/nvim_routes_sel.txt",
+	}, script)
+	vim.fn.system("chmod +x " .. script)
+
+	tmux_float(script)  -- blocks until popup closes
+
+	if vim.fn.filereadable(tmpout) == 0 then return end
+	local lines = vim.fn.readfile(tmpout)
+	local qflist = {}
+	for _, line in ipairs(lines) do
+		if vim.trim(line) ~= "" then
+			table.insert(qflist, { text = vim.trim(line) })
+		end
+	end
+	if #qflist > 0 then
+		vim.fn.setqflist(qflist, "r")
+		vim.cmd("copen")
+	end
 end
 
 local last_test_cmd = nil
@@ -400,9 +424,19 @@ return {
 				desc = "Rails Logs",
 			},
 			{
-				"<leader>Rd",
+				"<leader>Rm",
 				function() rails_guard(function() vim.cmd("VimuxRunCommand('bundle exec rails db:migrate')") end) end,
 				desc = "DB Migrate",
+			},
+			{
+				"<leader>RS",
+				function() rails_guard(function() vim.cmd("VimuxRunCommand('bundle exec rails db:seed')") end) end,
+				desc = "DB Seed",
+			},
+			{
+				"<leader>RR",
+				function() rails_guard(function() vim.cmd("VimuxRunCommand('bundle exec rails db:migrate:reset')") end) end,
+				desc = "DB Migrate reset",
 			},
 			{
 				"<leader>Rg",
