@@ -107,3 +107,62 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 		end
 	end,
 })
+
+vim.keymap.set("t", "jk", [[<C-\><C-n>]])
+vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]])
+
+-- Claude Code integration
+local function find_claude_pane()
+	local result = vim.fn.systemlist("tmux list-panes -s -F '#{window_id} #{pane_id} #{pane_current_command}' 2>/dev/null")
+	for _, line in ipairs(result) do
+		if line:lower():match("claude") then
+			local win, pane = line:match("^(%S+)%s+(%S+)")
+			return win, pane
+		end
+	end
+end
+
+local function send_to_claude(ref)
+	if vim.fn.exists("$TMUX") == 0 then
+		vim.notify("Not inside a tmux session", vim.log.levels.WARN)
+		return
+	end
+
+	local function do_send(win, pane)
+		vim.fn.system(string.format("tmux send-keys -t %s -l %s", pane, vim.fn.shellescape(ref)))
+		vim.fn.system(string.format("tmux send-keys -t %s -l '\\'", pane))
+		vim.fn.system(string.format("tmux send-keys -t %s Enter", pane))
+		vim.fn.system(string.format("tmux select-window -t %s", win))
+		vim.fn.system(string.format("tmux select-pane -t %s", pane))
+	end
+
+	local win, pane = find_claude_pane()
+	if pane then
+		do_send(win, pane)
+	else
+		vim.fn.system("tmux new-window 'claude'")
+		vim.defer_fn(function()
+			win, pane = find_claude_pane()
+			if pane then
+				do_send(win, pane)
+			else
+				vim.notify("Could not find Claude Code pane after launch", vim.log.levels.WARN)
+			end
+		end, 3500)
+	end
+end
+
+keymap("n", "<leader>ac", function()
+	local lnum = vim.fn.line(".")
+	local rel = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:.")
+	send_to_claude(string.format("@%s:%d", rel, lnum))
+end, { desc = "Send current line ref to Claude Code" })
+
+vim.keymap.set("x", "<leader>ac", function()
+	local anchor = vim.fn.getpos("v")[2]
+	local cursor = vim.fn.getpos(".")[2]
+	local s = math.min(anchor, cursor)
+	local e = math.max(anchor, cursor)
+	local rel = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:.")
+	send_to_claude(string.format("@%s:%d-%d", rel, s, e))
+end, { noremap = true, silent = true, desc = "Send selection ref to Claude Code" })
