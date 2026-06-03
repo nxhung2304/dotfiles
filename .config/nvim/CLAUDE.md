@@ -36,7 +36,7 @@ Minimal setup: only `options.lua` (sets `clipboard=unnamedplus`) and `lua/code/p
 
 ### Custom Sidebar (`lua/user/core/sidebar/`)
 Hand-built panel switcher — see `lua/user/core/sidebar/CLAUDE.md` for full details.
-Panels: Files (`<leader>1`), Git (`<leader>2`), Search (`<leader>3`), LSP symbols (`<leader>4`), Marks (`<leader>5`), GitHub (`<leader>6`). Toggle: `<leader>ut`.
+Panels: Files (`<leader>1`), Git (`<leader>2`), Search (`<leader>3`), Marks (`<leader>4`). Toggle: `<leader>ut`. LSP symbols and GitHub panels temporarily disabled.
 
 ## Key Keymaps
 
