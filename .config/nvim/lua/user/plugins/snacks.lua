@@ -44,12 +44,13 @@ return {
  ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
  ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝]],
 				keys = {
-					{ icon = " ", key = "f", desc = "Find File", action = ":lua Snacks.picker.files()" },
-					{ icon = " ", key = "r", desc = "Recent Files", action = ":lua Snacks.picker.recent({ filter = { cwd = true } })" },
-					{ icon = " ", key = "g", desc = "Find Text", action = ":lua Snacks.picker.grep()" },
-					{ icon = " ", key = "c", desc = "Config", action = ":lua Snacks.picker.files({ cwd = vim.fn.stdpath('config') })" },
+					{ icon = "󰈞 ", key = "f", desc = "Find File", action = ":lua Snacks.picker.files()" },
+					{ icon = "󰈔 ", key = "n", desc = "New File", action = ":ene | startinsert" },
+					{ icon = "󰋚 ", key = "r", desc = "Recent Files", action = ":lua Snacks.picker.recent({ filter = { cwd = true } })" },
+					{ icon = "󰍉 ", key = "g", desc = "Find Text", action = ":lua Snacks.picker.grep()" },
+					{ icon = "󰒓 ", key = "c", desc = "Config", action = ":lua Snacks.picker.files({ cwd = vim.fn.stdpath('config') })" },
 					{ icon = "󰒲 ", key = "l", desc = "Lazy", action = ":Lazy" },
-					{ icon = " ", key = "q", desc = "Quit", action = ":qa" },
+					{ icon = "󰗼 ", key = "q", desc = "Quit", action = ":qa" },
 				},
 			},
 			sections = {
