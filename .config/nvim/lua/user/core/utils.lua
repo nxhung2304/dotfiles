@@ -68,7 +68,7 @@ M.get_filepath_with_navic = function()
 		colored_filepath = "%#WinBarFilename#" .. " " .. file_icon .. " " .. filename .. "%*"
 	end
 
-	local ok, sidebar = pcall(require, "user.core.sidebar.symbol")
+	local ok, sidebar = pcall(require, "user.core.symbol")
 	if ok then
 		local crumb = sidebar.get_breadcrumb()
 		if crumb and crumb ~= "" then
@@ -82,8 +82,10 @@ end
 M.lsp_on_attach = function(client, bufnr)
 	local keymap = M.keymap
 
-	-- Enable completion triggered by <c-x><c-o>
 	vim.api.nvim_buf_set_option(bufnr, "omnifunc", "v:lua.vim.lsp.omnifunc")
+
+	local ok, symbol = pcall(require, "user.core.symbol")
+	if ok then symbol.attach(bufnr) end
 
 	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr, desc = "Go to Definition" })
 	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr, desc = "Go to References" })
@@ -98,10 +100,6 @@ M.lsp_on_attach = function(client, bufnr)
 				vim.lsp.codelens.refresh()
 			end,
 		})
-	end
-
-	if client.server_capabilities.documentSymbolProvider then
-		require("user.core.sidebar.symbol").attach(bufnr)
 	end
 end
 
