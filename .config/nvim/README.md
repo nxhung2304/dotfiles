@@ -13,71 +13,162 @@
     </a>
 </center>
 
-My Neovim setup powered by 💤 lazy.nvim to make it easy to customize and extend your config. Rather than having to choose between starting from scratch or using a pre-made distro
+Personal Neovim config powered by [lazy.nvim](https://github.com/folke/lazy.nvim). Supports standard Neovim, VS Code (via extension), and Xcode (via ShadowVim).
 
-<img src="./assets/alpha.png">
-<img src="./assets/telescope.png">
-<img src="./assets/main.png">
-<img src="./assets/which-key.png">
+## Requirements
 
-## ✨ Features
+- Neovim >= **0.11** (LuaJIT build)
+- Git >= **2.19.0**
+- [Nerd Font](https://www.nerdfonts.com/)
+- tmux (for Claude Code integration and sessionizer)
 
-- 🔥 Transform your Neovim into a full-fledged IDE
-- 💤 Easily customize and extend your config with [lazy.nvim](https://github.com/folke/lazy.nvim)
-- 🚀 Blazingly fast
-- 🧹 Sane default settings for options, autocmds, and keymaps
-- 📦 Comes with a wealth of plugins pre-configured and ready to use
+## LSP Servers
 
-## ⚡️ Requirements
+| Language | Server | Install |
+|---|---|---|
+| Ruby | `solargraph` | `gem install --user-install solargraph` |
+| TypeScript/JS | `ts_ls`, `vtsls` | `npm install -g typescript typescript-language-server` |
+| Vue | `volar` | `npm install -g @vue/language-server` |
+| ESLint / JSON / CSS | `eslint`, `jsonls`, `cssls` | `npm i -g vscode-langservers-extracted` |
+| Emmet | `emmet_ls` | `npm install -g emmet-ls` |
+| Tailwind | `tailwindcss` | `npm install -g @tailwindcss/language-server` |
+| Lua | `lua_ls` | `brew install lua-language-server` |
+| Swift | `sourcekit` | Xcode CLI tools |
+| PHP | `phpactor` | Composer |
+| Python | `pyright` | `npm install -g pyright` |
+| Kotlin | `kotlin_language_server` | `brew install kotlin-language-server` |
+| Dart/Flutter | `dartls` | Managed by flutter-tools.nvim |
 
-### 🚀 Need have:
-- Neovim >= **0.10** (needs to be built with **LuaJIT**)
-- Git >= **2.19.0** (for partial clones support)
-- a [Nerd Font](https://www.nerdfonts.com/) **_(optional)_**
+## Formatters
 
-### 🔥 Lsp
-- sourcekit: `sourcekit`
-- solargraph: `gem install --user-install solargraph`
-- tsserver: `npm install -g typescript typescript-language-server`
-- eslint: `npm i -g vscode-langservers-extracted`
-- jsonls: `npm i -g vscode-langservers-extracted`
-- emmet_ls: `npm install -g emmet-ls`
-- vuels: `npm install -g vls`
-- lua_ls: `brew install lua-language-server`
-- tailwindcss: `npm install -g @tailwindcss/language-server`
-- xcodebuild.nvim:
+```sh
+gem install rubocop
+brew install swiftformat stylua kotlin-language-server
+npm install -g prettier
 ```
-brew install xcode-build-server xcbeautify ruby pipx rg
-gem install xcodeproj
-pipx install pymobiledevice3
+
+## File Structure
+
 ```
- 
-### 🧹 Formatters
-- rubocop: `gem install rubocop`
-- swiftformat: `brew install swiftformat`
-- prettier: `npm install --save-dev --save-exact prettier`
-- styluad: `brew install stylua`
-- kolit: `brew install kotlin-language-server`
-
-## 📂 File Structure
-
-The files under config will be automatically loaded at the appropriate time,
-so you don't need to require those files manually.
-
-You can add your custom plugin specs under `lua/plugins/`. All files there
-will be automatically loaded by [lazy.nvim](https://github.com/folke/lazy.nvim)
-
-<pre>
 ~/.config/nvim
+├── init.lua                        # Entry point — branches on vscode/shadowvim/standard
 ├── lua
-│   ├── config
-│   │   ├── autocmds.lua
-│   │   ├── mappings.lua
-│   │   ├── init.lua
-│   │   └── options.lua
-│   └── plugins
-│       ├── spec1.lua
-│       ├── **
-│       └── spec2.lua
-└── init.lua
-</pre>
+│   ├── user/
+│   │   ├── core/
+│   │   │   ├── init.lua            # Loads core modules in order
+│   │   │   ├── options.lua
+│   │   │   ├── keymaps.lua
+│   │   │   ├── autocmds.lua
+│   │   │   ├── custom_command.lua
+│   │   │   ├── configs.lua         # Shared icons/constants
+│   │   │   ├── statusline.lua
+│   │   │   ├── utils.lua
+│   │   │   └── sidebar/            # Custom panel switcher
+│   │   └── plugins/
+│   │       ├── lsp/                # nvim-lspconfig + Mason
+│   │       │   └── settings/       # Per-server option files
+│   │       ├── flutter/            # flutter-tools + nvim-dap
+│   │       ├── snacks.lua          # Picker, notifier, image rendering
+│   │       ├── conform.lua         # Formatting
+│   │       ├── cmp.lua             # Completion
+│   │       ├── treesitter.lua
+│   │       ├── git.lua
+│   │       ├── rails.lua
+│   │       ├── xcode.lua
+│   │       └── ...
+│   └── code/                       # VS Code mode only
+│       ├── options.lua
+│       └── plugins/
+└── ftdetect/
+```
+
+## Keymaps
+
+### General
+
+| Key | Action |
+|---|---|
+| `jk` | Exit insert mode |
+| `<C-s>` | Save file |
+| `<C-f>` | Open tmux-sessionizer |
+| `<C-h/j/k/l>` | Navigate splits |
+| `<C-u>` / `<C-d>` | Scroll and center |
+| `Q` | Replay macro `@q` |
+| `<leader>q` | Replay last macro |
+
+### LSP
+
+| Key | Action |
+|---|---|
+| `ga` | Code action |
+| `]e` / `[e` | Next / prev error |
+| `]q` / `[q` | Next / prev quickfix |
+| `<leader>ud` | Toggle sorted diagnostics |
+| `<leader>uR` | Restart Neovim |
+
+### Files & Clipboard
+
+| Key | Action |
+|---|---|
+| `<leader>cc` | Copy to clipboard (OSC52) |
+| `<leader>ca` | Copy absolute path |
+| `<leader>cr` | Copy relative path |
+| `<leader>cd` | Copy current diagnostic |
+| `<leader>cs` | Substitute word in file |
+
+### Sidebar panels
+
+| Key | Panel |
+|---|---|
+| `<leader>1` | Files |
+| `<leader>2` | Git |
+| `<leader>3` | Search |
+| `<leader>4` | Marks |
+| `<leader>ut` | Toggle sidebar |
+
+### Flutter (`<leader>F`)
+
+| Key | Action |
+|---|---|
+| `<leader>Fr` | Run |
+| `<leader>FD` | Debug |
+| `<leader>Fs` | Hot Restart |
+| `<leader>FR` | Hot Reload |
+| `<leader>Fq` | Quit |
+| `<leader>Fl` | Toggle Log |
+| `<leader>Fd` | Devices |
+| `<leader>Fe` | Emulators |
+| `<leader>Fo` | Widget Outline |
+
+### Debug / DAP (`<leader>d`)
+
+| Key | Action |
+|---|---|
+| `<leader>dc` | Continue |
+| `<leader>do` | Step Over |
+| `<leader>di` | Step Into |
+| `<leader>dO` | Step Out |
+| `<leader>dt` | Terminate |
+| `<leader>de` | REPL |
+| `<leader>dv` | Toggle DAP panel |
+| `<leader>db` | Toggle breakpoint |
+| `<leader>dB` | Conditional breakpoint |
+
+### Claude Code integration
+
+| Key | Action |
+|---|---|
+| `<leader>ac` | Send current line ref to Claude Code (tmux) |
+| `<leader>ac` (visual) | Send selected range ref to Claude Code |
+
+## Flutter Debug Workflow
+
+```
+1. <leader>Fd / <leader>Fe   — pick device or emulator
+2. <leader>Fr / <leader>FD   — run or force-debug the app
+3. <leader>db                — set breakpoints
+4. <leader>dc                — continue past a breakpoint
+5. <leader>do/di/dO          — step over / into / out
+6. <leader>dv                — inspect variables and call stack
+7. <leader>Fq / <leader>dt   — quit
+```

@@ -197,9 +197,21 @@ function components.macro()
 	return hi_pattern:format("WarningMsg", "  Recording @" .. register .. "  ")
 end
 
+function components.flutter_device()
+  if not vim.g.flutter_tools_decorations or not vim.g.flutter_tools_decorations.device then
+    return ""
+  end
+  local device = vim.g.flutter_tools_decorations.device
+  if device == "" or device == nil then
+    return ""
+  end
+  return "  " .. device .. " "
+end
+
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
+  '%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
