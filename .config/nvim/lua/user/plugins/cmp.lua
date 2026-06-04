@@ -7,15 +7,10 @@ return {
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-nvim-lua",
-			"saadparwaiz1/cmp_luasnip",
 		},
 		opts = function()
-			local luasnip = require("luasnip")
 			local cmp = require("cmp")
-			require("luasnip/loaders/from_vscode").lazy_load()
-			require("luasnip.loaders.from_vscode").lazy_load({ paths = "~/.config/nvim/lua/user/snippets" })
-			local col = vim.fn.col(".") - 1
-			local check_backspace = col == 0 or vim.fn.getline("."):sub(col, col):match("%s")
+			local mini_snippets = require("mini.snippets")
 			cmp.setup.cmdline({ "/", "?" }, {
 				mapping = cmp.mapping.preset.cmdline(),
 				sources = {
@@ -26,7 +21,8 @@ return {
 			return {
 				snippet = {
 					expand = function(args)
-						luasnip.lsp_expand(args.body) -- For `luasnip` users.
+						local insert = mini_snippets.config.expand.insert or mini_snippets.default_insert
+						insert({ body = args.body })
 					end,
 				},
 				mapping = {
@@ -44,29 +40,21 @@ return {
 					["<Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_next_item()
-						elseif luasnip.expandable() then
-							luasnip.expand()
-						elseif luasnip.expand_or_jumpable() then
-							luasnip.expand_or_jump()
+						elseif mini_snippets.session.get() ~= nil then
+							mini_snippets.session.jump("next")
 						else
 							fallback()
 						end
-					end, {
-						"i",
-						"s",
-					}),
+					end, { "i", "s" }),
 					["<S-Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_prev_item()
-						elseif luasnip.jumpable(-1) then
-							luasnip.jump(-1)
+						elseif mini_snippets.session.get() ~= nil then
+							mini_snippets.session.jump("prev")
 						else
 							fallback()
 						end
-					end, {
-						"i",
-						"s",
-					}),
+					end, { "i", "s" }),
 				},
 				formatting = {
 					fields = { "kind", "abbr", "menu" },
@@ -89,8 +77,7 @@ return {
 				},
 				sources = {
 					{ name = "nvim_lsp", priority = 1000 },
-					-- { name = "minuet", priority = 100 }, -- Thêm minuet với priority cao
-					{ name = "luasnip", priority = 750 },
+					-- { name = "minuet", priority = 100 },
 					{ name = "buffer", priority = 500, keyword_length = 3, max_item_count = 5 },
 					{ name = "path", priority = 250 },
 				},

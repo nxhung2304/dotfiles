@@ -1,6 +1,17 @@
+-- Keymaps differ from nvim-surround: sa=add, sd=delete, sr=replace (vs ys/ds/cs)
 return {
-	"kylechui/nvim-surround",
-	version = "^3.0.0", -- Use for stability; omit to use `main` branch for the latest features
+	"echasnovski/mini.surround",
+	version = false,
 	event = "VeryLazy",
-	opts = {},
+	opts = {
+		mappings = {
+			add = "sa",
+			delete = "sd",
+			replace = "sr",
+			find = "sf",
+			find_left = "sF",
+			highlight = "sh",
+			update_n_lines = "sn",
+		},
+	},
 }
