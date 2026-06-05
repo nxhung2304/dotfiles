@@ -34,6 +34,30 @@ function components.position()
 	return "%3l:%-2c"
 end
 
+-- Git changed files count (repo-wide, via git status --porcelain)
+local git_status_cache = {}
+function components.git_status()
+	local cwd = vim.fn.getcwd()
+	local now = vim.fn.localtime()
+	if git_status_cache[cwd] and (now - git_status_cache[cwd].time) < 5 then
+		return git_status_cache[cwd].result
+	end
+
+	local handle = io.popen("git -C " .. vim.fn.shellescape(cwd) .. " status --porcelain 2>/dev/null")
+	local result = ""
+	if handle then
+		local count = 0
+		for _ in handle:lines() do count = count + 1 end
+		handle:close()
+		if count > 0 then
+			result = hi_pattern:format("DiffAdd", " 󰊢 " .. count .. "  ")
+		end
+	end
+
+	git_status_cache[cwd] = { result = result, time = now }
+	return result
+end
+
 -- Git branch
 local git_branch_cache = {}
 function components.git_branch()
@@ -210,6 +234,7 @@ end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
+	'%{%v:lua._statusline_component("git_status")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
   '%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("macro")%}',
