@@ -428,35 +428,52 @@ local function render()
 					local res_key  = path .. "\0" .. r.lnum
 					local res_excl = file_excl or state.excluded[res_key]
 
-					local trimmed = r.text:match("^%s*(.-)%s*$") or ""
+					local raw     = r.text:match("^%s*(.-)%s*$") or ""
 					local max_txt = math.max(20, win_w - 10)
-					local truncated = false
-					if #trimmed > max_txt then
-						trimmed   = trimmed:sub(1, max_txt - 1) .. "…"
-						truncated = true
+
+					-- Find match in full text before any truncation
+					local ms, me = find_match(raw, state.query)
+
+					local display, hl_s, hl_e
+					if ms and ms > max_txt then
+						-- Match is beyond visible window — shift to show it
+						local ctx   = math.min(ms - 1, 8)
+						local start = ms - ctx
+						local slice = raw:sub(start)
+						if #slice > max_txt - 1 then
+							slice = slice:sub(1, max_txt - 2) .. "…"
+						end
+						display = "…" .. slice
+						hl_s    = #"…" + ctx + 1
+						hl_e    = hl_s + (me - ms)
+					else
+						if #raw > max_txt then
+							display = raw:sub(1, max_txt - 1) .. "…"
+						else
+							display = raw
+						end
+						hl_s = ms
+						hl_e = me
 					end
 
 					local lnum_str  = tostring(r.lnum)
 					local prefix    = "   " .. lnum_str .. ": "
 					local excl_sfx  = res_excl and " 󰅗" or ""
-					local line_text = prefix .. trimmed .. excl_sfx
+					local line_text = prefix .. display .. excl_sfx
 
 					table.insert(lines,   line_text)
 					table.insert(entries, {
 						type = "result", path = r.path, lnum = r.lnum, col = r.col,
-						prefix_len = #prefix, truncated = truncated,
+						prefix_len = #prefix, truncated = (#raw > max_txt),
 						excl_key = res_key, excluded = res_excl,
 					})
 
-					if not res_excl then
-						local ms, me = find_match(trimmed, state.query)
-						if ms then
-							table.insert(match_hls, {
-								row = #lines - 1,
-								s   = #prefix + ms - 1,
-								e   = #prefix + me,
-							})
-						end
+					if not res_excl and hl_s then
+						table.insert(match_hls, {
+							row = #lines - 1,
+							s   = #prefix + hl_s - 1,
+							e   = #prefix + hl_e,
+						})
 					end
 				end
 			end
