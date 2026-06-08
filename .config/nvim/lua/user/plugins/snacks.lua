@@ -58,6 +58,7 @@ return {
 				{
 					section = "recent_files",
 					title = "Recent Files",
+					cwd = true,
 					limit = 5,
 					padding = 1,
 				},
