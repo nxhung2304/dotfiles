@@ -84,7 +84,7 @@ vim.api.nvim_create_autocmd("WinEnter", {
 vim.api.nvim_create_autocmd("InsertLeave", {
 	desc = "Auto-save on leaving insert mode",
 	callback = function()
-		if vim.bo.modified and vim.bo.buftype == "" and not vim.bo.readonly then
+		if vim.bo.modified and vim.bo.buftype == "" and not vim.bo.readonly and vim.fn.expand("%") ~= "" then
 			vim.cmd.update()
 			vim.notify("saved at " .. vim.fn.strftime("%H:%M:%S"), vim.log.levels.INFO, { title = "AutoSave" })
 		end
