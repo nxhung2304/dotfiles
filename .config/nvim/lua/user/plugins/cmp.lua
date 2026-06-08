@@ -78,8 +78,9 @@ return {
 				sources = {
 					{ name = "nvim_lsp", priority = 1000 },
 					-- { name = "minuet", priority = 100 },
-					{ name = "buffer", priority = 500, keyword_length = 3, max_item_count = 5 },
-					{ name = "path", priority = 250 },
+					{ name = "i18n",    priority = 900 },
+					{ name = "buffer",  priority = 500, keyword_length = 3, max_item_count = 5 },
+					{ name = "path",    priority = 250 },
 				},
 				performance = {
 					debounce = 60,

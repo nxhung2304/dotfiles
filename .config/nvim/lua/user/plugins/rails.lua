@@ -287,6 +287,63 @@ end
 
 return {
 	{
+		"yelog/i18n.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter" },
+		ft = { "ruby", "eruby", "haml", "slim", "yaml" },
+		config = function()
+			require("i18n").setup({
+				activation = "auto",
+				locales = {},
+				sources = { "config/locales/{locales}.yml" },
+				auto_detect = {
+					enabled = true,
+					extensions = { "yml", "yaml", "json" },
+					locale_dir_names = { "locales", "i18n", "locale" },
+					max_depth = 6,
+				},
+				func_pattern = { "t", "I18n.t" },
+				func_type = { "ruby", "eruby", "haml", "slim" },
+				show_mode = "both",
+				usage = { popup_type = "vim_ui" },
+				i18n_keys = { popup_type = "vim_ui" },
+				-- Resolve Rails lazy lookup: t(".title") in app/views/courses/edit.html.erb
+				-- → "courses.edit.title"
+				-- i18n.nvim strips the leading dot before calling the resolver,
+				-- so detect lazy keys by inspecting the raw source line instead.
+				namespace_resolver = function(bufnr, key, line)
+					local raw = vim.api.nvim_buf_get_lines(bufnr, line - 1, line, false)[1] or ""
+					if not raw:match([[t%s*%(%s*['"]%.]]) then return nil end
+					local path = vim.api.nvim_buf_get_name(bufnr)
+					local rel = path:match("app/views/(.+)%.[^.]+%.[^.]+$")
+					if not rel then return nil end
+					return rel:gsub("/", ".")
+				end,
+				namespace_separator = "",
+			})
+			local ok, cmp = pcall(require, "cmp")
+			if ok then
+				cmp.register_source("i18n", require("i18n.integration.cmp_source").new())
+			end
+		end,
+		keys = {
+			{ "<leader>ik", function() I18n.i18n_keys() end,           desc = "i18n Keys" },
+			{ "<leader>in", function() I18n.next_locale() end,         desc = "i18n Next Locale" },
+			{ "<leader>is", function() I18n.show_popup() end,          desc = "i18n Show Translations" },
+			{ "<leader>io", function() I18n.toggle_origin() end,       desc = "i18n Toggle Origin" },
+			{ "<leader>it", function() I18n.toggle_translation() end,  desc = "i18n Toggle Translation" },
+			{ "<leader>ia", "<cmd>I18nAddKey<cr>",                     desc = "i18n Add Key" },
+			{
+				"gd",
+				function()
+					if require("i18n").i18n_definition() then return end
+					vim.lsp.buf.definition()
+				end,
+				ft = { "ruby", "eruby", "haml", "slim" },
+				desc = "i18n or LSP definition",
+			},
+		},
+	},
+	{
 		"preservim/vimux",
 		lazy = false,
 		config = function()

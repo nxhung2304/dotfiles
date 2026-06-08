@@ -1,6 +1,7 @@
 return {
 	{
 		"kyazdani42/nvim-tree.lua",
+		dependencies = { { "echasnovski/mini.icons", opts = {} } },
 		init = function()
 			vim.g.loaded_netrw = 1
 			vim.g.loaded_netrwPlugin = 1
@@ -26,6 +27,10 @@ return {
 				end,
 			})
 		end,
+		config = function(_, opts)
+			require("mini.icons").mock_nvim_web_devicons()
+			require("nvim-tree").setup(opts)
+		end,
 		opts = {
 			sync_root_with_cwd = true,
 			respect_buf_cwd = true,
@@ -49,7 +54,7 @@ return {
 						file = true,
 						folder = true,
 						folder_arrow = true,
-						git = true,
+						git = false,
 					},
 					glyphs = {
 						default = "",
@@ -64,11 +69,11 @@ return {
 							ignored = "󰈉",
 						},
 						folder = {
-							default = "",
-							open = "",
-							empty = "",
-							empty_open = "",
-							symlink = "",
+							default = "󰉋",
+							open = "󰝰",
+							empty = "󰉖",
+							empty_open = "󰷏",
+							symlink = "󰉒",
 						},
 					},
 				},
