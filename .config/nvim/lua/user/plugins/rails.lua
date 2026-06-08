@@ -456,21 +456,21 @@ return {
 			},
 			-- Rubocop
 			{
-				"<leader>oc",
+				"<leader>Rb",
 				function()
 					vim.cmd("VimuxRunCommand('bundle exec rubocop " .. vim.fn.expand("%:p") .. "')")
 				end,
 				desc = "Rubocop Check File",
 			},
-			{ "<leader>oC", "<cmd>VimuxRunCommand('bundle exec rubocop')<cr>",    desc = "Rubocop Check All" },
+			{ "<leader>RB", "<cmd>VimuxRunCommand('bundle exec rubocop')<cr>",    desc = "Rubocop Check All" },
 			{
-				"<leader>of",
+				"<leader>Rf",
 				function()
 					vim.cmd("VimuxRunCommand('bundle exec rubocop -A " .. vim.fn.expand("%:p") .. "')")
 				end,
 				desc = "Rubocop Fix File",
 			},
-			{ "<leader>oF", "<cmd>VimuxRunCommand('bundle exec rubocop -A')<cr>", desc = "Rubocop Fix All" },
+			{ "<leader>RF", "<cmd>VimuxRunCommand('bundle exec rubocop -A')<cr>", desc = "Rubocop Fix All" },
 		},
 	},
 }

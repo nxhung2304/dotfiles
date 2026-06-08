@@ -5,8 +5,8 @@ keymap("n", "<C-s>", "<cmd>:w!<cr>", { desc = "Save file" })
 keymap("i", "<C-s>", "<cmd>:w!<cr>", { desc = "Save file" })
 
 -- Clipboard via OSC52
-keymap("n", "<leader>cc", '"+y', { desc = "Copy to clipboard (OSC52)" })
-keymap("v", "<leader>cc", '"+y', { desc = "Copy selection to clipboard (OSC52)" })
+-- keymap("n", "<leader>cc", '"+y', { desc = "Copy to clipboard (OSC52)" })
+-- keymap("v", "<leader>cc", '"+y', { desc = "Copy selection to clipboard (OSC52)" })
 
 keymap("n", "<C-h>", "<C-w>h")
 keymap("n", "<C-j>", "<C-w>j")
@@ -156,7 +156,7 @@ keymap("n", "<leader>ac", function()
 	send_to_claude(string.format("@%s:%d", rel, lnum))
 end, { desc = "Send current line ref to Claude Code" })
 
-vim.keymap.set("x", "<leader>ac", function()
+vim.keymap.set("x", "<leader>cc", function()
 	local anchor = vim.fn.getpos("v")[2]
 	local cursor = vim.fn.getpos(".")[2]
 	local s = math.min(anchor, cursor)
