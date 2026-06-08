@@ -52,8 +52,9 @@ M.get_filepath_with_navic = function()
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
 
-	local devicons = require("nvim-web-devicons")
-	local file_icon, icon_color = devicons.get_icon_color(filename, vim.fn.expand("%:e"))
+	local file_icon, icon_hl = MiniIcons.get("file", filename)
+	local hl_def = vim.api.nvim_get_hl(0, { name = icon_hl, link = false })
+	local icon_color = hl_def.fg and string.format("#%06x", hl_def.fg)
 	if icon_color then
 		vim.api.nvim_set_hl(0, "WinBarFileIcon", { fg = icon_color })
 		file_icon = "%#WinBarFileIcon#" .. (file_icon or "") .. "%*"

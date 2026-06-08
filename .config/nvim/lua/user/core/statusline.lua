@@ -159,14 +159,13 @@ end
 
 -- Filename với icon
 function components.filename()
-	local devicons = require("nvim-web-devicons")
 	local filename = vim.fn.expand("%:t")
 
 	if filename == "" then
 		return hi_pattern:format("Comment", "  [No Name] ")
 	end
 
-	local icon, icon_hl = devicons.get_icon(filename, vim.fn.expand("%:e"), { default = true })
+	local icon, icon_hl = MiniIcons.get("file", filename)
 
 	if icon then
 		return " " .. hi_pattern:format(icon_hl or "Normal", icon) .. " " .. filename
@@ -176,14 +175,13 @@ function components.filename()
 end
 
 function components.filetype()
-	local devicons = require("nvim-web-devicons")
 	local ft = vim.bo.filetype
 
 	if ft == "" then
 		return ""
 	end
 
-	local icon = devicons.get_icon_by_filetype(ft, { default = true })
+	local icon = MiniIcons.get("filetype", ft)
 
 	if icon then
 		return " " .. icon .. " " .. ft .. " "
