@@ -1,0 +1,44 @@
+[colors]
+foreground = '#cccccc'
+background = '#1f1f1f'
+cursor_bg = '#cccccc'
+cursor_border = '#cccccc'
+cursor_fg = '#1f1f1f'
+selection_fg = 'none'
+selection_bg = '#264f78'
+scrollbar_thumb = '#494d53'
+split = '#444d56'
+
+ansi = [
+    '#1f1f1f',
+    '#f44747',
+    '#6a9955',
+    '#d7ba7d',
+    '#569cd6',
+    '#c586c0',
+    '#4dc9b0',
+    '#dddddd',
+]
+
+brights = [
+    '#808080',
+    '#f55757',
+    '#80ad6b',
+    '#e1cb9e',
+    '#6fabdc',
+    '#d6a9d2',
+    '#70d3bf',
+    '#ffffff',
+]
+
+[colors.tab_bar]
+background = '#1f1f1f'
+active_tab_bg = '#1f1f1f'
+active_tab_fg = '#cccccc'
+inactive_tab_bg = '#2d2d2d'
+inactive_tab_fg = '#808080'
+inactive_tab_hover_bg = '#323232'
+inactive_tab_hover_fg = '#aaaaaa'
+
+[metadata]
+name = 'arctic'

@@ -7,7 +7,7 @@ if wezterm.config_builder then
 end
 
 -- Appearance
-config.color_scheme = "Catppuccin Mocha"
+config.color_scheme = 'arctic'
 config.window_decorations = "RESIZE | TITLE"
 
 config.window_background_opacity = 1
@@ -27,9 +27,9 @@ config.window_padding = {
 }
 
 -- Font
--- config.font = wezterm.font("JetBrainsMonoNL Nerd Font")
-config.font = wezterm.font("FiraCode Nerd Font")
-config.font_size = 13.5
+config.font = wezterm.font("JetBrainsMonoNL Nerd Font")
+-- config.font = wezterm.font("FiraCode Nerd Font")
+config.font_size = 14
 config.line_height = 1.6
 
 -- Scroll
