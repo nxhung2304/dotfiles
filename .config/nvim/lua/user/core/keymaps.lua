@@ -25,7 +25,16 @@ keymap("v", "p", '"_dP')
 keymap("x", "J", ":move '>+1<CR>gv-gv", { desc = "Move current line to down" })
 keymap("x", "K", ":move '<-2<CR>gv-gv", { desc = "Move current line to up" })
 
-keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>")
+keymap("n", "ga", function()
+	local ruby_fts = { ruby = true, eruby = true, haml = true, slim = true }
+	if ruby_fts[vim.bo.filetype] then
+		-- Delegate to rails.lua's ga_code_action via user event
+		vim.api.nvim_exec_autocmds("User", { pattern = "RailsCodeAction" })
+		return
+	end
+	local clients = vim.lsp.get_clients({ bufnr = 0, method = "textDocument/codeAction" })
+	if #clients > 0 then vim.lsp.buf.code_action() end
+end)
 
 keymap("n", "<leader>cs", function()
 	local word = vim.fn.expand("<cword>")
