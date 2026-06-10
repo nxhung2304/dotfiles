@@ -116,7 +116,13 @@ export PATH="$HOME/.local/bin:$PATH"
 alias n="nvim"
 alias v="nvim"
 alias c="clear"
-alias t="tmux"
+t() {
+  if [ -z "$TMUX" ]; then
+    tmux new-session -As "$(basename "$PWD")"
+  else
+    tmux
+  fi
+}
 alias ta="tmux attach"
 alias da="tmux detach"
 
