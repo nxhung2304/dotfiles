@@ -66,13 +66,18 @@ function M.get_breadcrumb()
 	local crumbs = find_crumbs(symbols, cursor_line)
 	if not crumbs or #crumbs == 0 then return "" end
 
+	local MAX_CRUMBS = 3
+	local truncated = #crumbs > MAX_CRUMBS
+	local visible = truncated and { unpack(crumbs, #crumbs - MAX_CRUMBS + 1) } or crumbs
+
 	local parts = {}
-	for i, sym in ipairs(crumbs) do
+	for i, sym in ipairs(visible) do
 		local icon = kind_icons[sym.kind] or "• "
 		local hl = (i % 2 == 1) and "NavicHighlight1" or "NavicHighlight2"
 		table.insert(parts, "%#" .. hl .. "#" .. icon .. sym.name .. "%*")
 	end
-	return " > " .. table.concat(parts, " %#WinBarPath#>%* ")
+	local prefix = truncated and " %#WinBarPath#…%* > " or " > "
+	return prefix .. table.concat(parts, " %#WinBarPath#>%* ")
 end
 
 function M.get_current_symbol()
