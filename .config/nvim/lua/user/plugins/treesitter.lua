@@ -1,5 +1,43 @@
 return {
 	{
+		"nvim-treesitter/nvim-treesitter-context",
+		event = { "BufReadPost", "BufNewFile" },
+		opts = {
+			max_lines = 3,
+			trim_scope = "outer",
+			mode = "cursor",
+		},
+		config = function(_, opts)
+			require("treesitter-context").setup(opts)
+			vim.api.nvim_set_hl(0, "TreesitterContextBottom", { underline = true, sp = "#555555" })
+			vim.api.nvim_set_hl(0, "TreesitterContextLineNumberBottom", { underline = true, sp = "#555555" })
+
+			-- box shadow: dim the context slightly and set winblend on its float window
+			vim.api.nvim_create_autocmd("WinNew", {
+				callback = function()
+					vim.schedule(function()
+						for _, win in ipairs(vim.api.nvim_list_wins()) do
+							local cfg = vim.api.nvim_win_get_config(win)
+							if cfg.zindex and cfg.zindex == 20 and cfg.relative ~= "" then
+								vim.wo[win].winblend = 15
+							end
+						end
+					end)
+				end,
+			})
+		end,
+		keys = {
+			{
+				"[C",
+				function()
+					require("treesitter-context").go_to_context(vim.v.count1)
+				end,
+				desc = "Jump to context",
+				silent = true,
+			},
+		},
+	},
+	{
 		"nvim-treesitter/nvim-treesitter",
 		event = { "BufReadPost", "BufNewFile" },
 		dependencies = {
