@@ -52,7 +52,7 @@ M.get_filepath_with_navic = function()
 	local filename = path_parts[#path_parts]
 	local path = table.concat(path_parts, "/", 1, #path_parts - 1)
 
-	local file_icon, icon_hl = MiniIcons.get("file", filename)
+	local file_icon, icon_hl = require("nvim-web-devicons").get_icon(filename, nil, { default = true })
 	local hl_def = vim.api.nvim_get_hl(0, { name = icon_hl, link = false })
 	local icon_color = hl_def.fg and string.format("#%06x", hl_def.fg)
 	if icon_color then

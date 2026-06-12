@@ -1,7 +1,7 @@
 return {
 	{
 		"kyazdani42/nvim-tree.lua",
-		dependencies = { { "echasnovski/mini.icons", opts = {} } },
+		dependencies = { "nvim-tree/nvim-web-devicons" },
 		init = function()
 			vim.g.loaded_netrw = 1
 			vim.g.loaded_netrwPlugin = 1
@@ -28,7 +28,6 @@ return {
 			})
 		end,
 		config = function(_, opts)
-			require("mini.icons").mock_nvim_web_devicons()
 			require("nvim-tree").setup(opts)
 		end,
 		opts = {
@@ -170,7 +169,7 @@ return {
 		---@type oil.SetupOpts
 		opts = {},
 		-- Optional dependencies
-		dependencies = { { "echasnovski/mini.icons", opts = {} } },
+		dependencies = { "nvim-tree/nvim-web-devicons" },
 		-- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
 		lazy = false,
 		keys = {

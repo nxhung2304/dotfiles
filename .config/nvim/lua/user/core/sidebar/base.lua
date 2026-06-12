@@ -145,9 +145,9 @@ function M.make_close(state)
 end
 
 function M.file_icon(path)
-	if not _G.MiniIcons then return " ", "Normal" end
 	local fname = vim.fn.fnamemodify(path, ":t")
-	local icon, hl = MiniIcons.get("file", fname)
+	local devicons = require("nvim-web-devicons")
+	local icon, hl = devicons.get_icon(fname, nil, { default = true })
 	return icon or " ", hl or "Normal"
 end
 

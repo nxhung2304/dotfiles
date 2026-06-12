@@ -165,7 +165,7 @@ function components.filename()
 		return hi_pattern:format("Comment", "  [No Name] ")
 	end
 
-	local icon, icon_hl = MiniIcons.get("file", filename)
+	local icon, icon_hl = require("nvim-web-devicons").get_icon(filename, nil, { default = true })
 
 	if icon then
 		return " " .. hi_pattern:format(icon_hl or "Normal", icon) .. " " .. filename
@@ -181,7 +181,7 @@ function components.filetype()
 		return ""
 	end
 
-	local icon = MiniIcons.get("filetype", ft)
+	local icon = require("nvim-web-devicons").get_icon_by_filetype(ft, { default = true })
 
 	if icon then
 		return " " .. icon .. " " .. ft .. " "
