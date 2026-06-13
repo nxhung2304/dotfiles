@@ -69,3 +69,5 @@ vim.g.clipboard = {
 		["*"] = require("vim.ui.clipboard.osc52").paste("*"),
 	},
 }
+
+vim.env.RIPGREP_CONFIG_PATH = vim.fn.expand("~/.ripgreprc")

@@ -148,6 +148,8 @@ alias ip="ipconfig getifaddr en0"
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
 alias cc="claude"
 
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+
 alias ffd="fvm flutter devices"
 alias ffr="fvm flutter run"
 alias ffpg="fvm flutter pub get"
