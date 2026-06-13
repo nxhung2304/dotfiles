@@ -47,7 +47,7 @@ return {
 					{ icon = "󰈞 ", key = "f", desc = "Find File", action = ":lua Snacks.picker.files()" },
 					{ icon = "󰈔 ", key = "n", desc = "New File", action = ":ene | startinsert" },
 					{ icon = "󰋚 ", key = "r", desc = "Recent Files", action = ":lua Snacks.picker.recent({ filter = { cwd = true } })" },
-					{ icon = "󰍉 ", key = "g", desc = "Find Text", action = ":lua Snacks.picker.grep()" },
+					{ icon = "󰊢 ", key = "g", desc = "Git status", action = ":Neogit" },
 					{ icon = "󰒓 ", key = "c", desc = "Config", action = ":lua Snacks.picker.files({ cwd = vim.fn.stdpath('config') })" },
 					{ icon = "󰒲 ", key = "l", desc = "Lazy", action = ":Lazy" },
 					{ icon = "󰗼 ", key = "q", desc = "Quit", action = ":qa" },
@@ -135,10 +135,18 @@ return {
 		{
 			"<leader>um",
 			function()
-				Snacks.notifier.show_history()
+				Snacks.win({
+					text = vim.split(vim.fn.execute("messages"), "\n", { trimempty = true }),
+					title = " Messages",
+					width = 0.8,
+					height = 0.6,
+					border = "rounded",
+					wo = { wrap = true },
+				})
 			end,
-			desc = "Show messages",
+			desc = "Show Messages",
 		},
+
 		{
 			"<leader>gi",
 			function()
