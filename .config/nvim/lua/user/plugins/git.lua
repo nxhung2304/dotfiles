@@ -30,6 +30,9 @@ return {
 				},
 			},
 		},
+		keys = {
+			{ "<leader>gd", "<cmd>CodeDiff<cr>", desc = "Open CodeDiff" },
+		},
 	},
 	{
 		"lewis6991/gitsigns.nvim",
@@ -44,16 +47,22 @@ return {
 
 				-- Actions
 				map("n", "<leader>gs", gs.stage_hunk, { desc = "Stage hunk" })
-				map("v", "<leader>gs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage hunk (visual)" })
+				map("v", "<leader>gs", function()
+					gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+				end, { desc = "Stage hunk (visual)" })
 				map("n", "<leader>gu", gs.undo_stage_hunk, { desc = "Undo stage hunk" })
 				map("n", "<leader>gS", gs.stage_buffer, { desc = "Stage buffer" })
 				map("n", "<leader>gr", gs.reset_hunk, { desc = "Reset hunk" })
-				map("v", "<leader>gr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Reset hunk (visual)" })
+				map("v", "<leader>gr", function()
+					gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+				end, { desc = "Reset hunk (visual)" })
 				map("n", "<leader>gR", gs.reset_buffer, { desc = "Reset buffer" })
 				map("n", "<leader>gp", gs.preview_hunk_inline, { desc = "Preview hunk" })
 				map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
-				map("n", "<leader>gL", function() gs.blame_line({ full = true }) end, { desc = "Blame line (full)" })
+				map("n", "<leader>gL", function()
+					gs.blame_line({ full = true })
+				end, { desc = "Blame line (full)" })
 				map("n", "<leader>gl", gs.setqflist, { desc = "Show changes in qf" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
 			end,
