@@ -60,11 +60,19 @@ return {
 				map("n", "<leader>gp", gs.preview_hunk_inline, { desc = "Preview hunk" })
 				map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
-				map("n", "<leader>gL", function()
-					gs.blame_line({ full = true })
-				end, { desc = "Blame line (full)" })
-				map("n", "<leader>gl", gs.setqflist, { desc = "Show changes in qf" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
+				local open_tab = function(url_cmd)
+					vim.fn.jobstart({ "sh", "-c", url_cmd .. " | xargs ~/.local/bin/scripts/open-or-focus-tab" }, { detach = true })
+				end
+				map("n", "<leader>gh", function()
+					open_tab("gh pr view --json url -q .url")
+				end, { desc = "Open PR in browser" })
+				map("n", "<leader>gP", function()
+					open_tab("gh repo view --json url -q .url | xargs -I{} echo {}/pulls")
+				end, { desc = "Open PRs list in browser" })
+				map("n", "<leader>gi", function()
+					open_tab("gh repo view --json url -q .url | xargs -I{} echo {}/issues")
+				end, { desc = "Open Issues list in browser" })
 			end,
 
 			-- Blame config
