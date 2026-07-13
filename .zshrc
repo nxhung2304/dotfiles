@@ -18,7 +18,7 @@ plugins=(
     zsh-autosuggestions
     zsh-syntax-highlighting
     z
-    zsh-autocomplete
+    fzf-tab
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -162,3 +162,9 @@ export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin"
+
+# fzf-tab
+zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff --color=always $word'
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'  # nếu bạn dùng eza
+
+ZSH_AUTOSUGGEST_STRATEGY=(completion history)
