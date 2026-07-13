@@ -3,17 +3,8 @@ local t = require("user.plugins.rails.test")
 
 return {
 	{
-		"preservim/vimux",
-		lazy = false,
-		config = function()
-			vim.g["VimuxOrientation"] = "h"
-			vim.g["VimuxHeight"] = "33"
-		end,
-	},
-	{
 		"tpope/vim-rails",
 		lazy = false,
-		dependencies = { "preservim/vimux" },
 		init = function()
 			local function apply_hl()
 				vim.api.nvim_set_hl(0, "TestRunning", { fg = "#fabd2f", bold = true })
@@ -129,16 +120,17 @@ return {
 			{ "<leader>rv", "<cmd>Eview<cr>", desc = "View" },
 			{ "<leader>ru", "<cmd>Eunittest<cr>", desc = "Unittest" },
 			{ "<leader>rf", "<cmd>Efixture<cr>", desc = "Fixture" },
-			{ "<leader>ri", "<cmd>Emigration<cr>", desc = "Migration" },
-			{ "<leader>rr", "<cmd>Einitializer<cr>", desc = "Routes" },
+			{ "<leader>ri", u.i18n_jump, desc = "i18n Jump / Grep" },
+			{ "<leader>rI", u.i18n_files, desc = "i18n Files" },
+			{ "<leader>rr", "<cmd>Eroutes<cr>", desc = "Routes" },
 			{ "<leader>rh", "<cmd>Ehelper<cr>", desc = "Helper" },
 
-			-- Runtime (tmux persistent windows)
+			-- Runtime
 			{
 				"<leader>Rc",
 				function()
 					u.rails_guard(function()
-						u.tmux_named_window("console", "bundle exec rails console")
+						u.run_cmd("bundle exec rails console", "rails console", { interactive = true })
 					end)
 				end,
 				desc = "Rails Console",
@@ -147,7 +139,13 @@ return {
 				"<leader>Rs",
 				function()
 					u.rails_guard(function()
-						u.tmux_named_window("server", "bundle exec rails server")
+						vim.ui.input({ prompt = "rails server ", default = "" }, function(args)
+							local cmd = "bundle exec rails server"
+							if args and args ~= "" then
+								cmd = cmd .. " " .. args
+							end
+							u.tmux_named_window("server", cmd)
+						end)
 					end)
 				end,
 				desc = "Rails Server",
@@ -165,7 +163,7 @@ return {
 				"<leader>Rm",
 				function()
 					u.rails_guard(function()
-						vim.cmd("VimuxRunCommand('bundle exec rails db:migrate')")
+						u.run_cmd("bundle exec rails db:migrate", "db:migrate")
 					end)
 				end,
 				desc = "DB Migrate",
@@ -174,7 +172,7 @@ return {
 				"<leader>RS",
 				function()
 					u.rails_guard(function()
-						vim.cmd("VimuxRunCommand('bundle exec rails db:seed')")
+						u.run_cmd("bundle exec rails db:seed", "db:seed")
 					end)
 				end,
 				desc = "DB Seed",
@@ -183,7 +181,7 @@ return {
 				"<leader>RR",
 				function()
 					u.rails_guard(function()
-						vim.cmd("VimuxRunCommand('bundle exec rails db:migrate:reset')")
+						u.run_cmd("bundle exec rails db:migrate:reset", "db:migrate:reset")
 					end)
 				end,
 				desc = "DB Migrate reset",
@@ -192,7 +190,11 @@ return {
 				"<leader>Rg",
 				function()
 					u.rails_guard(function()
-						vim.cmd("VimuxPromptCommand('bundle exec rails generate ')")
+						vim.ui.input({ prompt = "rails generate ", default = "" }, function(args)
+							if args and args ~= "" then
+								u.run_cmd("bundle exec rails generate " .. args, "generate " .. args)
+							end
+						end)
 					end)
 				end,
 				desc = "Rails Generate",
@@ -216,19 +218,33 @@ return {
 			{
 				"<leader>Rb",
 				function()
-					vim.cmd("VimuxRunCommand('bundle exec rubocop " .. vim.fn.expand("%:p") .. "')")
+					local file = vim.fn.expand("%:.")
+					u.run_cmd("bundle exec rubocop " .. vim.fn.expand("%:p"), "rubocop " .. file)
 				end,
 				desc = "Rubocop Check File",
 			},
-			{ "<leader>RB", "<cmd>VimuxRunCommand('bundle exec rubocop')<cr>", desc = "Rubocop Check All" },
+			{
+				"<leader>RB",
+				function()
+					u.run_cmd("bundle exec rubocop", "rubocop")
+				end,
+				desc = "Rubocop Check All",
+			},
 			{
 				"<leader>Rf",
 				function()
-					vim.cmd("VimuxRunCommand('bundle exec rubocop -A " .. vim.fn.expand("%:p") .. "')")
+					local file = vim.fn.expand("%:.")
+					u.run_cmd("bundle exec rubocop -A " .. vim.fn.expand("%:p"), "rubocop -A " .. file)
 				end,
 				desc = "Rubocop Fix File",
 			},
-			{ "<leader>RF", "<cmd>VimuxRunCommand('bundle exec rubocop -A')<cr>", desc = "Rubocop Fix All" },
+			{
+				"<leader>RF",
+				function()
+					u.run_cmd("bundle exec rubocop -A", "rubocop -A")
+				end,
+				desc = "Rubocop Fix All",
+			},
 		},
 	},
 }

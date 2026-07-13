@@ -81,6 +81,11 @@ M.get_filepath_with_navic = function()
 end
 
 M.lsp_on_attach = function(client, bufnr)
+	if vim.bo[bufnr].filetype == "markdown" then
+		client:stop()
+		return
+	end
+
 	local keymap = M.keymap
 
 	vim.api.nvim_buf_set_option(bufnr, "omnifunc", "v:lua.vim.lsp.omnifunc")

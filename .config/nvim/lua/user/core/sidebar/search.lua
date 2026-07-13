@@ -271,6 +271,9 @@ local function show_replace_preview(on_confirm)
 	end
 end
 
+local render
+local scroll_to_results
+
 local function do_replace()
 	if state.query == "" or state.replace == "" then
 		vim.notify("SearchSidebar: set both Search and Replace first", vim.log.levels.WARN)
@@ -328,7 +331,7 @@ local function do_replace()
 	end)
 end
 
-local function render()
+render = function()
 	if not base.is_valid(state) then return end
 
 	local lines   = {}
@@ -525,7 +528,7 @@ local function render()
 	require("user.core.sidebar").set_tabbar(state.sidebar_win)
 end
 
-local function scroll_to_results()
+scroll_to_results = function()
 	if not base.is_valid(state) then return end
 	for i, entry in ipairs(state.entries) do
 		if entry.type == "summary" or entry.type == "file" or entry.type == "hint" then

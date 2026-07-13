@@ -63,6 +63,15 @@ return {
 				local is_auto = suggestion.is_auto_trigger_enabled()
 				vim.notify("Copilot auto-trigger: " .. (is_auto and "ON" or "OFF"), vim.log.levels.INFO)
 			end, { desc = "Toggle Copilot auto-trigger" })
+
+			vim.keymap.set("n", "<leader>cD", function()
+				local suggestion = require("copilot.suggestion")
+				if suggestion.is_auto_trigger_enabled() then
+					suggestion.toggle_auto_trigger()
+					vim.notify("Copilot inline suggestion: OFF", vim.log.levels.INFO)
+				end
+				suggestion.dismiss()
+			end, { desc = "Disable Copilot inline suggestion" })
 		end,
 	},
 }

@@ -144,7 +144,7 @@ function M.run_test(cmd)
 				end
 
 				local elapsed = string.format("%.2fs", (vim.uv.hrtime() - started_at) / 1e9)
-				local qflist, fail_count = parse_test_output(buf)
+				local _, fail_count = parse_test_output(buf)
 
 				if code == 0 then
 					if test_win_id and vim.api.nvim_win_is_valid(test_win_id) then
@@ -157,7 +157,7 @@ function M.run_test(cmd)
 							vim.api.nvim_win_close(test_win_id, true)
 							test_win_id = nil
 						end
-					end, 800)
+					end, 2000)
 				else
 					local summary = fail_count > 0 and (fail_count .. " failure" .. (fail_count ~= 1 and "s" or ""))
 						or "error"
