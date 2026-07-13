@@ -20,44 +20,24 @@
 
 ---
 
+## Key Decisions
+- **[Decision topic]** — [Why this approach, what was ruled out, constraints to respect]
+- **[...]**
+
+---
+
 ## Implementation Checklist
-- [ ] [Task-specific step]
+- [ ] [Ordered step with file path — no code, just what to do and where]
 - [ ] [...]
 
 ---
 
-## Step-by-step Guide
-
-**Files to create/modify:**
-- `src/...` — [what it does]
-
-**Key decisions:**
-- [Non-obvious constraint or architectural choice]
-
-**Flow:**
+## Flow
 ```
-[ASCII diagram — state transitions, request flow, or data write path]
-
-Example shapes to use:
-  Actor/User → [Controller] → [Model] → DB
-                    ↓ (error)
-               [render error]
-
-  Status: draft → reviewing → published
-                              ↓ (archived)
-```
-
-**Non-obvious snippets:**
-```
-# [what this method does]
-def method_name
-end
-
-test "scenario description" do
-end
+[ASCII diagram — state transitions, request flow, or data write path. Under 20 lines.]
 ```
 
 ---
 
 ## Notes
-[Edge cases, dependencies on other tasks, gotchas — keep to 2-3 bullet points max]
+[Gotchas, dependencies on other tasks, edge cases — 2-4 bullet points max]

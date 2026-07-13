@@ -1,4 +1,47 @@
 {
+  "autoMemoryEnabled": false,
+  "effortLevel": "medium",
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true
+  },
+  "hasCompletedOnboarding": true,
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash '/Users/rightsvn-hunga/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Read(~/.claude/code-rules/**)"
@@ -15,40 +58,10 @@
       "mcp__claude_ai_Notion__notion-update-view"
     ]
   },
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'"
-          }
-        ]
-      }
-    ]
-  },
   "statusLine": {
-    "type": "command",
-    "command": "bash /Users/rightsvn-hunga/.claude/statusline-command.sh"
+    "command": "bash /Users/rightsvn-hunga/.claude/statusline-command.sh",
+    "type": "command"
   },
-  "enabledPlugins": {
-    "lua-lsp@claude-plugins-official": true,
-    "ruby-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
-  },
-  "effortLevel": "medium",
-  "autoMemoryEnabled": false,
   "theme": "dark",
-  "hasCompletedOnboarding": true
+  "tui": "fullscreen"
 }

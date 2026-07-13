@@ -8,11 +8,24 @@ description: Review code changes between two branches for clean code, style conv
 
 ## Quick start
 
-`/review-branch <feature-branch> <base-branch>`
+`/review-branch [<feature-branch>] [<base-branch>]`
 
-Example: `/review-branch feature/auth main`
+All params are optional:
+- No params → review current branch against `main` (or `master` if `main` doesn't exist)
+- One param → use it as base branch, feature branch = current branch
+- Two params → explicit feature and base branch
+
+Example: `/review-branch` or `/review-branch feature/auth main`
 
 ## Workflow
+
+### 0. Resolve branches
+
+If no params provided, run:
+```bash
+git branch --show-current         # feature branch
+git branch -r | grep -E 'main|master' | head -1  # detect base branch
+```
 
 ### 1. Load rules (token-efficient)
 
