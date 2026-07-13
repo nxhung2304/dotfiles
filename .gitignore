@@ -6,5 +6,10 @@ backups/
 .claude/ide/
 
 .config/github-copilot/apps.json
+.config/github-copilot/auth.db
+.config/github-copilot/auth.db-shm
+.config/github-copilot/auth.db-wal
+.config/configstore/
+.config/herdr/session.json
 .config/iterm2/
 .config/flutter/

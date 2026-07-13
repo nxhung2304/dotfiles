@@ -18,6 +18,7 @@ plugins=(
     zsh-autosuggestions
     zsh-syntax-highlighting
     z
+    zsh-autocomplete
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -153,3 +154,11 @@ export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 alias ffd="fvm flutter devices"
 alias ffr="fvm flutter run"
 alias ffpg="fvm flutter pub get"
+alias ffr_ip16="fvm flutter run -d 00008140-000C6D961447001C"
+
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+export PATH="$JAVA_HOME/bin:$PATH"
+export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin"
