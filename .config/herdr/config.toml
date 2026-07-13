@@ -1,0 +1,110 @@
+onboarding = false
+
+[update]
+channel = "stable"
+
+[terminal]
+shell_mode = "auto"
+new_cwd = "follow"
+
+[theme]
+name = "gruvbox"
+auto_switch = false
+
+[ui]
+sidebar_width = 32
+mouse_capture = true
+confirm_close = true
+prompt_new_tab_name = false
+pane_borders = true
+pane_gaps = true
+
+[ui.toast]
+delivery = "herdr"
+delay_seconds = 1
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[ui.sound]
+enabled = false
+
+[keys]
+prefix = "ctrl+a"
+
+# Workspace navigation
+navigate_workspace_up = "k"
+navigate_workspace_down = "j"
+navigate_workspace_left = "h"
+navigate_workspace_right = "l"
+
+# Pane focus (vim-style, like ctrl+hjkl in tmux)
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+
+# Pane swap
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+
+# Splits (mirrors tmux % and ")
+split_vertical = "prefix+v"
+split_horizontal = "prefix+minus"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+resize_mode = "prefix+r"
+
+# Tabs (mirrors tmux windows)
+new_tab = "prefix+c"
+previous_tab = "prefix+p"
+next_tab = ["prefix+n", "prefix+ctrl+n"]
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+shift+t"
+close_tab = "prefix+shift+x"
+
+# Workspaces
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+workspace_picker = "prefix+w"
+previous_workspace = "prefix+shift+left"
+next_workspace = "prefix+shift+right"
+
+# Other
+detach = "prefix+q"
+copy_mode = "prefix+["
+toggle_sidebar = "prefix+b"
+goto = "prefix+g"
+last_pane = "prefix+tab"
+cycle_pane_next = "prefix+ctrl+tab"
+
+# Session picker (like tmux bind s)
+[[keys.command]]
+key = "prefix+s"
+type = "pane"
+command = "herdr workspace-picker"
+description = "workspace picker"
+
+# Lazygit
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "lazygit"
+
+# Open/focus claude tab
+[[keys.command]]
+key = "prefix+shift+c"
+type = "shell"
+command = "herdr pane new --label claude -- claude"
+description = "open claude"
+
+# Open/focus nvim
+[[keys.command]]
+key = "prefix+shift+e"
+type = "shell"
+command = "herdr pane new --label neovim -- nvim"
+description = "open neovim"
