@@ -54,7 +54,10 @@ install_shell() {
     else
         log_success "Starship already installed"
     fi
-    ln -sf "$DOTFILES_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
+    if [ "$(readlink "$HOME/.config/starship.toml" 2>/dev/null)" != "$DOTFILES_DIR/.config/starship.toml" ] && \
+       [ "$(cd "$HOME/.config" && pwd -P)" != "$(cd "$DOTFILES_DIR/.config" && pwd -P)" ]; then
+        ln -sf "$DOTFILES_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
+    fi
 
     # 4. Direnv
     log_info "Checking direnv..."
