@@ -166,5 +166,3 @@ export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0
 # fzf-tab
 zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff --color=always $word'
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'  # nếu bạn dùng eza
-
-ZSH_AUTOSUGGEST_STRATEGY=(completion history)
