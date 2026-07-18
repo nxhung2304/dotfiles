@@ -52,6 +52,8 @@ return {
         },
 
         lsp = {
+          on_attach = require("user.core.utils").lsp_on_attach,
+          capabilities = require("cmp_nvim_lsp").default_capabilities(),
           settings = {
             showTodos = true,
             completeFunctionCalls = true,

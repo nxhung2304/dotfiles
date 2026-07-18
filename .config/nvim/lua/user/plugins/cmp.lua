@@ -11,6 +11,22 @@ return {
 		opts = function()
 			local cmp = require("cmp")
 			local mini_snippets = require("mini.snippets")
+
+			-- Some LSP servers send `detail`/`documentation` as JSON null, which
+			-- decodes to `vim.NIL` (userdata). nvim-cmp's `item.detail ~= ''` guard
+			-- treats that as truthy and calls str.trim(vim.NIL) -> crash. Coerce any
+			-- non-string passed to trim into "" so bad items degrade gracefully.
+			local str = require("cmp.utils.str")
+			if not str.__trim_guarded then
+				local orig_trim = str.trim
+				str.trim = function(text)
+					if type(text) ~= "string" then
+						return ""
+					end
+					return orig_trim(text)
+				end
+				str.__trim_guarded = true
+			end
 			cmp.setup.cmdline({ "/", "?" }, {
 				mapping = cmp.mapping.preset.cmdline(),
 				sources = {

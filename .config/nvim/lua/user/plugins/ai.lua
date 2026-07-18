@@ -56,17 +56,25 @@ return {
 				disable_limit_reached_message = true, -- giống config cũ của bạn
 			})
 
+			-- copilot.lua stores the runtime toggle state in this buffer var;
+			-- nil means "use the config default", which is auto_trigger = true above.
+			local function auto_trigger_on()
+				local state = vim.b.copilot_suggestion_auto_trigger
+				if state == nil then
+					return true
+				end
+				return state
+			end
+
 			vim.keymap.set("n", "<leader>ct", function()
 				local suggestion = require("copilot.suggestion")
 				suggestion.toggle_auto_trigger()
-
-				local is_auto = suggestion.is_auto_trigger_enabled()
-				vim.notify("Copilot auto-trigger: " .. (is_auto and "ON" or "OFF"), vim.log.levels.INFO)
+				vim.notify("Copilot auto-trigger: " .. (auto_trigger_on() and "ON" or "OFF"), vim.log.levels.INFO)
 			end, { desc = "Toggle Copilot auto-trigger" })
 
 			vim.keymap.set("n", "<leader>cD", function()
 				local suggestion = require("copilot.suggestion")
-				if suggestion.is_auto_trigger_enabled() then
+				if auto_trigger_on() then
 					suggestion.toggle_auto_trigger()
 					vim.notify("Copilot inline suggestion: OFF", vim.log.levels.INFO)
 				end
