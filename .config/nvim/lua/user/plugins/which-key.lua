@@ -21,6 +21,8 @@ return {
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>t", desc = "Test" },
 			{ "<leader>q", desc = "Macro" },
+			{ "<leader>cn", desc = "Swap item with next (vim-swap)" },
+			{ "<leader>cp", desc = "Swap item with previous (vim-swap)" },
 		})
 
 		wk.setup(opts)

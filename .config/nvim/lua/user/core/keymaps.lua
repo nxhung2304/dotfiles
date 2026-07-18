@@ -164,7 +164,7 @@ local function send_to_claude(ref)
 	end
 end
 
-keymap("n", "<leader>ac", function()
+keymap("n", "<leader>cc", function()
 	local lnum = vim.fn.line(".")
 	local rel = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:.")
 	send_to_claude(string.format("@%s:%d", rel, lnum))
