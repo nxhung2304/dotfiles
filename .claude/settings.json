@@ -1,47 +1,4 @@
 {
-  "autoMemoryEnabled": false,
-  "effortLevel": "medium",
-  "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "lua-lsp@claude-plugins-official": true,
-    "ruby-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true
-  },
-  "hasCompletedOnboarding": true,
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "bash '/Users/rightsvn-hunga/.claude/hooks/herdr-agent-state.sh' session",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "*"
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'",
-            "type": "command"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Read(~/.claude/code-rules/**)"
@@ -55,13 +12,72 @@
       "mcp__claude_ai_Notion__notion-move-pages",
       "mcp__claude_ai_Notion__notion-update-data-source",
       "mcp__claude_ai_Notion__notion-update-page",
-      "mcp__claude_ai_Notion__notion-update-view"
+      "mcp__claude_ai_Notion__notion-update-view",
+      "mcp__claude_ai_Slack__slack_send_message",
+      "mcp__claude_ai_Slack__slack_send_message_draft",
+      "mcp__claude_ai_Slack__slack_schedule_message",
+      "mcp__claude_ai_Slack__slack_add_reaction",
+      "mcp__claude_ai_Slack__slack_create_conversation",
+      "mcp__claude_ai_Slack__slack_create_canvas",
+      "mcp__claude_ai_Slack__slack_update_canvas"
+    ]
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/rightsvn-hunga/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
-    "command": "bash /Users/rightsvn-hunga/.claude/statusline-command.sh",
-    "type": "command"
+    "type": "command",
+    "command": "bash /Users/rightsvn-hunga/.claude/statusline-command.sh"
   },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "tui": "fullscreen",
+  "autoMemoryEnabled": false,
   "theme": "dark",
-  "tui": "fullscreen"
+  "hasCompletedOnboarding": true
 }
