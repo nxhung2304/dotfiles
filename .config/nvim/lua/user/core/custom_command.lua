@@ -71,12 +71,24 @@ vim.api.nvim_create_user_command("FlutterLspRestartSmart", function()
 end, { desc = "Restart LSP and re-attach all dart buffers" })
 
 vim.api.nvim_create_user_command("GitBlameCopyGitHubURL", function()
-	local current_file = vim.fn.expand("%")
+	local file_abs = vim.fn.expand("%:p")
+	local file_dir = vim.fn.fnamemodify(file_abs, ":h")
 	local line_number = vim.fn.line(".")
 
-	local current_branch = vim.fn.system("git branch --show-current"):gsub("\n", "")
+	local function git(...)
+		return vim.trim(vim.fn.system({ "git", "-C", file_dir, ... }))
+	end
 
-	local remote_url = vim.fn.system("git config --get remote.origin.url"):gsub("\n", "")
+	-- Repo-relative path (no leading slash), so the URL never gets an absolute
+	-- path glued after the branch (e.g. blob/master//Users/...).
+	local rel_path = git("ls-files", "--full-name", "--", file_abs)
+	if rel_path == "" then
+		vim.notify("GitBlameCopyGitHubURL: not a tracked file in a git repo", vim.log.levels.ERROR)
+		return
+	end
+
+	local current_branch = git("branch", "--show-current")
+	local remote_url = git("config", "--get", "remote.origin.url")
 
 	local github_url
 	if remote_url:match("^git@") then
@@ -87,7 +99,7 @@ vim.api.nvim_create_user_command("GitBlameCopyGitHubURL", function()
 		github_url = github_url:gsub("%.git$", "")
 	end
 
-	local final_url = string.format("%s/blob/%s/%s#L%d", github_url, current_branch, current_file, line_number)
+	local final_url = string.format("%s/blob/%s/%s#L%d", github_url, current_branch, rel_path, line_number)
 
 	vim.fn.setreg("+", final_url)
 	print("Copied: " .. final_url)

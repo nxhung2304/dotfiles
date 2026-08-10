@@ -57,12 +57,38 @@ return {
 					gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
 				end, { desc = "Reset hunk (visual)" })
 				map("n", "<leader>gR", gs.reset_buffer, { desc = "Reset buffer" })
-				map("n", "<leader>gp", gs.preview_hunk_inline, { desc = "Preview hunk" })
+				-- Floating popup preview (real buffer, cursor can enter to yank the
+				-- old/deleted lines). Pressing again focuses the popup.
+				map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
 				map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
 				local open_tab = function(url_cmd)
-					vim.fn.jobstart({ "sh", "-c", url_cmd .. " | xargs ~/.local/bin/scripts/open-or-focus-tab" }, { detach = true })
+					local stderr = {}
+					vim.fn.jobstart({
+						"sh",
+						"-c",
+						"set -o pipefail; " .. url_cmd .. " | xargs ~/.local/bin/scripts/open-or-focus-tab",
+					}, {
+						stderr_buffered = true,
+						on_stderr = function(_, data)
+							if data then
+								vim.list_extend(stderr, data)
+							end
+						end,
+						on_exit = function(_, code)
+							if code ~= 0 then
+								local msg = vim.trim(table.concat(stderr, "\n"))
+								vim.schedule(function()
+									vim.notify(
+										"Cannot open in browser" .. (msg ~= "" and (":\n" .. msg) or ""),
+										vim.log.levels.ERROR,
+										{ title = "gitsigns" }
+									)
+								end)
+							end
+						end,
+					})
 				end
 				map("n", "<leader>gh", function()
 					open_tab("gh pr view --json url -q .url")
