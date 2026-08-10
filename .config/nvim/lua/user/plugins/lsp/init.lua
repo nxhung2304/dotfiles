@@ -101,7 +101,6 @@ return {
 				"emmet-ls",
 				"eslint-lsp",
 				"gopls",
-				"htmx-lsp",
 				"json-lsp",
 				"lua-language-server",
 				"phpactor",
