@@ -54,6 +54,21 @@ Apply rules loaded in step 1 across 4 areas:
 - **Security**: input validation, auth checks, hardcoded secrets, injection risks
 - **Performance**: N+1 queries, unnecessary loops, memory leaks, heavy ops in hot paths
 
+### 3.5 Verify before asserting (MANDATORY)
+
+**No speculation. Every finding must be confirmed against the real code/data before it goes in the report.** A review that reports a hypothetical as a bug is worse than missing it.
+
+Rules:
+- **Construct a concrete failure scenario.** For each Critical/Warning, you must be able to state: "with input/state X, line Y produces wrong result Z." If you can't build a scenario that actually occurs, do NOT report it.
+- **Verify at the strongest source of truth, in order** — don't stop early:
+  1. DB schema (`db/schema.rb` / migrations): `null: false`, foreign keys, unique indexes, defaults, column types.
+  2. Actual runtime behavior / framework guarantees (cascade `dependent:`, soft-delete gem, default scopes).
+  3. App-layer validations (`validates`, `belongs_to` required) — **these only run on save; never treat them as a guarantee about existing data.**
+- **Nil / null concerns → check `db/schema.rb` FIRST** (NOT NULL + FK constraint). If the column is `null: false` with an FK, the value cannot be nil for valid data — do not report a nil-crash.
+- **Never lower the bar with "unlikely", "edge case", "in theory".** If you write those words next to a finding, that's the signal you haven't verified it. Either prove it can happen with a real scenario, or drop it.
+- **Distinguish "the diff changed behavior" from "the diff is buggy."** Only report the latter.
+- If a concern is plausible but you cannot verify it with the tools available, put it under a separate **"Unverified — needs author confirmation"** list phrased as a question, NOT as a Critical/Warning finding.
+
 ### 4. Output structured report
 
 ```markdown
@@ -84,11 +99,13 @@ Apply rules loaded in step 1 across 4 areas:
 
 ## Rules
 
+- **Verified issues only — no speculation.** See step 3.5. Every Critical/Warning must have a concrete, confirmed failure scenario.
 - Only real issues — no filler praise
 - Group by severity: Critical → Warning → Suggestion
-- Each issue: `file:line – problem → fix`
+- Each issue: `file:line – problem → fix` (state what you verified, and how)
 - If nothing found in a category, state "None found"
 - Use targeted section reads from the index — do NOT read full rule files unless necessary
+- Prefer under-reporting to over-reporting: a false Warning erodes trust more than a missed nit.
 
 ## Write to file
 - After review, write markdown file to `specs/comments/[issue-branch]-title.md`
