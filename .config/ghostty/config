@@ -63,8 +63,8 @@ auto-update = check
 unfocused-split-opacity = 0.7
 resize-overlay = never
 
-# Scrollback và history
-scrollback-limit = 100000
+# Scrollback và history (value in bytes; ~100 MB)
+scrollback-limit = 100000000
 mouse-hide-while-typing = true
 
 # Tab bar styling (nếu dùng tabs)
