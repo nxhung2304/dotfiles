@@ -156,13 +156,24 @@ alias ffr="fvm flutter run"
 alias ffpg="fvm flutter pub get"
 alias ffr_ip16="fvm flutter run -d 00008140-000C6D961447001C"
 
+alias andr_ls="emulator -list-avds"
+andr_run() {
+  emulator -avd "$1" &
+}
+
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
 export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
-export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator"
 
 # fzf-tab
 zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff --color=always $word'
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'  # nếu bạn dùng eza
+
+# Golang
+. ${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/golang/set-env.zsh
+
+
+export PATH="$PATH":"$HOME/.pub-cache/bin"
