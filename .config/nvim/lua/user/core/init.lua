@@ -7,3 +7,5 @@ require "user.core.autocmds"
 local sidebar = require "user.core.sidebar"
 require "user.core.sidebar.search"
 sidebar.setup_keymaps()
+
+require "user.core.symbols_outline"

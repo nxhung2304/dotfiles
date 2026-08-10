@@ -8,6 +8,7 @@ return {
 		},
 		formatters_by_ft = {
 			lua = { "stylua" },
+			go = { "goimports", "gofumpt" },
 			python = { "isort", "black" },
 			javascript = { "prettierd", "prettier", stop_after_first = true },
 			ruby = {

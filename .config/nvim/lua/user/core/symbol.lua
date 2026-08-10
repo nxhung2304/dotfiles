@@ -129,16 +129,32 @@ function M.pick_symbol()
 	end)
 end
 
+-- Cached symbols for a buffer (may be nil if not fetched yet). Used by the
+-- Symbols sidebar panel so it shares this module's cache instead of re-querying.
+function M.get_symbols(bufnr)
+	return breadcrumb_cache[bufnr]
+end
+
+-- Icon glyph for an LSP SymbolKind. Shared with the sidebar panel.
+function M.icon(kind)
+	return kind_icons[kind] or "• "
+end
+
+-- Fire a documentSymbol request, update the cache, and invoke cb(result) when
+-- it resolves. Exposed so consumers (e.g. the sidebar) can force a refresh.
+function M.request(bufnr, cb)
+	if not has_document_symbol(bufnr) then return end
+	local params = { textDocument = vim.lsp.util.make_text_document_params(bufnr) }
+	vim.lsp.buf_request(bufnr, "textDocument/documentSymbol", params, function(err, result)
+		if not err and result then
+			breadcrumb_cache[bufnr] = result
+			if cb then cb(result) end
+		end
+	end)
+end
+
 function M.attach(bufnr)
-	local function fetch()
-		if not has_document_symbol(bufnr) then return end
-		local params = { textDocument = vim.lsp.util.make_text_document_params(bufnr) }
-		vim.lsp.buf_request(bufnr, "textDocument/documentSymbol", params, function(err, result)
-			if not err and result then
-				breadcrumb_cache[bufnr] = result
-			end
-		end)
-	end
+	local function fetch() M.request(bufnr) end
 
 	fetch()
 	vim.api.nvim_create_autocmd({ "BufWritePost", "InsertLeave" }, {

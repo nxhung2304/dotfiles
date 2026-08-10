@@ -38,12 +38,13 @@ return {
 
 			-- attach servers
 			local servers = {
-				-- "ruby_lsp",
-				"solargraph",
+				"ruby_lsp",
 				"bashls",
 				"cssls",
 				"emmet_ls",
 				"eslint",
+				"gopls",
+				"htmx",
 				"jsonls",
 				"lua_ls",
 				"phpactor",
@@ -80,39 +81,53 @@ return {
 	{
 		"williamboman/mason.nvim",
 		opts = {
-			ensure_installed = {
-				-- LSP Servers
-				"bash-language-server",
-				"cssls",
-				"emmet_ls",
-				"eslint",
-				"jsonls",
-				"lua_language_server",
-				"phpactor",
-				"pyright",
-				-- "ruby-lsp",
-				"solargraph",
-				"tailwindcss-language-server",
-				"typescript-language-server",
-				"vtsls",
-				"vue-language-server",
-				-- Formatters & Linters
-				"clang_format",
-				"clangd",
-				"cspell",
-				"deno",
-				"html",
-				"prettier",
-				"rubocop",
-				"shfmt",
-				"stylua",
-				-- Build tools
-				"kotlin_language_server",
-			},
 			ui = {
 				border = "rounded",
 			},
 			PATH = "prepend",
+		},
+	},
+	{
+		-- mason.nvim itself does NOT process `ensure_installed`; this plugin does.
+		-- It installs any missing tool below on startup (run_on_start).
+		-- Names must be Mason registry package names (dashes, not lspconfig ids).
+		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		dependencies = { "williamboman/mason.nvim" },
+		opts = {
+			ensure_installed = {
+				-- LSP Servers
+				"bash-language-server",
+				"css-lsp",
+				"emmet-ls",
+				"eslint-lsp",
+				"gopls",
+				"htmx-lsp",
+				"json-lsp",
+				"lua-language-server",
+				"phpactor",
+				"pyright",
+				"ruby-lsp",
+				"tailwindcss-language-server",
+				"typescript-language-server",
+				"vtsls",
+				"vue-language-server",
+				"kotlin-language-server",
+				-- Formatters & Linters
+				"clang-format",
+				"clangd",
+				"cspell",
+				"delve",
+				"deno",
+				"gofumpt",
+				"goimports",
+				"html-lsp",
+				"prettier",
+				"rubocop",
+				"shfmt",
+				"stylua",
+			},
+			run_on_start = true,
+			auto_update = false,
 		},
 	},
 	{ "mfussenegger/nvim-lint", event = { "BufReadPre", "BufNewFile" } },

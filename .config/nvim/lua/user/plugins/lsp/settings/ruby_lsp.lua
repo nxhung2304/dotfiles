@@ -14,5 +14,8 @@ return {
 			inlayHints = true,
 		},
 	},
-	root_dir = require("lspconfig").util.root_pattern("Gemfile", ".git", "config", "test", "spec"),
+	-- Neovim 0.11+ native LSP: use `root_markers`, not lspconfig's `util.root_pattern`.
+	-- A root_pattern function has the signature fun(path)->path and never calls the
+	-- `on_dir` callback that vim.lsp.config expects, so ruby_lsp would never start.
+	root_markers = { "Gemfile", ".git" },
 }
