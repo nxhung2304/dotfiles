@@ -52,7 +52,15 @@ return {
 						i = cmp.mapping.abort(),
 						c = cmp.mapping.close(),
 					}),
-					["<CR>"] = cmp.mapping.confirm({ select = false }),
+					-- Confirm only when an entry is actually selected; otherwise
+					-- fall back so nvim-autopairs' <CR> (endwise / newline) runs.
+					["<CR>"] = cmp.mapping(function(fallback)
+						if cmp.visible() and cmp.get_active_entry() then
+							cmp.confirm({ select = false })
+						else
+							fallback()
+						end
+					end, { "i", "s" }),
 					["<Tab>"] = cmp.mapping(function(fallback)
 						if cmp.visible() then
 							cmp.select_next_item()
