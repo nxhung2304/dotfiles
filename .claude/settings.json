@@ -22,6 +22,7 @@
       "mcp__claude_ai_Slack__slack_update_canvas"
     ]
   },
+  "model": "opus[1m]",
   "hooks": {
     "Notification": [
       {
@@ -79,5 +80,27 @@
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "theme": "dark",
-  "hasCompletedOnboarding": true
+  "hasCompletedOnboarding": true,
+  "sandboxing": {
+    "rules": [
+      {
+        "type": "path",
+        "pattern": "**/.env*",
+        "action": "Deny",
+        "description": "Block Claude from reading sensitive environment variables globally"
+      },
+      {
+        "type": "path",
+        "pattern": "**/*.secret",
+        "action": "Deny",
+        "description": "Block access to secret files"
+      },
+      {
+        "type": "path",
+        "pattern": "**/build/**",
+        "action": "Deny",
+        "description": "Ignore large build artifacts"
+      }
+    ]
+  }
 }
