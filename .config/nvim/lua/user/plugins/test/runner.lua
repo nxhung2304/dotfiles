@@ -1,10 +1,27 @@
+-- Generic terminal test runner. Frameworks are described by adapters (see
+-- adapters.lua); this module owns the UI: a right-hand terminal split with a
+-- spinner/pass/fail winbar, jump-to-error, and failure navigation.
+
+local adapters = require("user.plugins.test.adapters")
+
 local M = {}
 
-local last_test_cmd = nil
+local last_cmd = nil
+local last_adapter = nil
+local last_label = nil
+local current_adapter = nil
 local test_win_id = nil
 local test_buf_id = nil
 local spinner_timer = nil
 local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+
+local function ensure_hl()
+	vim.api.nvim_set_hl(0, "TestRunning", { fg = "#fabd2f", bold = true })
+	vim.api.nvim_set_hl(0, "TestPassed", { fg = "#b8bb26", bold = true })
+	vim.api.nvim_set_hl(0, "TestFailed", { fg = "#fb4934", bold = true })
+end
+ensure_hl()
+vim.api.nvim_create_autocmd("ColorScheme", { callback = ensure_hl })
 
 local function stop_spinner()
 	if spinner_timer then
@@ -41,28 +58,20 @@ local function set_winbar(win, status, label)
 	vim.wo[win].winbar = string.format("%%#%s# %s %s%%*", hl, icon, label)
 end
 
-local function parse_test_output(buf)
-	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-	-- Join lines to handle terminal line-wrapping breaking paths across lines
-	local content = table.concat(lines, "\n")
-	local qflist = {}
-	local fail_count = 0
-
-	for file, lnum in content:gmatch("%[([^%]]+):(%d+)%]:") do
-		file = file:gsub("\n", ""):gsub("%s+", "")
-		if file ~= "" then
-			table.insert(qflist, { filename = file, lnum = tonumber(lnum), text = "Test failure", type = "E" })
+-- Try each of the adapter's location patterns against a chunk of text.
+local function match_location(adapter, chunk)
+	for _, pat in ipairs(adapter.loc_patterns) do
+		local file, lnum = chunk:match(pat)
+		if file then
+			return (file:gsub("%s+", "")), tonumber(lnum)
 		end
 	end
-
-	local f, e = content:match("(%d+) failures?, (%d+) errors?")
-	fail_count = f and (tonumber(f) + tonumber(e)) or #qflist
-
-	return qflist, fail_count
 end
 
-function M.run_test(cmd)
-	last_test_cmd = cmd
+function M.run_test(cmd, adapter, label)
+	last_cmd, last_adapter, last_label = cmd, adapter, label
+	current_adapter = adapter
+	label = label or "test"
 
 	local origin_win = vim.api.nvim_get_current_win()
 
@@ -108,11 +117,10 @@ function M.run_test(cmd)
 		local cur = vim.api.nvim_win_get_cursor(test_win_id)[1]
 		local total = vim.api.nvim_buf_line_count(buf)
 		local chunk = table.concat(vim.api.nvim_buf_get_lines(buf, cur - 1, math.min(cur + 4, total), false), "\n")
-		local file, lnum = chunk:match("%[([^%]]+):(%d+)%]:")
+		local file, lnum = match_location(adapter, chunk)
 		if not file then
 			return
 		end
-		file = file:gsub("\n", ""):gsub("%s+", "")
 		for _, win in ipairs(vim.api.nvim_list_wins()) do
 			if win ~= test_win_id then
 				local wbuf = vim.api.nvim_win_get_buf(win)
@@ -128,8 +136,6 @@ function M.run_test(cmd)
 	vim.keymap.set("n", "<CR>", jump_to_error_under_cursor, { buffer = term_buf, silent = true })
 	vim.keymap.set("n", "gf", jump_to_error_under_cursor, { buffer = term_buf, silent = true })
 
-	local label = cmd:match("bundle exec rails test (.+)$") or "rails test"
-	label = vim.fn.fnamemodify(label:gsub(":%d+$", ""), ":.")
 	start_spinner(test_win_id, label)
 
 	local started_at = vim.uv.hrtime()
@@ -144,7 +150,8 @@ function M.run_test(cmd)
 				end
 
 				local elapsed = string.format("%.2fs", (vim.uv.hrtime() - started_at) / 1e9)
-				local _, fail_count = parse_test_output(buf)
+				local content = table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n")
+				local fail_count = adapter.summary(content)
 
 				if code == 0 then
 					if test_win_id and vim.api.nvim_win_is_valid(test_win_id) then
@@ -159,8 +166,8 @@ function M.run_test(cmd)
 						end
 					end, 2000)
 				else
-					local summary = fail_count > 0 and (fail_count .. " failure" .. (fail_count ~= 1 and "s" or ""))
-						or "error"
+					local n = fail_count or 0
+					local summary = n > 0 and (n .. " failure" .. (n ~= 1 and "s" or "")) or "error"
 					if test_win_id and vim.api.nvim_win_is_valid(test_win_id) then
 						set_winbar(test_win_id, "fail", label .. " (" .. summary .. ", " .. elapsed .. ")")
 						local line_count = vim.api.nvim_buf_line_count(buf)
@@ -179,6 +186,42 @@ function M.run_test(cmd)
 	vim.api.nvim_set_current_win(file_win)
 end
 
+--------------------------------------------------------------------------------
+-- Dispatch: detect the framework for the current buffer/project and run.
+--------------------------------------------------------------------------------
+local function dispatch(kind)
+	local adapter = adapters.pick()
+	if not adapter then
+		vim.notify("No test framework detected for this buffer/project", vim.log.levels.WARN)
+		return
+	end
+	local cmd, label = adapter[kind]()
+	M.run_test(cmd, adapter, label)
+end
+
+function M.run_nearest()
+	dispatch("nearest")
+end
+
+function M.run_file()
+	dispatch("file")
+end
+
+function M.run_all()
+	dispatch("all")
+end
+
+function M.run_last()
+	if last_cmd then
+		M.run_test(last_cmd, last_adapter, last_label)
+	else
+		vim.notify("No previous test command", vim.log.levels.WARN)
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Panel + failure navigation
+--------------------------------------------------------------------------------
 function M.toggle_test_panel()
 	if test_win_id and vim.api.nvim_win_is_valid(test_win_id) then
 		vim.api.nvim_win_close(test_win_id, true)
@@ -199,12 +242,38 @@ function M.toggle_test_panel()
 	end
 end
 
-function M.get_test_win_id()
-	return test_win_id
+function M.focus_test_output()
+	if test_win_id and vim.api.nvim_win_is_valid(test_win_id) then
+		vim.api.nvim_set_current_win(test_win_id)
+	else
+		vim.notify("No test output open", vim.log.levels.WARN)
+	end
 end
 
-function M.get_last_test_cmd()
-	return last_test_cmd
+-- dir: 1 = next failure, -1 = previous failure
+function M.goto_failure(dir)
+	local win = test_win_id
+	if not (win and vim.api.nvim_win_is_valid(win)) then
+		vim.notify("No test output open", vim.log.levels.WARN)
+		return
+	end
+	local markers = (current_adapter and current_adapter.failure_markers) or { "^Failure:", "^Error:" }
+	local buf = vim.api.nvim_win_get_buf(win)
+	local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+	local cur = vim.api.nvim_win_get_cursor(win)[1]
+	local from = cur + dir
+	local to = dir > 0 and #lines or 1
+	for i = from, to, dir do
+		local line = lines[i]
+		for _, m in ipairs(markers) do
+			if line and line:match(m) then
+				vim.api.nvim_set_current_win(win)
+				vim.api.nvim_win_set_cursor(win, { i, 0 })
+				return
+			end
+		end
+	end
+	vim.notify("No more failures", vim.log.levels.INFO)
 end
 
 return M
