@@ -2,16 +2,32 @@
 -- part of the sidebar switcher). Reuses the documentSymbol cache maintained by
 -- `user.core.symbol`.
 local symbol = require("user.core.symbol")
+local diagnostics_outline = require("user.core.diagnostics_outline")
 
 local M = {}
-local WIDTH = 40
+
+-- LSP SymbolKind values shown when the "methods only" filter is on. Container
+-- kinds are kept so methods still nest under their class/namespace; data-only
+-- kinds (variables, fields, properties, constants, literals) are hidden.
+local METHOD_KINDS = {
+	[2]  = true, -- Module
+	[3]  = true, -- Namespace
+	[5]  = true, -- Class
+	[6]  = true, -- Method
+	[9]  = true, -- Constructor
+	[10] = true, -- Enum
+	[11] = true, -- Interface
+	[12] = true, -- Function
+	[23] = true, -- Struct
+}
 
 local state = {
-	buf        = nil,
-	win        = nil,
-	source_win = nil,
-	entries    = {},
-	augroup    = vim.api.nvim_create_augroup("SymbolsOutline", { clear = true }),
+	buf          = nil,
+	win          = nil,
+	source_win   = nil,
+	entries      = {},
+	methods_only = true,
+	augroup      = vim.api.nvim_create_augroup("SymbolsOutline", { clear = true }),
 }
 local ns = vim.api.nvim_create_namespace("SymbolsOutline")
 
@@ -44,24 +60,32 @@ local function editor_win()
 	end
 end
 
--- Pre-order flatten: display lines + parallel jump-target entries.
+-- Pre-order flatten: display lines + parallel jump-target entries. Symbols
+-- whose kind isn't in the current filter are skipped (but their children are
+-- still visited at the same depth) so methods nested under a hidden node stay
+-- visible.
 local function build(symbols, depth, lines, entries)
 	for _, sym in ipairs(symbols) do
-		local range  = sym.selectionRange or sym.range
-		local full   = sym.range or range
-		local icon   = symbol.icon(sym.kind)
-		local indent = string.rep("  ", depth)
-		table.insert(lines, indent .. icon .. sym.name)
-		table.insert(entries, {
-			lnum = range.start.line + 1,
-			col  = range.start.character,
-			s    = full.start.line, -- containment range for cursor tracking
-			e    = full["end"].line,
-			icol = #indent,
-			ncol = #(indent .. icon),
-		})
+		local show = not state.methods_only or METHOD_KINDS[sym.kind]
+		local next_depth = depth
+		if show then
+			local range  = sym.selectionRange or sym.range
+			local full   = sym.range or range
+			local icon   = symbol.icon(sym.kind)
+			local indent = string.rep("  ", depth)
+			table.insert(lines, indent .. icon .. sym.name)
+			table.insert(entries, {
+				lnum = range.start.line + 1,
+				col  = range.start.character,
+				s    = full.start.line, -- containment range for cursor tracking
+				e    = full["end"].line,
+				icol = #indent,
+				ncol = #(indent .. icon),
+			})
+			next_depth = depth + 1
+		end
 		if sym.children and #sym.children > 0 then
-			build(sym.children, depth + 1, lines, entries)
+			build(sym.children, next_depth, lines, entries)
 		end
 	end
 end
@@ -149,14 +173,12 @@ function M.open()
 	vim.cmd("botright vsplit")
 	state.win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(state.win, state.buf)
-	vim.api.nvim_win_set_width(state.win, WIDTH)
 
 	local wo = vim.wo[state.win]
 	wo.number         = false
 	wo.relativenumber = false
 	wo.signcolumn     = "no"
 	wo.wrap           = false
-	wo.winfixwidth    = true
 	wo.cursorline     = true
 	wo.winbar         = "%#Title# 󰊕 Symbols%*"
 
@@ -164,6 +186,7 @@ function M.open()
 	map("<CR>", jump)
 	map("q", M.close)
 	map("r", M.render)
+	map("m", M.toggle_methods_only)
 
 	-- return focus to the editor and fetch/render
 	vim.api.nvim_set_current_win(state.source_win)
@@ -209,9 +232,20 @@ function M.close()
 end
 
 function M.toggle()
-	if is_open() then M.close() else M.open() end
+	if is_open() then
+		M.close()
+		diagnostics_outline.close()
+	else
+		M.open()
+		diagnostics_outline.open()
+	end
 end
 
-vim.keymap.set("n", "<leader>o", M.toggle, { desc = "Toggle symbols outline" })
+function M.toggle_methods_only()
+	state.methods_only = not state.methods_only
+	M.render()
+end
+
+vim.keymap.set("n", "<leader>co", M.toggle, { desc = "Toggle symbols outline" })
 
 return M

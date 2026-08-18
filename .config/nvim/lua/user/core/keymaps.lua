@@ -43,8 +43,8 @@ end)
 
 keymap("n", "<leader>cs", function()
 	local word = vim.fn.expand("<cword>")
-	vim.api.nvim_feedkeys(":%s/" .. vim.fn.escape(word, "/") .. "/", "n", false)
-end, { desc = "Substitute in file" })
+	return ":%s/" .. vim.fn.escape(word, "/\\") .. "/"
+end, { expr = true, desc = "Substitute in file" })
 
 keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
 keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })

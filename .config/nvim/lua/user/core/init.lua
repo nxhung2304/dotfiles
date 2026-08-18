@@ -9,3 +9,4 @@ require "user.core.sidebar.search"
 sidebar.setup_keymaps()
 
 require "user.core.symbols_outline"
+require "user.core.diagnostics_outline"
