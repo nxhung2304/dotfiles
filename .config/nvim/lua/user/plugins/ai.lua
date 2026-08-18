@@ -14,7 +14,10 @@ return {
 					trigger_on_accept = true,
 
 					keymap = {
-						accept = "<Tab>", -- giữ nguyên như cũ
+						-- <Tab> accept is handled inside nvim-cmp's <Tab> mapping
+						-- (see cmp.lua) to avoid two plugins mapping <Tab> and
+						-- fighting over it, which froze the buffer.
+						accept = false,
 						accept_word = "<C-Right>",
 						accept_line = "<C-j>",
 						next = "<C-n>",

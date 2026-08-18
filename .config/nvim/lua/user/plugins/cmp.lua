@@ -62,8 +62,11 @@ return {
 						end
 					end, { "i", "s" }),
 					["<Tab>"] = cmp.mapping(function(fallback)
+						local ok, copilot = pcall(require, "copilot.suggestion")
 						if cmp.visible() then
 							cmp.select_next_item()
+						elseif ok and copilot.is_visible() then
+							copilot.accept()
 						elseif mini_snippets.session.get() ~= nil then
 							mini_snippets.session.jump("next")
 						else
