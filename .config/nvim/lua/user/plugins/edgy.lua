@@ -5,8 +5,8 @@ return {
 	event = "VeryLazy",
 	opts = {
 		right = {
-			{ ft = "symbolsoutline", size = { height = 0.7, width = 60 } },
-			{ ft = "diagnosticsoutline", size = { height = 0.3, width = 60 } },
+			{ ft = "symbolsoutline", size = { height = 0.7, width = 35 } },
+			{ ft = "diagnosticsoutline", size = { height = 0.3, width = 35 } },
 		},
 	},
 }
