@@ -35,6 +35,8 @@ opt.termguicolors = true
 opt.timeoutlen = 400
 opt.undofile = true
 
+vim.o.winborder = "rounded" -- Default border for all floating windows (hover, signature help, etc.)
+
 -- opt.shortmess:append("sI") -- disable nvim intro
 
 opt.cmdheight = 0 -- Hide command status
