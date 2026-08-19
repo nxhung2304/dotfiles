@@ -70,6 +70,27 @@ vim.api.nvim_create_user_command("FlutterLspRestartSmart", function()
 	end, 1000)
 end, { desc = "Restart LSP and re-attach all dart buffers" })
 
+vim.api.nvim_create_user_command("NewIssueSpec", function()
+	local dir = vim.fn.getcwd() .. "/specs/issues"
+
+	vim.ui.input({ prompt = "New issue filename: " }, function(name)
+		if not name or name == "" then return end
+		if not name:match("%.md$") then name = name .. ".md" end
+
+		vim.fn.mkdir(dir, "p")
+
+		local path = dir .. "/" .. name
+		if vim.fn.filereadable(path) == 1 then
+			vim.notify('File already exists: "' .. path .. '"', vim.log.levels.WARN)
+			vim.cmd("edit " .. vim.fn.fnameescape(path))
+			return
+		end
+
+		vim.fn.writefile({}, path)
+		vim.cmd("edit " .. vim.fn.fnameescape(path))
+	end)
+end, { desc = "Create a new issue file in specs/issues" })
+
 vim.api.nvim_create_user_command("GitBlameCopyGitHubURL", function()
 	local file_abs = vim.fn.expand("%:p")
 	local file_dir = vim.fn.fnamemodify(file_abs, ":h")
