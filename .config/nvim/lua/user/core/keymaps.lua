@@ -49,7 +49,7 @@ end, { expr = true, desc = "Substitute in file" })
 keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
 keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
 
-keymap("n", "<leader>ni", "<cmd>NewIssueSpec<cr>", { desc = "New issue file in specs/issues" })
+keymap("n", "<leader>ci", "<cmd>NewIssueSpec<cr>", { desc = "New issue file in specs/issues" })
 
 keymap("t", "<Esc>", "<C-\\><C-n>")
 
