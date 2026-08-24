@@ -29,12 +29,12 @@ Read({ file_path: "~/.claude/code-rules/index.md", limit: 100 })
 ```
 Từ keyword map trong index.md:
 - "parser" → coding-rules.md:25-40
-- "function" → clean-code.md:200-228
+- "function" → clean-code.md:259-294
 ```
 
 ## 4. Read ONLY Targeted Sections
 ```bash
-Read({ file_path: "~/.claude/code-rules/general/clean-code.md", offset: 200, limit: 30 })
+Read({ file_path: "~/.claude/code-rules/general/clean-code.md", offset: 259, limit: 35 })
 ```
 - Chỉ đọc 20-30 lines cần thiết
 - Dùng offset để jump đến section

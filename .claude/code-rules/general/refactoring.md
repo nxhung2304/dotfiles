@@ -1,89 +1,75 @@
 # Refactoring & Code Organization
 
+## When to Refactor
+Khi logic/formatter/constant xuất hiện ở **2+ nơi**, hoặc file/function vượt quá size limit (xem `clean-code.md`), cân nhắc extract/refactor.
+
 ## Reusable Logic — When to Extract
 
-### Rule 1: Input Formatters & Constants
-If a formatter, regex, or constant is used in **2+ locations or widgets**, extract to a dedicated file.
+### Rule 1: Repeated Formatters/Constants
+Nếu một formatter, regex, hoặc constant được dùng ở **2+ nơi**, extract ra module dùng chung.
 
-**Structure:**
-- Input formatters → `lib/core/formatters/input_formatters.dart`
-- Number/date formatters → Extension on the type (e.g., `double_extension.dart`)
-- Generic constants → `lib/core/constants/`
+```
+# ❌ Sai — Duplicated regex in multiple files
+# file_a
+validate(value, pattern="^\d*[.,]?\d*")
 
-```dart
-// ❌ Sai — Duplicated regex in multiple files
-// timesheet_entry_block.dart
-inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*'))]
+# file_b (future)
+validate(value, pattern="^\d*[.,]?\d*")
 
-// ot_screen.dart (future)
-inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*'))]
+# ✅ Đúng — Extract to shared constant
+# core/formatters.*
+DECIMAL_HOURS_PATTERN = "^\d*[.,]?\d*"
 
-// ✅ Đúng — Extract to constants
-// lib/core/formatters/input_formatters.dart
-class InputFormatters {
-  static final decimalHours = FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*'));
-}
-
-// Usage in any file:
-inputFormatters: [InputFormatters.decimalHours]
+# Usage in any file:
+validate(value, pattern=DECIMAL_HOURS_PATTERN)
 ```
 
 ### Rule 2: Display/Format Methods
-Format methods that transform **one type → another** should be extensions or utility functions.
+Method biến đổi **type A → type B** nên là utility function hoặc extension/helper method của type đó, không lặp lại logic format ở từng call site.
 
-```dart
-// Usage:
-_totalHours.toHoursDisplay(suffix: TimesheetStrings.formHoursSuffix)
+```
+# Usage:
+totalHours.toDisplayString(suffix=HOURS_SUFFIX)
 ```
 
 ## File Organization Checklist
 
-When extracting or creating new files:
+Khi extract hoặc tạo file mới:
 
-- [ ] **Formatter/helper used 2+ times?** → Extract to `core/formatters/` or `core/extensions/`
-- [ ] **Constants duplicated?** → Move to `core/constants/` or dedicated constants file
-- [ ] **Extension method?** → Place in `core/extensions/[type]_extension.dart`
-- [ ] **Import updated?** → Add import in file that uses the extracted code
-- [ ] **Documentation added?** → Add doc comments for public methods/constants
+- [ ] **Helper dùng 2+ lần?** → Extract vào `core/formatters` hoặc `core/utils`
+- [ ] **Constants bị duplicate?** → Move vào `core/constants` hoặc file constants riêng
+- [ ] **Import đã update?** → Add import ở file dùng code đã extract
+- [ ] **Documentation added?** → Thêm doc comment cho public methods/constants
 
 ## Example: Good Refactoring
 
 **Before:**
-```dart
-// timesheet_form_screen.dart
-String displayTotalHours() {
-  final total = _entries.fold(0.0, (sum, entry) => sum + entry.hours);
-  return "${total.toStringAsFixed(1)} ${TimesheetStrings.formHoursSuffix}";
+```
+# form_screen.*
+function displayTotalHours() {
+  total = entries.reduce(sum by hours)
+  return format(total, suffix=HOURS_SUFFIX)
 }
 
-// timesheet_entry_block.dart
-inputFormatters: [
-  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-]
+# entry_block.*
+validate(value, pattern="^\d*\.?\d*")
 ```
 
 **After:**
-```dart
-// lib/core/formatters/input_formatters.dart
-class InputFormatters {
-  /// Accepts decimal hours input (0-9, . or , separator)
-  static final decimalHours = FilteringTextInputFormatter.allow(
-    RegExp(r'^\d*[.,]?\d*'),
-  );
+```
+# core/formatters.*
+DECIMAL_HOURS_PATTERN = "^\d*[.,]?\d*"
+
+# core/extensions.*
+function toDisplayString(value, suffix=HOURS_SUFFIX) {
+  return format(value, suffix)
 }
 
-// lib/core/extensions/double_extension.dart
-extension DoubleFormatting on double {
-  String toHoursDisplay({String suffix = AppStrings.hoursSuffix}) {
-    return '${toStringAsFixed(1)} $suffix';
-  }
+# form_screen.*
+function buildTotalBar() {
+  return render(totalHours.toDisplayString())
 }
 
-// timesheet_form_screen.dart
-Widget _buildTotalBar() {
-  return Text(_totalHours.toHoursDisplay());
-}
-
-// timesheet_entry_block.dart
-inputFormatters: [InputFormatters.decimalHours]
+# entry_block.*
+validate(value, pattern=DECIMAL_HOURS_PATTERN)
 ```
