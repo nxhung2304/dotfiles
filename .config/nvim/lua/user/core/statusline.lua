@@ -195,24 +195,27 @@ function components.macro()
 end
 
 function components.flutter_device()
-  if not vim.g.flutter_tools_decorations or not vim.g.flutter_tools_decorations.device then
+  local decorations = vim.g.flutter_tools_decorations
+  local device = decorations and decorations.device
+  if device == "" then
+    device = nil
+  end
+  -- Fall back to the auto-picked default device before any run session starts
+  device = device or vim.g.flutter_preferred_device
+  if not device or device == "" then
     return ""
   end
-  local device = vim.g.flutter_tools_decorations.device
-  if device == "" or device == nil then
-    return ""
-  end
-  return "  " .. device .. " "
+  return "  " .. device .. " "
 end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
 	'%{%v:lua._statusline_component("git_status")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
-  '%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
+	'%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',

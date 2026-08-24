@@ -78,6 +78,8 @@ return {
       require("dap-view").setup({
         winbar = {
           show = true,
+          sections = { "scopes", "repl" },
+          default_section = "scopes",
           controls = { enabled = true, position = "right" },
         },
         windows = { size = 0.35, position = "left" },
@@ -86,9 +88,45 @@ return {
       local dap = require("dap")
       local dap_view = require("dap-view")
 
+      -- `debugPC` (the stopped-line highlight) is unstyled in most colorschemes,
+      -- so the sign shows but the line itself isn't highlighted. Use a fixed
+      -- amber tint (independent of the active colorscheme) so the stopped
+      -- line always stands out, and reapply on every theme switch.
+      local function set_debug_hl()
+        vim.api.nvim_set_hl(0, "debugPC", { bg = "#4d3319" })
+      end
+      set_debug_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_debug_hl })
+
       -- Close REPL when debug session ends; don't auto-open (toggle manually)
       dap.listeners.before.event_terminated["flutter_repl"] = function()
         dap.repl.close()
+      end
+
+      -- Keep the REPL for variable/expression evaluation only; stdout/stderr
+      -- (Flutter's print/log output) is already viewable in the tmux pane.
+      dap.defaults.fallback.on_output = function(_, body)
+        if body.category == "stdout" or body.category == "stderr" then
+          return
+        end
+        dap.repl.append(body.output, "$", { newline = false })
+      end
+
+      -- Always focus the source window when execution stops (breakpoint/step),
+      -- even if focus was in dap-repl/dap-view at the time.
+      dap.listeners.after.event_stopped["flutter_focus_source"] = function(session)
+        vim.schedule(function()
+          local frame = session.current_frame
+          if not (frame and frame.source and frame.source.path) then return end
+          local bufnr = vim.fn.bufnr(frame.source.path)
+          if bufnr == -1 then return end
+          for _, win in ipairs(vim.api.nvim_list_wins()) do
+            if vim.api.nvim_win_get_buf(win) == bufnr then
+              vim.api.nvim_set_current_win(win)
+              return
+            end
+          end
+        end)
       end
 
       -- Flutter dev_log → tmux pane
@@ -129,12 +167,79 @@ return {
         end,
       })
 
-      -- Show spinner notification while FlutterDevices / FlutterEmulators load.
-      -- Stops when the picker window opens (FileType autocmd) or after 8s fallback.
-      local function flutter_with_loading(label, cmd)
+      -- Open (or focus) the tmux window that tails the flutter dev log.
+      -- Reuse existing window named flutter-log; open new one only if absent.
+      local function open_flutter_log_window()
+        if vim.fn.filereadable(flutter_log_path) == 0 then
+          vim.fn.writefile({}, flutter_log_path)
+        end
+        local existing = vim.fn.system("tmux select-window -t flutter-log 2>&1")
+        if existing:find("no window named") or existing:find("can't find") or existing:find("error") then
+          vim.fn.system("tmux new-window -n 'flutter-log' 'tail -f " .. flutter_log_path .. "'")
+        end
+      end
+
+      -- Auto-pick a default device on project open: prefer a real, physically
+      -- connected device; fall back to a simulator/emulator if none is plugged in.
+      -- flutter-tools only tracks "current device" once a run session starts, so
+      -- we cache our own pick and (a) surface it via vim.g.flutter_preferred_device
+      -- for the statusline, (b) feed it into <leader>Fr/<leader>FD below.
+      local preferred_device = nil
+
+      local function is_virtual_device(device)
+        local system = (device.system or ""):lower()
+        local id = device.id or ""
+        return system:find("simulator", 1, true)
+          or system:find("emulator", 1, true)
+          or id:match("^emulator%-") ~= nil
+      end
+
+      local function detect_preferred_device()
+        local executable = require("flutter-tools.executable")
+        local devices_mod = require("flutter-tools.devices")
+        local Job = require("plenary.job")
+        executable.flutter(function(cmd)
+          local job = Job:new({
+            command = cmd,
+            args = { "devices" },
+          })
+          job:after_success(vim.schedule_wrap(function(j)
+            local entries = devices_mod.to_selection_entries(j:result())
+            local real, virtual
+            for _, entry in ipairs(entries) do
+              if entry.data then
+                if is_virtual_device(entry.data) then
+                  virtual = virtual or entry.data
+                else
+                  real = real or entry.data
+                end
+              end
+            end
+            preferred_device = real or virtual
+            if preferred_device then
+              vim.g.flutter_preferred_device = preferred_device.name
+              vim.notify("Default device: " .. preferred_device.name, vim.log.levels.INFO, { title = "Flutter" })
+            end
+          end))
+          job:start()
+        end)
+      end
+
+      vim.api.nvim_create_autocmd("VimEnter", {
+        once = true,
+        callback = function()
+          if vim.fs.find("pubspec.yaml", { upward = true, path = vim.fn.getcwd() })[1] then
+            vim.defer_fn(detect_preferred_device, 300)
+          end
+        end,
+      })
+
+      -- Start an animated "<spinner> label…" notification; returns a stop() function
+      -- that dismisses it. Safe to call stop() more than once.
+      local function start_spinner(label)
         local frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
         local frame = 1
-        local id = "flutter_loading_" .. cmd
+        local id = "flutter_loading_" .. label
 
         local timer = vim.uv.new_timer()
         timer:start(0, 80, vim.schedule_wrap(function()
@@ -145,7 +250,7 @@ return {
         end))
 
         local stopped = false
-        local function stop()
+        return function()
           if stopped then return end
           stopped = true
           if not timer:is_closing() then
@@ -155,6 +260,39 @@ return {
           -- Dismiss the persistent notification (timeout=false won't self-close)
           vim.notify("", vim.log.levels.INFO, { id = id, timeout = 1 })
         end
+      end
+
+      local function run_or_debug(force_debug)
+        local commands = require("flutter-tools.commands")
+        open_flutter_log_window()
+
+        -- Spin until the app is actually running: debugger_runner emits
+        -- FlutterToolsAppStarted on the DAP `app.started` event (i.e. once
+        -- Flutter reports the app is live), not merely once the process spawns.
+        local stop = start_spinner("Flutter running")
+        local once = vim.api.nvim_create_autocmd("User", {
+          pattern = "FlutterToolsAppStarted",
+          once = true,
+          callback = stop,
+        })
+        dap.listeners.before.event_terminated["flutter_loading"] = stop
+        dap.listeners.before.event_exited["flutter_loading"] = stop
+        vim.defer_fn(function()
+          pcall(vim.api.nvim_del_autocmd, once)
+          stop()
+        end, 120000)
+
+        if not commands.current_device() and preferred_device then
+          commands.run({ device = preferred_device, force_debug = force_debug })
+        else
+          commands.run_command(nil, force_debug)
+        end
+      end
+
+      -- Show spinner notification while FlutterDevices / FlutterEmulators load.
+      -- Stops when the picker window opens (FileType autocmd) or after 8s fallback.
+      local function flutter_with_loading(label, cmd)
+        local stop = start_spinner(label)
 
         -- Hook vim.ui.select — flutter-tools always calls this regardless of UI backend
         local orig_select = vim.ui.select
@@ -182,21 +320,12 @@ return {
       end
 
       -- Flutter commands (<leader>F)
-      vim.keymap.set("n", "<leader>Fr", "<cmd>FlutterRun<CR>",           { desc = "Flutter: Run" })
-      vim.keymap.set("n", "<leader>FD", "<cmd>FlutterDebug<CR>",         { desc = "Flutter: Debug" })
+      vim.keymap.set("n", "<leader>Fr", function() run_or_debug(false) end, { desc = "Flutter: Run" })
+      vim.keymap.set("n", "<leader>FD", function() run_or_debug(true) end,  { desc = "Flutter: Debug" })
       vim.keymap.set("n", "<leader>Fs", "<cmd>FlutterRestart<CR>",       { desc = "Flutter: Hot Restart" })
       vim.keymap.set("n", "<leader>FR", "<cmd>FlutterReload<CR>",        { desc = "Flutter: Hot Reload" })
       vim.keymap.set("n", "<leader>Fq", "<cmd>FlutterQuit<CR>",          { desc = "Flutter: Quit" })
-      vim.keymap.set("n", "<leader>Fl", function()
-        if vim.fn.filereadable(flutter_log_path) == 0 then
-          vim.fn.writefile({}, flutter_log_path)
-        end
-        -- Reuse existing window named flutter-log; open new one only if absent
-        local existing = vim.fn.system("tmux select-window -t flutter-log 2>&1")
-        if existing:find("no window named") or existing:find("can't find") or existing:find("error") then
-          vim.fn.system("tmux new-window -n 'flutter-log' 'tail -f " .. flutter_log_path .. "'")
-        end
-      end, { desc = "Flutter: Log in tmux pane" })
+      vim.keymap.set("n", "<leader>Fl", open_flutter_log_window, { desc = "Flutter: Log in tmux pane" })
       vim.keymap.set("n", "<leader>FL", function()
         vim.cmd("FlutterLogClear")
         vim.fn.writefile({}, flutter_log_path)
