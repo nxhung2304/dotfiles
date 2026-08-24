@@ -48,11 +48,17 @@ git diff <base>..<branch>
 
 ### 3. Review each changed file
 
-Apply rules loaded in step 1 across 4 areas:
+Apply rules loaded in step 1 across these areas:
 - **Clean code**: naming, function size, magic numbers, hardcoded strings, DRY, single responsibility
 - **Style**: indentation, line length, blank lines, guard clauses, condition formatting
 - **Security**: input validation, auth checks, hardcoded secrets, injection risks
 - **Performance**: N+1 queries, unnecessary loops, memory leaks, heavy ops in hot paths
+- **Correctness / logic bugs**: off-by-one, inverted conditions, unhandled null/undefined, wrong operator, silently swallowed exceptions (`catch {}` rỗng)
+- **Concurrency / race conditions**: shared mutable state không lock, async/await read-modify-write không atomic, thread-safety của singleton/cache, deadlock tiềm ẩn, transaction isolation level sai
+- **Error handling & edge cases**: lỗi không được log/propagate, resource (file handle, DB connection, listener) không được đóng khi exception xảy ra giữa chừng, edge case như empty list/zero/negative number chưa xử lý
+- **Cleanup / hygiene**: code/import/biến không dùng còn sót lại, code bị comment-out, debug statement quên xoá (`console.log`, `print`, `debugger`), TODO/FIXME không có ticket, file/diff không liên quan lẫn vào commit
+- **Test coverage**: logic mới không có test đi kèm, test bị sửa để pass giả (skip/disable thay vì fix)
+- **Breaking changes / migration safety**: API contract thay đổi ảnh hưởng caller khác, migration không reversible, thiếu default cho cột `NOT NULL` mới, lock table lớn khi migrate
 
 ### 3.5 Verify before asserting (MANDATORY)
 
@@ -68,6 +74,7 @@ Rules:
 - **Never lower the bar with "unlikely", "edge case", "in theory".** If you write those words next to a finding, that's the signal you haven't verified it. Either prove it can happen with a real scenario, or drop it.
 - **Distinguish "the diff changed behavior" from "the diff is buggy."** Only report the latter.
 - If a concern is plausible but you cannot verify it with the tools available, put it under a separate **"Unverified — needs author confirmation"** list phrased as a question, NOT as a Critical/Warning finding.
+- **Race conditions especially**: only report if you can point to the concrete interleaving (which two operations, in what order, produce the wrong state). "This might race" without a concrete interleaving goes in "Unverified", not Critical/Warning.
 
 ### 4. Output structured report
 
