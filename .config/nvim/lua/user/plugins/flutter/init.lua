@@ -179,6 +179,16 @@ return {
         end
       end
 
+      -- Wipe flutter-tools' dev_log buffer, the mirrored log file, and (if the
+      -- tmux window already exists) the pane's scrollback, so leftover output
+      -- from a previous session never bleeds into the next one.
+      local function clear_flutter_log()
+        vim.cmd("FlutterLogClear")
+        vim.fn.writefile({}, flutter_log_path)
+        local tail_cmd = "clear && tail -f " .. flutter_log_path
+        vim.fn.system("tmux respawn-pane -t flutter-log -k '" .. tail_cmd .. "' 2>/dev/null")
+      end
+
       -- Auto-pick a default device on project open: prefer a real, physically
       -- connected device; fall back to a simulator/emulator if none is plugged in.
       -- flutter-tools only tracks "current device" once a run session starts, so
@@ -264,6 +274,7 @@ return {
 
       local function run_or_debug(force_debug)
         local commands = require("flutter-tools.commands")
+        clear_flutter_log()
         open_flutter_log_window()
 
         -- Spin until the app is actually running: debugger_runner emits
@@ -326,13 +337,7 @@ return {
       vim.keymap.set("n", "<leader>FR", "<cmd>FlutterReload<CR>",        { desc = "Flutter: Hot Reload" })
       vim.keymap.set("n", "<leader>Fq", "<cmd>FlutterQuit<CR>",          { desc = "Flutter: Quit" })
       vim.keymap.set("n", "<leader>Fl", open_flutter_log_window, { desc = "Flutter: Log in tmux pane" })
-      vim.keymap.set("n", "<leader>FL", function()
-        vim.cmd("FlutterLogClear")
-        vim.fn.writefile({}, flutter_log_path)
-        -- Kill current tail and restart with a clear screen
-        local tail_cmd = "clear && tail -f " .. flutter_log_path
-        vim.fn.system("tmux respawn-pane -t flutter-log -k '" .. tail_cmd .. "' 2>/dev/null")
-      end, { desc = "Flutter: Clear Log" })
+      vim.keymap.set("n", "<leader>FL", clear_flutter_log, { desc = "Flutter: Clear Log" })
       vim.keymap.set("n", "<leader>Fd", function()
         flutter_with_loading("Loading devices", "FlutterDevices")
       end, { desc = "Flutter: Devices" })

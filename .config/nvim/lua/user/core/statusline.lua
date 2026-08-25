@@ -197,6 +197,11 @@ end
 function components.flutter_device()
   local decorations = vim.g.flutter_tools_decorations
   local device = decorations and decorations.device
+  -- flutter-tools stores the running device as a table ({name, id, ...}),
+  -- not a string, so pull the display name out of it.
+  if type(device) == "table" then
+    device = device.name
+  end
   if device == "" then
     device = nil
   end
