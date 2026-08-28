@@ -10,6 +10,7 @@ five_hour_resets_at=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at //
 seven_day_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 dir=$(basename "$cwd")
+branch=$(git -C "$cwd" branch --show-current 2>/dev/null)
 
 # Build context window segment
 if [ -n "$used_pct" ]; then
@@ -47,7 +48,11 @@ if [ -n "$seven_day_pct" ]; then
 fi
 
 # Assemble output
-out="dir: ${dir} | ${ctx_seg}"
+out="dir: ${dir}"
+if [ -n "$branch" ]; then
+  out="${out} | branch: ${branch}"
+fi
+out="${out} | ${ctx_seg}"
 if [ -n "$rate_seg" ]; then
   out="${out} | ${rate_seg}"
 fi
