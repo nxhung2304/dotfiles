@@ -89,7 +89,11 @@ return {
 										vim.notify("Switched to " .. choice, vim.log.levels.INFO, { title = "gh" })
 										on_switched()
 									else
-										vim.notify("Failed to switch to " .. choice, vim.log.levels.ERROR, { title = "gh" })
+										vim.notify(
+											"Failed to switch to " .. choice,
+											vim.log.levels.ERROR,
+											{ title = "gh" }
+										)
 									end
 								end)
 							end,
@@ -162,5 +166,20 @@ return {
 		keys = {
 			{ "<leader>go", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
 		},
+	},
+	{
+		"nxhung2304/conflict.nvim",
+		config = function()
+			require("conflict").setup({
+				keymaps = { leader = "<leader>" },
+				ui = { markers = false }, -- clickable action buttons
+				detect = { anywhere = true }, -- detect outside git merge
+				colors = {
+					current = "#56CC7A",
+					incoming = "#40A6FF",
+					base = "#FFCC66",
+				},
+			})
+		end,
 	},
 }

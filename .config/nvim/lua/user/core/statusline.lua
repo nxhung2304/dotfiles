@@ -194,23 +194,31 @@ function components.macro()
 	return hi_pattern:format("WarningMsg", "  Recording @" .. register .. "  ")
 end
 
+-- Icon per device platform: phone (iOS/Android), desktop (macOS/Windows/Linux),
+-- browser (Chrome/web).
+local function flutter_device_icon(platform)
+  platform = (platform or ""):lower()
+  if platform:find("ios", 1, true) or platform:find("android", 1, true) then
+    return "\u{f10b} " -- nf-fa-mobile
+  elseif platform:find("macos", 1, true) or platform:find("windows", 1, true) or platform:find("linux", 1, true) then
+    return "\u{f108} " -- nf-fa-desktop
+  elseif platform:find("chrome", 1, true) or platform:find("web", 1, true) then
+    return "\u{f268} " -- nf-fa-chrome
+  end
+  return " "
+end
+
 function components.flutter_device()
   local decorations = vim.g.flutter_tools_decorations
-  local device = decorations and decorations.device
-  -- flutter-tools stores the running device as a table ({name, id, ...}),
-  -- not a string, so pull the display name out of it.
-  if type(device) == "table" then
-    device = device.name
-  end
-  if device == "" then
-    device = nil
-  end
-  -- Fall back to the auto-picked default device before any run session starts
-  device = device or vim.g.flutter_preferred_device
-  if not device or device == "" then
+  -- flutter-tools stores the running device as a table ({name, id, platform, ...}).
+  -- Fall back to the auto-picked default device before any run session starts.
+  local device = (decorations and decorations.device) or vim.g.flutter_preferred_device
+  if type(device) ~= "table" or not device.name or device.name == "" then
     return ""
   end
-  return "  " .. device .. " "
+  -- Strip the trailing "(mobile)"/"(desktop)"/"(web)" annotation flutter appends to the name
+  local name = device.name:gsub(" %([^%(%)]-%)%s*$", "")
+  return "  " .. flutter_device_icon(device.platform) .. name .. " "
 end
 
 local statusline = {

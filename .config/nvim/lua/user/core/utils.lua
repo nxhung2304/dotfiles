@@ -107,6 +107,26 @@ M.lsp_on_attach = function(client, bufnr)
 			end,
 		})
 	end
+
+	if client.server_capabilities.documentHighlightProvider then
+		local group = vim.api.nvim_create_augroup("LspDocumentHighlight_" .. bufnr, { clear = true })
+
+		vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+			group = group,
+			buffer = bufnr,
+			callback = function()
+				vim.lsp.buf.document_highlight()
+			end,
+		})
+
+		vim.api.nvim_create_autocmd("CursorMoved", {
+			group = group,
+			buffer = bufnr,
+			callback = function()
+				vim.lsp.buf.clear_references()
+			end,
+		})
+	end
 end
 
 -- Fix Lsp cannot start with flutter-tools:https://github.com/nvim-flutter/flutter-tools.nvim

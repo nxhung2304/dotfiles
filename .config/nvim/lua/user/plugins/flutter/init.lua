@@ -227,7 +227,7 @@ return {
             end
             preferred_device = real or virtual
             if preferred_device then
-              vim.g.flutter_preferred_device = preferred_device.name
+              vim.g.flutter_preferred_device = preferred_device
               vim.notify("Default device: " .. preferred_device.name, vim.log.levels.INFO, { title = "Flutter" })
             end
           end))
