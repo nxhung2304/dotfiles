@@ -129,6 +129,5 @@ return {
 			auto_update = false,
 		},
 	},
-	{ "mfussenegger/nvim-lint", event = { "BufReadPre", "BufNewFile" } },
 	{ "williamboman/mason-lspconfig.nvim", event = { "BufReadPre", "BufNewFile" } },
 }

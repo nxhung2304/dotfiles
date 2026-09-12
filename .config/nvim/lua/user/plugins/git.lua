@@ -1,6 +1,72 @@
 local Utils = require("user.core.utils")
 local map = Utils.keymap
 
+local function get_gh_accounts()
+	local out = vim.fn.system("gh auth status 2>&1")
+	local accounts = {}
+	for account in out:gmatch("account (%S+)") do
+		table.insert(accounts, account)
+	end
+	return accounts
+end
+
+local function switch_gh_account(on_switched)
+	local accounts = get_gh_accounts()
+	if #accounts == 0 then
+		vim.notify("No gh accounts found", vim.log.levels.WARN, { title = "gh" })
+		return
+	end
+	vim.ui.select(accounts, { prompt = "Switch GitHub account:" }, function(choice)
+		if not choice then
+			return
+		end
+		vim.fn.jobstart({ "gh", "auth", "switch", "--user", choice }, {
+			on_exit = function(_, code)
+				vim.schedule(function()
+					if code == 0 then
+						vim.notify("Switched to " .. choice, vim.log.levels.INFO, { title = "gh" })
+						on_switched()
+					else
+						vim.notify("Failed to switch to " .. choice, vim.log.levels.ERROR, { title = "gh" })
+					end
+				end)
+			end,
+		})
+	end)
+end
+
+local open_tab
+open_tab = function(url_cmd)
+	local stderr = {}
+	vim.fn.jobstart({
+		"sh",
+		"-c",
+		"set -o pipefail; " .. url_cmd .. " | xargs ~/.local/bin/scripts/open-or-focus-tab",
+	}, {
+		stderr_buffered = true,
+		on_stderr = function(_, data)
+			if data then
+				vim.list_extend(stderr, data)
+			end
+		end,
+		on_exit = function(_, code)
+			if code ~= 0 then
+				local msg = vim.trim(table.concat(stderr, "\n"))
+				vim.schedule(function()
+					vim.notify(
+						"Cannot open in browser" .. (msg ~= "" and (":\n" .. msg) or ""),
+						vim.log.levels.ERROR,
+						{ title = "gitsigns" }
+					)
+					switch_gh_account(function()
+						open_tab(url_cmd)
+					end)
+				end)
+			end
+		end,
+	})
+end
+
 return {
 	{
 		"esmuellert/codediff.nvim",
@@ -60,78 +126,8 @@ return {
 				-- Floating popup preview (real buffer, cursor can enter to yank the
 				-- old/deleted lines). Pressing again focuses the popup.
 				map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
-				map("n", "<leader>gd", gs.diffthis, { desc = "Diff this" })
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
-				local function get_gh_accounts()
-					local out = vim.fn.system("gh auth status 2>&1")
-					local accounts = {}
-					for account in out:gmatch("account (%S+)") do
-						table.insert(accounts, account)
-					end
-					return accounts
-				end
-
-				local function switch_gh_account(on_switched)
-					local accounts = get_gh_accounts()
-					if #accounts == 0 then
-						vim.notify("No gh accounts found", vim.log.levels.WARN, { title = "gh" })
-						return
-					end
-					vim.ui.select(accounts, { prompt = "Switch GitHub account:" }, function(choice)
-						if not choice then
-							return
-						end
-						vim.fn.jobstart({ "gh", "auth", "switch", "--user", choice }, {
-							on_exit = function(_, code)
-								vim.schedule(function()
-									if code == 0 then
-										vim.notify("Switched to " .. choice, vim.log.levels.INFO, { title = "gh" })
-										on_switched()
-									else
-										vim.notify(
-											"Failed to switch to " .. choice,
-											vim.log.levels.ERROR,
-											{ title = "gh" }
-										)
-									end
-								end)
-							end,
-						})
-					end)
-				end
-
-				local open_tab
-				open_tab = function(url_cmd)
-					local stderr = {}
-					vim.fn.jobstart({
-						"sh",
-						"-c",
-						"set -o pipefail; " .. url_cmd .. " | xargs ~/.local/bin/scripts/open-or-focus-tab",
-					}, {
-						stderr_buffered = true,
-						on_stderr = function(_, data)
-							if data then
-								vim.list_extend(stderr, data)
-							end
-						end,
-						on_exit = function(_, code)
-							if code ~= 0 then
-								local msg = vim.trim(table.concat(stderr, "\n"))
-								vim.schedule(function()
-									vim.notify(
-										"Cannot open in browser" .. (msg ~= "" and (":\n" .. msg) or ""),
-										vim.log.levels.ERROR,
-										{ title = "gitsigns" }
-									)
-									switch_gh_account(function()
-										open_tab(url_cmd)
-									end)
-								end)
-							end
-						end,
-					})
-				end
 				map("n", "<leader>gh", function()
 					open_tab("gh pr view --json url -q .url")
 				end, { desc = "Open PR in browser" })
@@ -158,7 +154,6 @@ return {
 	},
 	{
 		"NeogitOrg/neogit",
-		lazy = true,
 		dependencies = {
 			"m00qek/baleia.nvim", -- optional
 		},

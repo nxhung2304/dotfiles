@@ -20,6 +20,7 @@ return {
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>t", desc = "Test" },
 			{ "<leader>q", desc = "Macro" },
+			{ "<leader>D", desc = "Database" },
 		})
 
 		wk.setup(opts)
