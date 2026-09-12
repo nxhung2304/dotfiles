@@ -177,3 +177,9 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'
 
 
 export PATH="$PATH":"$HOME/.pub-cache/bin"
+
+upgrade_nvim() {
+  cd ~/dotfiles/scripts/nvim/
+  chmod +x ./upgrade_stable.sh
+  ./upgrade_stable.sh
+}
