@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pane_id=$(herdr pane current --current | jq -r '.result.pane.pane_id')
+herdr pane send-text "$pane_id" clear
+herdr pane send-keys "$pane_id" enter

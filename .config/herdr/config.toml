@@ -32,40 +32,34 @@ enabled = false
 [keys]
 prefix = "ctrl+a"
 
-# Workspace navigation
-navigate_workspace_up = "k"
-navigate_workspace_down = "j"
-navigate_workspace_left = "h"
-navigate_workspace_right = "l"
-
-# Pane focus (vim-style, like ctrl+hjkl in tmux)
 focus_pane_left = "prefix+h"
 focus_pane_down = "prefix+j"
 focus_pane_up = "prefix+k"
 focus_pane_right = "prefix+l"
 
-# Pane swap
-swap_pane_left = "prefix+shift+h"
-swap_pane_down = "prefix+shift+j"
-swap_pane_up = "prefix+shift+k"
-swap_pane_right = "prefix+shift+l"
+swap_pane_left = "prefix+alt+h"
+swap_pane_down = "prefix+alt+j"
+swap_pane_up = "prefix+alt+k"
+swap_pane_right = "prefix+alt+l"
 
-# Splits (mirrors tmux % and ")
 split_vertical = "prefix+v"
 split_horizontal = "prefix+minus"
 close_pane = "prefix+x"
 zoom = "prefix+z"
 resize_mode = "prefix+r"
+resize_pane_left = "ctrl+alt+shift+left"
+resize_pane_down = "ctrl+alt+shift+down"
+resize_pane_up = "ctrl+alt+shift+up"
+resize_pane_right = "ctrl+alt+shift+right"
+rename_pane = "prefix+shift+p"
 
-# Tabs (mirrors tmux windows)
 new_tab = "prefix+c"
-previous_tab = "prefix+p"
+previous_tab = ["prefix+p", "prefix+ctrl+p"]
 next_tab = ["prefix+n", "prefix+ctrl+n"]
 switch_tab = "prefix+1..9"
 rename_tab = "prefix+shift+t"
 close_tab = "prefix+shift+x"
 
-# Workspaces
 new_workspace = "prefix+shift+n"
 rename_workspace = "prefix+shift+w"
 close_workspace = "prefix+shift+d"
@@ -73,38 +67,63 @@ workspace_picker = "prefix+w"
 previous_workspace = "prefix+shift+left"
 next_workspace = "prefix+shift+right"
 
-# Other
 detach = "prefix+q"
 copy_mode = "prefix+["
+edit_scrollback = "prefix+e"
 toggle_sidebar = "prefix+b"
 goto = "prefix+g"
 last_pane = "prefix+tab"
 cycle_pane_next = "prefix+ctrl+tab"
+cycle_pane_previous = "prefix+shift+tab"
+reload_config = "prefix+shift+r"
 
-# Session picker (like tmux bind s)
+navigate_pane_left = "h"
+navigate_pane_down = "j"
+navigate_pane_up = "k"
+navigate_pane_right = "l"
+
 [[keys.command]]
-key = "prefix+s"
-type = "pane"
-command = "herdr workspace-picker"
-description = "workspace picker"
+key = "ctrl+alt+shift+l"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
+description = "clear pane screen (wezterm cmd+k)"
 
-# Lazygit
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+width = "80%"
+height = "80%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-sessionizer"
+description = "sessionizer"
+
+[[keys.command]]
+key = "prefix+shift+l"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
+description = "clear pane screen"
+
 [[keys.command]]
 key = "prefix+alt+g"
-type = "pane"
+type = "popup"
+width = "80%"
+height = "80%"
 command = "lazygit"
 description = "lazygit"
 
-# Open/focus claude tab
 [[keys.command]]
 key = "prefix+shift+c"
-type = "shell"
-command = "herdr pane new --label claude -- claude"
-description = "open claude"
+type = "pane"
+command = "claude"
+description = "claude code"
 
-# Open/focus nvim
 [[keys.command]]
 key = "prefix+shift+e"
-type = "shell"
-command = "herdr pane new --label neovim -- nvim"
-description = "open neovim"
+type = "pane"
+command = "nvim"
+description = "neovim"
+
+[[keys.command]]
+key = "prefix+shift+s"
+type = "pane"
+command = "bundle exec rails server"
+description = "rails server"

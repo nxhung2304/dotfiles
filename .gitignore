@@ -11,5 +11,8 @@ backups/
 .config/github-copilot/auth.db-wal
 .config/configstore/
 .config/herdr/session.json
+.config/herdr/*.bak.*
+.config/herdr/.plugins.lock
+.config/herdr/release-notes.json
 .config/iterm2/
 .config/flutter/
