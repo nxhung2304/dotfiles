@@ -30,6 +30,7 @@ Import this file first to get keyword→rule mappings, then read only relevant s
 | **pattern, predictable** | coding-rules.md | Prefer Predictable Patterns | 40-68 |
 | **clarity, cleverness** | coding-rules.md | Core Principles | 10-25 |
 | **refactor, extract, method** | refactoring.md | When to Refactor | 3-6 |
+| **auth, authorization, ownership, idor, access control** | security-authz.md | Broken Object-Level Authorization (IDOR) | 1-40 |
 
 ---
 
@@ -68,6 +69,9 @@ Import this file first to get keyword→rule mappings, then read only relevant s
 ### Refactoring
 - When to refactor → `refactoring.md:3-6`
 - Extract shared logic → `refactoring.md:6-89`
+
+### Security — Authorization
+- Object-level authorization / IDOR / ownership checks (any language/framework) → `security-authz.md` (always load for review, not keyword-gated)
 
 ---
 

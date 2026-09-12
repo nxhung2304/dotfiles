@@ -32,6 +32,7 @@ git branch -r | grep -E 'main|master' | head -1  # detect base branch
 **Always load (global rules at `~/.claude/code-rules/`):**
 - `~/.claude/code-rules/core.md` (always, ~17 lines)
 - `~/.claude/code-rules/index.md` (keyword map for targeted reads)
+- `~/.claude/code-rules/general/security-authz.md` (always — object-level authorization/IDOR checks apply to any diff touching an endpoint/handler that looks up a resource by id, regardless of language/framework; not keyword-gated)
 
 **Then load only sections relevant to the diff's file types** using the index keyword map.
 
@@ -51,7 +52,7 @@ git diff <base>..<branch>
 Apply rules loaded in step 1 across these areas:
 - **Clean code**: naming, function size, magic numbers, hardcoded strings, DRY, single responsibility
 - **Style**: indentation, line length, blank lines, guard clauses, condition formatting
-- **Security**: input validation, auth checks, hardcoded secrets, injection risks
+- **Security**: input validation, auth checks, hardcoded secrets, injection risks, object-level authorization/ownership (IDOR — see `security-authz.md`; for any action that resolves a resource by an id/slug from params/route/body, trace whether the lookup or the authorization rule checks the record's own owner/user/account FK against the current actor)
 - **Performance**: N+1 queries, unnecessary loops, memory leaks, heavy ops in hot paths
 - **Correctness / logic bugs**: off-by-one, inverted conditions, unhandled null/undefined, wrong operator, silently swallowed exceptions (`catch {}` rỗng)
 - **Concurrency / race conditions**: shared mutable state không lock, async/await read-modify-write không atomic, thread-safety của singleton/cache, deadlock tiềm ẩn, transaction isolation level sai
