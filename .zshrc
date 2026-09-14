@@ -71,7 +71,11 @@ fi
 # opencode
 export PATH=/Users/rightsvn-hung/.opencode/bin:$PATH
 
-export TERM=xterm-256color
+if [ -z "$TMUX" ]; then
+    export TERM=xterm-256color
+fi
+
+ulimit -n 8192
 
 # export NVM_DIR="$HOME/.nvm"
 
