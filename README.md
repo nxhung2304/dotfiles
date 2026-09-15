@@ -39,7 +39,7 @@ chmod +x install.sh
 ### Git & GitHub
 | Tool | Config path | Description |
 |------|-------------|-------------|
-| Git | `.gitconfig` | Global git settings, aliases, and user config |
+| Git | `.config/git/` | Global gitignore |
 | GitHub CLI | `.config/gh/` | gh CLI auth and host config |
 | GitHub Copilot | `.config/github-copilot/` | Copilot editor integration settings |
 
@@ -54,4 +54,21 @@ chmod +x install.sh
 |------|-------------|-------------|
 | Flutter | `.config/flutter/` | Flutter SDK settings and device preferences |
 | Homebrew | `Brewfile` | Declarative list of all brew packages and casks |
+| Herdr | `.config/herdr/` | Terminal session manager settings |
+
+### AI Coding Assistants
+| Tool | Config path | Description |
+|------|-------------|-------------|
+| Claude Code | `.claude/` | Agents, commands, skills, hooks, and project code rules |
+| Codex CLI | `.codex/` | Rules, config, and shared skills (symlinked from `.claude/skills`) |
+| Gemini CLI | `.gemini/` | Settings and shared skills (symlinked from `.claude/skills`) |
+
+### Scripts
+| Path | Description |
+|------|-------------|
+| `scripts/install/` | Modular install steps (stow, terminal, etc.) sourced by `install.sh` |
+| `scripts/nvim/`, `scripts/tmux/` | Helper scripts for Neovim and tmux |
+| `scripts/tmux-sessionizer` | Fuzzy-find and jump between tmux sessions |
+| `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane` | Herdr session helpers |
+| `scripts/open-or-focus-tab` | Open or focus an existing terminal tab |
 
