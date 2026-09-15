@@ -17,7 +17,6 @@ install_terminal() {
     fi
 
     log_info "Linking Tmux config..."
-    ln -sf "$DOTFILES_DIR/.tmux.conf" "$HOME/.tmux.conf"
     rm -rf "$HOME/.config/tmux" && ln -sf "$DOTFILES_DIR/.config/tmux" "$HOME/.config/tmux"
     
     mkdir -p "$HOME/.local/bin/scripts"
