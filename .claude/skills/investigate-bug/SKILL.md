@@ -1,6 +1,6 @@
 ---
 name: investigate-bug
-description: Interactively investigate a reported bug through systematic reproduction, root cause analysis, and fix planning. Use when user asks "investigate bug", "tìm lỗi", "điều tra bug", or reports a bug number/description and wants to understand its root cause before fixing.
+description: Interactively investigate a reported bug through systematic reproduction, root cause analysis, and fix planning. Use when user asks "investigate bug", "tìm lỗi", "điều tra bug", "đánh giá bug/lỗi", "đánh giá thử", "review nghi ngờ", or points to an existing investigation/bug report file (e.g. investigate.md, root-cause note with a list of "nghi ngờ"/suspicions) and wants an assessment of it — not only when starting a fresh investigation from scratch.
 ---
 
 # Investigate Bug
@@ -41,6 +41,17 @@ Walk through the code path step by step as if executing the bug scenario:
 
 If you cannot trace the failure: ask one targeted question about the missing context (data shape, device state, network condition, etc.).
 
+### 3.5 Evaluating an existing list of suspicions
+
+If the user hands you a file/note that already lists multiple suspected causes (e.g. `investigate.md` with several numbered "nghi ngờ"), do not merge them into one narrative or produce a single combined conclusion. For **each** suspicion, independently:
+
+1. State what you actually read/checked (file, line, log) to verify it.
+2. Label the verdict explicitly as one of:
+   - **Đã xác nhận** (confirmed) — code/log directly shows this, cite the evidence (file:line or log excerpt).
+   - **Chưa xác nhận** (unconfirmed) — you have a plausible mechanism but no direct evidence it actually happened / actually causes the reported symptom. Say so in these words, don't blur it into a confirmed finding.
+   - **Không xác nhận được với thông tin hiện có** (cannot confirm with what's available) — say what extra info/repro would be needed to decide.
+3. Never upgrade a "chưa xác nhận" to a stated fact by proximity to a confirmed one in the same paragraph — a wrong confirmation here sends the whole investigation in the wrong direction, so keep each verdict visually and textually separate.
+
 ### 4. Root cause analysis
 
 Once the failure point is located, determine the root cause category:
@@ -68,7 +79,11 @@ Before proposing a fix, answer:
 
 ### 6. Propose a fix plan
 
-Output a structured fix plan:
+Only produce a fix plan (including any "fix this first" ordering/priority) once the root cause has actually been confirmed to explain the reported symptom — via reproduction, a log that directly shows the failure, or code that unambiguously proves the mechanism. Reading code and finding a *plausible* bug is not the same as confirming it caused *this* report.
+
+If reproduction/confirmation hasn't happened yet, stop here instead of proposing a fix plan. State clearly: what's confirmed so far, what's still an unconfirmed hypothesis, and the next concrete step needed to confirm it (repro steps, a log to capture, an experiment to run). Ask the user whether they want to attempt reproduction before you propose fixes.
+
+Once confirmed, output a structured fix plan:
 
 ```
 ## Root Cause
@@ -97,4 +112,5 @@ Ask the user: *"Does this plan look right? Want me to proceed with the fix?"*
 - Always recommend an answer / hypothesis — never ask cold
 - Explore code before asking — don't ask what the code already answers
 - State the root cause as a clear hypothesis, not a vague guess
-- End every investigation with an explicit fix plan, not just an explanation
+- End every investigation with an explicit fix plan **only if** the root cause is confirmed — otherwise end with what's confirmed, what's not, and how to confirm it next
+- When multiple suspicions exist, verify and label each independently (confirmed / unconfirmed / cannot confirm) — never blend them into one conclusion
