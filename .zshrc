@@ -151,6 +151,11 @@ alias ip="ipconfig getifaddr en0"
 
 # Dev
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
+
+claude() {
+  tmux rename-window "claude:$(basename "$PWD")" 2>/dev/null
+  command claude "$@"
+}
 alias cc="claude"
 
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
