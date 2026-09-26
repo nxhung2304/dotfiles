@@ -67,6 +67,19 @@ open_tab = function(url_cmd)
 	})
 end
 
+local function open_line_pr()
+	local file = vim.fn.expand("%:p")
+	local line = vim.fn.line(".")
+	local url_cmd = string.format(
+		"sha=$(git blame -L %d,%d --porcelain -- %s | head -1 | cut -d' ' -f1); "
+			.. "gh api repos/{owner}/{repo}/commits/$sha/pulls --jq '.[0].html_url // empty'",
+		line,
+		line,
+		vim.fn.shellescape(file)
+	)
+	open_tab(url_cmd)
+end
+
 return {
 	{
 		"esmuellert/codediff.nvim",
@@ -128,6 +141,7 @@ return {
 				map("n", "<leader>gp", gs.preview_hunk, { desc = "Preview hunk" })
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
+				map("n", "<leader>gl", open_line_pr, { desc = "Open PR of current line's commit" })
 				map("n", "<leader>gh", function()
 					open_tab("gh pr view --json url -q .url")
 				end, { desc = "Open PR in browser" })
