@@ -18,3 +18,4 @@ backups/
 .config/herdr/release-notes.json
 .config/iterm2/
 .config/flutter/
+.config/gh/hosts.yml
