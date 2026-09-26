@@ -4,6 +4,8 @@ backups/
 
 .claude/settings_z.json
 .claude/ide/
+.claude/skills/synced/
+.claude/skills/.system/
 
 .config/github-copilot/apps.json
 .config/github-copilot/auth.db
