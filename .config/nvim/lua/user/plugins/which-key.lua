@@ -12,6 +12,7 @@ return {
 		wk.add({
 			mode = { "n", "v" },
 			{ "<leader>c", desc = "Code" },
+			{ "<leader>C", desc = "Claude Code" },
 			{ "<leader>g", desc = "Git" },
 			{ "<leader>s", desc = "Search" },
 			{ "<leader>F", desc = "Flutter" },

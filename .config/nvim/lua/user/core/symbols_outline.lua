@@ -66,10 +66,10 @@ end
 -- visible.
 local function build(symbols, depth, lines, entries)
 	for _, sym in ipairs(symbols) do
-		local show = not state.methods_only or METHOD_KINDS[sym.kind]
+		local range = sym.selectionRange or sym.range
+		local show = range and (not state.methods_only or METHOD_KINDS[sym.kind])
 		local next_depth = depth
 		if show then
-			local range  = sym.selectionRange or sym.range
 			local full   = sym.range or range
 			local icon   = symbol.icon(sym.kind)
 			local indent = string.rep("  ", depth)

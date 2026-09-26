@@ -104,14 +104,16 @@ function M.pick_symbol()
 	local items = {}
 	local function collect(syms, depth)
 		for _, sym in ipairs(syms) do
-			local icon = kind_icons[sym.kind] or "• "
-			local indent = string.rep("  ", depth)
 			local range = sym.selectionRange or sym.range
-			table.insert(items, {
-				label = indent .. icon .. sym.name,
-				lnum  = range.start.line + 1,
-				col   = range.start.character,
-			})
+			if range then
+				local icon = kind_icons[sym.kind] or "• "
+				local indent = string.rep("  ", depth)
+				table.insert(items, {
+					label = indent .. icon .. sym.name,
+					lnum  = range.start.line + 1,
+					col   = range.start.character,
+				})
+			end
 			if sym.children and #sym.children > 0 then
 				collect(sym.children, depth + 1)
 			end

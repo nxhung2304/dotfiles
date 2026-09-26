@@ -20,9 +20,7 @@ return {
 			{
 				"<leader>Rc",
 				function()
-					u.rails_guard(function()
-						u.run_cmd("bundle exec rails console", "rails console", { interactive = true })
-					end)
+					u.rails_guard(u.toggle_console)
 				end,
 				desc = "Rails Console",
 			},

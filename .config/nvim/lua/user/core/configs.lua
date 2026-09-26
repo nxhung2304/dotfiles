@@ -8,7 +8,6 @@ M = {
 		"lazy",
 		"mason",
 		"notify",
-		"toggleterm",
 		"netrw",
 		"tutor",
 		"NeogitStatus",

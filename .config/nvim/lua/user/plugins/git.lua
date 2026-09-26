@@ -137,6 +137,53 @@ return {
 				map("n", "<leader>gi", function()
 					open_tab("gh repo view --json url -q .url | xargs -I{} echo {}/issues")
 				end, { desc = "Open Issues list in browser" })
+				map("n", "<leader>gD", function()
+					Snacks.picker.git_branches({
+						format = function(item)
+							local hl = item.current and "SnacksPickerGitBranchCurrent" or "SnacksPickerGitBranch"
+							local name = item.detached and "(detached HEAD)" or item.branch
+							return { { name, hl } }
+						end,
+						actions = {
+							git_branch_del_confirm = function(picker, item)
+								if not (item and item.branch) then
+									return
+								end
+								local branch = item.branch
+								Snacks.picker.util.cmd({ "git", "rev-parse", "--abbrev-ref", "HEAD" }, function(data)
+									vim.schedule(function()
+										if data[1] and data[1]:match(branch) then
+											vim.notify(
+												"Cannot delete the current branch.",
+												vim.log.levels.ERROR,
+												{ title = "Git" }
+											)
+											return
+										end
+										Utils.confirm(("Delete branch %q?"):format(branch), function()
+											Snacks.picker.util.cmd({ "git", "branch", "-D", branch }, function()
+												vim.notify(
+													"Deleted branch `" .. branch .. "`",
+													vim.log.levels.INFO,
+													{ title = "Git" }
+												)
+												vim.cmd.checktime()
+												picker:refresh()
+											end, { cwd = picker:cwd() })
+										end)
+									end)
+								end, { cwd = picker:cwd() })
+							end,
+						},
+						win = {
+							input = {
+								keys = {
+									["<c-x>"] = { "git_branch_del_confirm", mode = { "n", "i" } },
+								},
+							},
+						},
+					})
+				end, { desc = "Delete branch (<c-x> in picker)" })
 			end,
 
 			-- Blame config
@@ -166,7 +213,7 @@ return {
 		"nxhung2304/conflict.nvim",
 		config = function()
 			require("conflict").setup({
-				keymaps = { leader = "<leader>" },
+				keymaps = { leader = "<leader>C" },
 				ui = { markers = false }, -- clickable action buttons
 				detect = { anywhere = true }, -- detect outside git merge
 				colors = {

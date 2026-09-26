@@ -13,26 +13,30 @@ function M.rails_guard(fn)
 	fn()
 end
 
-local _named_terms = {}
 function M.tmux_named_window(name, cmd)
-	local Terminal = require("toggleterm.terminal").Terminal
-	if not _named_terms[name] then
-		_named_terms[name] = Terminal:new({
-			cmd = cmd,
-			display_name = name,
-			direction = "vertical",
-			hidden = true,
-			close_on_exit = false,
-		})
-	end
-	_named_terms[name]:toggle()
+	Snacks.terminal.toggle(cmd, {
+		env = { NVIM_RAILS_TERM = name },
+		auto_close = false,
+		win = {
+			position = "right",
+			width = 0.38,
+			title = name,
+		},
+	})
 end
 
-local _console_term = nil
-local _console_initialized = false
+function M.toggle_console()
+	Snacks.terminal.toggle("bundle exec rails console", {
+		auto_close = false,
+		win = {
+			position = "left",
+			width = 0.38,
+			title = "rails console",
+		},
+	})
+end
 
 function M.console_send_selection()
-	local Terminal = require("toggleterm.terminal").Terminal
 	local tmpfile = "/tmp/nvim_console_snippet.rb"
 
 	-- <Cmd> mappings run while still in visual mode context, so '< / '> are not
@@ -44,30 +48,33 @@ function M.console_send_selection()
 	local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
 	vim.fn.writefile(lines, tmpfile)
 
-	if not _console_term then
-		_console_initialized = false
-		_console_term = Terminal:new({
-			cmd = "bundle exec rails console",
-			display_name = "rails console",
-			direction = "float",
-			hidden = true,
-			close_on_exit = false,
-			on_open = function(term)
-				if not _console_initialized then
-					-- Wait for irb/pry prompt before sending
-					vim.defer_fn(function()
-						_console_initialized = true
-						term:send('load "' .. tmpfile .. '"')
-					end, 5000)
-				end
-			end,
-		})
-		_console_term:toggle()
-	else
-		if not _console_term:is_open() then
-			_console_term:open()
+	local console, created = Snacks.terminal.get("bundle exec rails console", {
+		auto_close = false,
+		win = {
+			position = "left",
+			width = 0.38,
+			title = "rails console",
+		},
+	})
+	if not console then
+		return
+	end
+	if not console:win_valid() then
+		console:show()
+	end
+
+	local function send_load()
+		local channel = vim.b[console.buf].terminal_job_id
+		if channel then
+			vim.api.nvim_chan_send(channel, 'load "' .. tmpfile .. '"\r')
 		end
-		_console_term:send('load "' .. tmpfile .. '"')
+	end
+
+	if created then
+		-- Wait for irb/pry prompt before sending
+		vim.defer_fn(send_load, 5000)
+	else
+		send_load()
 	end
 end
 
@@ -214,7 +221,6 @@ function M.i18n_files()
 end
 
 function M.routes_grep()
-	local Terminal = require("toggleterm.terminal").Terminal
 	local tmpout = "/tmp/nvim_routes_sel.txt"
 	local script = "/tmp/nvim_routes_fzf.sh"
 
@@ -226,30 +232,35 @@ function M.routes_grep()
 	}, script)
 	vim.fn.system("chmod +x " .. script)
 
-	Terminal:new({
-		cmd = script,
-		direction = "float",
-		hidden = true,
-		close_on_exit = true,
-		on_exit = function()
-			vim.schedule(function()
-				if vim.fn.filereadable(tmpout) == 0 then
-					return
-				end
-				local lines = vim.fn.readfile(tmpout)
-				local qflist = {}
-				for _, line in ipairs(lines) do
-					if vim.trim(line) ~= "" then
-						table.insert(qflist, { text = vim.trim(line) })
-					end
-				end
-				if #qflist > 0 then
-					vim.fn.setqflist(qflist, "r")
-					vim.cmd("copen")
-				end
-			end)
-		end,
-	}):toggle()
+	local function load_selection()
+		if vim.fn.filereadable(tmpout) == 0 then
+			return
+		end
+		local lines = vim.fn.readfile(tmpout)
+		local qflist = {}
+		for _, line in ipairs(lines) do
+			if vim.trim(line) ~= "" then
+				table.insert(qflist, { text = vim.trim(line) })
+			end
+		end
+		if #qflist > 0 then
+			vim.fn.setqflist(qflist, "r")
+			vim.cmd("copen")
+		end
+	end
+
+	Snacks.terminal.open(script, {
+		auto_close = false,
+		win = {
+			position = "float",
+			on_buf = function(self)
+				self:on("TermClose", function()
+					self:close()
+					vim.schedule(load_selection)
+				end, { buf = true })
+			end,
+		},
+	})
 end
 
 return M

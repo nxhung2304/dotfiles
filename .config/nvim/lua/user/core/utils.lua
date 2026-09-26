@@ -169,6 +169,14 @@ function M.attach_dartls_to_all_buffers()
 	print("Attached dartls to " .. attached_count .. " buffers")
 end
 
+function M.confirm(prompt, on_confirm)
+	vim.ui.select({ "Yes", "No" }, { prompt = prompt }, function(choice)
+		if choice == "Yes" then
+			on_confirm()
+		end
+	end)
+end
+
 function M.open_sorted_diagnostics(severity_filter)
 	local diagnostics = vim.diagnostic.get(nil, severity_filter and { severity = severity_filter })
 

@@ -6,6 +6,8 @@ if vim.g.vscode then
 		spec = {
 			{ import = "code.plugins" },
 		},
+		root = vim.fn.stdpath("data") .. "/lazy-vscode",
+		lockfile = vim.fn.stdpath("config") .. "/lazy-lock-vscode.json",
 		change_detection = { enabled = false },
 	})
 else

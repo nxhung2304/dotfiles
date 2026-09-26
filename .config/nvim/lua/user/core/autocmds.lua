@@ -80,39 +80,6 @@ vim.api.nvim_create_autocmd("WinEnter", {
 	end,
 })
 
--- Auto-save 1s after leaving insert mode (debounced; cancelled if insert is re-entered)
-local autosave_timer = vim.uv.new_timer()
-local function save_current_buffer()
-	if vim.bo.modified and vim.bo.buftype == "" and not vim.bo.readonly and vim.fn.expand("%") ~= "" then
-		vim.cmd.update()
-		vim.notify(
-			vim.fn.expand("%:t") .. " saved at " .. vim.fn.strftime("%H:%M:%S"),
-			vim.log.levels.INFO,
-			{ title = "AutoSave" }
-		)
-	end
-end
-
-vim.api.nvim_create_autocmd("InsertEnter", {
-	desc = "Cancel pending auto-save while typing",
-	callback = function()
-		autosave_timer:stop()
-	end,
-})
-
-vim.api.nvim_create_autocmd("InsertLeave", {
-	desc = "Auto-save 1s after leaving insert mode",
-	callback = function()
-		local bufnr = vim.api.nvim_get_current_buf()
-		autosave_timer:stop()
-		autosave_timer:start(1000, 0, vim.schedule_wrap(function()
-			if vim.api.nvim_buf_is_valid(bufnr) then
-				vim.api.nvim_buf_call(bufnr, save_current_buffer)
-			end
-		end))
-	end,
-})
-
 -- Disable render-markdown in diff windows to prevent flickering
 vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 	desc = "Disable render-markdown in diff windows",
@@ -128,5 +95,4 @@ vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 		end
 	end,
 })
-
 
