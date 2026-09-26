@@ -79,6 +79,7 @@ confirm-close-surface = false
 # Shell integration
 # shell-integration = zsh
 # shell-integration-features = cursor,sudo,title
+shell-integration-features = no-title
 
 # === KEYBINDS ===
 # Font size control
