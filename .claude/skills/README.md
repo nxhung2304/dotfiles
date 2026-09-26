@@ -8,6 +8,7 @@
 | :--- | :--- |
 | **[commit](./commit/SKILL.md)** | Create professional git commits with bullet-point messages. Reads staged changes, formats with type prefix (feat/fix/refactor), and commits automatically. |
 | **[commit-push](./commit-push/SKILL.md)** | Commit staged changes and push to remote. Uses `commit` skill then pushes to remote branch. |
+| **[pr-desc](./pr-desc/SKILL.md)** | Generate a short, plain-language PR description (defaults to Vietnamese, language overridable) from the diff/commit log between the current branch and base, for leaders/reviewers to grasp quickly. Prints content only — does not create/update the PR. |
 
 ### 📝 Issue & Spec Management
 
