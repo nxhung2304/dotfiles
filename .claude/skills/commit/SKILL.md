@@ -1,7 +1,7 @@
 ---
 name: commit
 allowed-tools: Bash(git:*), Bash(cat:*), Read, Write, Bash(git commit:*)
-description: Create professional git commits with bullet-point messages and Co-Authored-By footer
+description: Create professional git commits with bullet-point message 
 ---
 
 Đọc staged changes → Format commit message → Create commit
@@ -27,5 +27,4 @@ type: subject (<70 chars, imperative)
 - Subject < 70 chars, imperative mood
 - Bullets use `-`, no markdown
 - WHAT & WHY, not HOW
-- Always include Co-Authored-By footer showing the current AI model (e.g. `Co-Authored-By: AI <noreply@anthropic.com>`)
 - **ALWAYS commit directly, no confirmation prompt**

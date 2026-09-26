@@ -6,24 +6,17 @@
 
 | Skill | Description |
 | :--- | :--- |
-| **[commit](./commit/SKILL.md)** | Create professional git commits with bullet-point messages and Co-Authored-By footer. Reads staged changes, formats with type prefix (feat/fix/refactor), and commits automatically. |
+| **[commit](./commit/SKILL.md)** | Create professional git commits with bullet-point messages. Reads staged changes, formats with type prefix (feat/fix/refactor), and commits automatically. |
 | **[commit-push](./commit-push/SKILL.md)** | Commit staged changes and push to remote. Uses `commit` skill then pushes to remote branch. |
 
 ### 📝 Issue & Spec Management
 
 | Skill | Description |
 | :--- | :--- |
-| **[write-a-prd](./write-a-prd/SKILL.md)** | Create PRD through user interview, codebase exploration, and module design. Identifies durable architectural patterns and submits as GitHub issue. |
 | **[github-issues-to-md](./github-issues-to-md/SKILL.md)** | Fetch GitHub Issues and save locally as Markdown in `specs/issues/[number].md`. Converts issues for local management and review. |
 | **[drill-issue](./drill-issue/SKILL.md)** | Deep dive into issue content through systematic questioning. Clarifies requirements, constraints, edge cases until crystal-clear. Generates implementation checklist as output. |
 | **[md-to-github-issues](./md-to-github-issues/SKILL.md)** | Sync approved local issue files from `specs/issues/` to GitHub Issues. Updates issue numbers in local files automatically. |
 | **[generate-issues](./generate-issues/SKILL.md)** | Create individual issue files from `specs/story.md` tasks. Generates `specs/issues/[number]-[slug].md` files with implementation guides. |
-
-### 📐 Planning & Design
-
-| Skill | Description |
-| :--- | :--- |
-| **[prd-to-story](./prd-to-story/SKILL.md)** | Transform PRD into PR-sized tasks. Breaks into phased plan using tracer-bullet vertical slices, then groups into concrete tasks. Outputs `specs/story.md` with implementation checklist. |
 
 ### 🔍 Review & Quality
 
@@ -44,12 +37,3 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | **[implement-quality](./implement-quality/SKILL.md)** | Run project-specific quality checks (flutter/rubocop/npm/pytest/cargo). Auto-fixes issues via error-fixer subagent. Verifies zero warnings. |
 | **[implement-finalize](./implement-finalize/SKILL.md)** | Commit changes, update spec status, push branch, create draft PR, notify Slack completion. Returns PR URL and committed files. |
 
-## System Skills (Internal)
-
-| Skill | Description |
-| :--- | :--- |
-| **[imagegen](./.system/imagegen/SKILL.md)** | Generate or edit raster images using AI models. |
-| **[openai-docs](./.system/openai-docs/SKILL.md)** | Provide authoritative guidance and model migration info from OpenAI documentation. |
-| **[plugin-creator](./.system/plugin-creator/SKILL.md)** | Scaffold new plugin directories and marketplace entries for the agent. |
-| **[skill-creator](./.system/skill-creator/SKILL.md)** | Expert guidance and templates for creating or updating skills. |
-| **[skill-installer](./.system/skill-installer/SKILL.md)** | Tooling to install new skills from curated lists or remote repositories. |
