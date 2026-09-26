@@ -48,14 +48,15 @@ if [ -n "$seven_day_pct" ]; then
 fi
 
 # Assemble output
-out="dir: ${dir}"
+line1="  ${dir}"
 if [ -n "$branch" ]; then
-  out="${out} | branch: ${branch}"
+  line1="${line1} |  ${branch}"
 fi
-out="${out} | ${ctx_seg}"
-if [ -n "$rate_seg" ]; then
-  out="${out} | ${rate_seg}"
-fi
-out="${out} | ${model}"
+line1="${line1} | 󰚩 ${model}"
 
-printf "%s" "$out"
+line2="${ctx_seg}"
+if [ -n "$rate_seg" ]; then
+  line2="${line2} | ${rate_seg}"
+fi
+
+printf "%s\n%s" "$line1" "$line2"

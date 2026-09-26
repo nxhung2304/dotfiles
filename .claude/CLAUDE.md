@@ -10,4 +10,5 @@
 - Variable and method names must be self-explanatory and contextually appropriate — a reader should understand their purpose immediately without needing extra explanation.
 - Do not add comments when writing or modifying code. Well-named code is the explanation; a comment restating what the code already says is noise. This includes doc comments, section headers, and inline notes.
 - The only exception is a comment that records a non-obvious *reason* a reader could not recover from the code — a trap that already caused a bug, a workaround for a framework/library behaviour, or a deliberate choice that looks wrong. Even then: **ask me first and wait for my approval before adding it.** Describe the comment you propose and why, then let me decide.
+- When a comment is approved (including doc comments), write it short and to the point: state the main idea in plain language, no restating what the code already shows, no filler wording. Prefer one line over a paragraph.
 - Never delete or rewrite existing comments unless I ask for it.
