@@ -1,15 +1,15 @@
 ---
 name: implement-code
 allowed-tools: Agent, Read, Write, Edit, Grep, Glob, Bash
-description: Thực hiện Implementation Checklist.
+description: Execute the Implementation Checklist.
 ---
 
-- Đọc spec → extract tất cả keywords từ Checklist
-- **Gọi rule-lookup MỘT LẦN** ở đầu với toàn bộ keywords — cache kết quả, dùng cho toàn bộ session (không gọi lại cho từng item)
-- Tuần tự làm từng item trong Checklist theo thứ tự
-- Nếu UI/color: gọi **design-checker** subagent
-- Sau mỗi item lớn: gọi **code-reviewer** subagent để verify
-- Không over-engineer, không code ngoài spec
+- Read the spec → extract all keywords from the Checklist
+- **Call rule-lookup ONCE** at the start with the full set of keywords — cache the result, reuse it for the whole session (do not call it again per item)
+- Work through the Checklist items in order, sequentially
+- If it's UI/color related: call the **design-checker** subagent
+- After each major item: call the **code-reviewer** subagent to verify
+- Do not over-engineer, do not write code outside the spec
 
-**IMPORTANT:** KHÔNG report summary cho user - chỉ return kết quả để orchestrator tiếp tục step tiếp theo.
+**IMPORTANT:** Do NOT report a summary to the user — only return the result so the orchestrator can continue to the next step.
 Return: { files_changed, checklist_items_completed }

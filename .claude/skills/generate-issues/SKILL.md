@@ -35,19 +35,19 @@ Every issue contains these sections in order:
 | Section | Always? | Notes |
 |---|---|---|
 | Status + Metadata | ✓ | title, phase, issue tracker link (if any) |
-| Description | ✓ | 2–4 lines, context only, không lặp checklist |
+| Description | ✓ | 2–4 lines, context only, don't repeat the checklist |
 | Acceptance Criteria | ✓ | checkbox list, testable |
 | Implementation Checklist | ✓ | checkbox list, actionable steps |
 | User Flow | UI features only | navigation tree, stack-agnostic |
-| Wireframe | UI features only | ASCII mockup màn hình chính |
+| Wireframe | UI features only | ASCII mockup of the main screens |
 | Flow Diagram | Non-UI features | request/response, state machine, data flow |
-| Key Decisions | ✓ | bullet list, chỉ những gì không hiển nhiên |
+| Key Decisions | ✓ | bullet list, only what's non-obvious |
 
 ---
 
 ### 5. User Flow *(UI features only)*
 
-Cây ASCII thể hiện luồng điều hướng — dùng tên thực tế của project, không dùng notation của bất kỳ framework cụ thể nào.
+An ASCII tree showing the navigation flow — use the project's actual names, not the notation of any specific framework.
 
 **Web (MVC/SPA):**
 ```
@@ -78,13 +78,13 @@ myapp
             └── section add --course <id> <title>
 ```
 
-Bỏ qua section này nếu feature không có user-facing screen (jobs, migrations, API-only).
+Skip this section if the feature has no user-facing screen (jobs, migrations, API-only).
 
 ---
 
 ### 6. Wireframe *(UI features only)*
 
-ASCII mockup, chỉ các màn hình chính. Không cần modal/toast/edge case UI.
+ASCII mockup, main screens only. No need for modal/toast/edge-case UI.
 
 **Web:**
 ```
@@ -119,7 +119,7 @@ Sections  (/courses/:id/sections)         [+ New]
 
 ### 7. Flow Diagram *(non-UI features)*
 
-Dùng khi feature không có screen (API endpoint, background job, migration, webhook...).
+Use when the feature has no screen (API endpoint, background job, migration, webhook...).
 
 **API endpoint:**
 ```
@@ -150,23 +150,23 @@ draft → published → archived
 ---
 
 ### 8. Key Decisions
-Chỉ ghi những gì không hiển nhiên:
-- Tại sao chọn approach này thay vì alternative (nested vs standalone, polling vs webhook, v.v.)
-- Constraint kỹ thuật quan trọng (library limitation, DB restriction, API rate limit)
-- Không lặp lại những gì đã rõ trong checklist
+Only record what's non-obvious:
+- Why this approach was chosen over an alternative (nested vs standalone, polling vs webhook, etc.)
+- Important technical constraints (library limitation, DB restriction, API rate limit)
+- Don't repeat what's already clear from the checklist
 
 ---
 
-### 9. KHÔNG đưa vào issue
-- "Files to create/modify" list — trùng với checklist
-- Skeleton code với empty body (signature + empty body không thêm giá trị gì)
-- Empty test stubs (test name không có nội dung)
-- Snippets cho code hiển nhiên (3-line route, 1-line config)
-- Chỉ thêm snippet khi cú pháp thực sự non-obvious hoặc dễ sai — và phải có nội dung thực, không để trống
+### 9. Do NOT include in the issue
+- A "Files to create/modify" list — duplicates the checklist
+- Skeleton code with an empty body (signature + empty body adds no value)
+- Empty test stubs (test name with no content)
+- Snippets for obvious code (a 3-line route, a 1-line config)
+- Only add a snippet when the syntax is genuinely non-obvious or error-prone — and it must have real content, never left blank
 
 ---
 
 ### 10. Output
-Summary: số issue tạo được + next steps.
+Summary: number of issues created + next steps.
 
 **Rules:** Status always `pending` — dev changes to `approved` manually.

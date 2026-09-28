@@ -5,62 +5,66 @@ description: Rewrite or refine a bug investigation report / technical report bef
 
 # Bug Report Writer
 
-Giúp viết hoặc sửa lại báo cáo điều tra bug/kỹ thuật trước khi gửi cho leader, reviewer, hoặc team, sao cho báo cáo đủ sâu để người đọc không phải hỏi lại các câu cơ bản (root cause dựa trên gì, đã đối chiếu gì, xử lý hậu quả ra sao).
+Help write or rewrite a bug/technical investigation report before it's sent to a leader, reviewer, or team, so the report is deep enough that the reader doesn't have to ask basic follow-up questions (what the root cause is based on, what was cross-checked, how the consequences were handled).
 
-**Nguyên tắc cốt lõi: KHÔNG áp cứng một form 6-7 mục vào mọi báo cáo.** Số mục phụ thuộc vào quy mô/độ nghiêm trọng của vấn đề. Một bug nhỏ, cô lập, chưa ảnh hưởng ai thì báo cáo 3-4 dòng là đủ. Một bug ảnh hưởng dữ liệu người dùng thật, liên quan nhiều hệ thống, thì cần đầy đủ các mục.
+**Core principle: do NOT force a rigid 6-7 section template onto every report.** The number of sections depends on the size/severity of the issue. A small, isolated bug that hasn't affected anyone needs only 3-4 lines. A bug affecting real user data across multiple systems needs the full set of sections.
 
-## Quy trình
+**Language:**
+- Default: match the language of the input report/draft
+- If ARGUMENTS specifies a language (e.g. `lang: en`, `lang: vi`), write the output in that language instead
 
-### Bước 1 — Đánh giá quy mô vấn đề
+## Process
 
-Trước khi viết, tự hỏi (hoặc hỏi người dùng nếu chưa rõ):
+### Step 1 — Assess the scope of the issue
 
-1. **Đã có bằng chứng root cause cụ thể chưa**, hay mới chỉ là phỏng đoán?
-2. **Có hệ thống/phiên bản tương đương để đối chiếu không** (ví dụ: bản iOS vs Android, bản cũ vs bản mới, Cordova vs Flutter)?
-3. **Vấn đề đã ảnh hưởng đến user/dữ liệu thật chưa**, hay mới phát hiện trong quá trình dev/test?
-4. **Mức độ nghiêm trọng/phạm vi ảnh hưởng** — 1 user hay nhiều user, có gây crash/mất dữ liệu/chi phí không?
-5. **Có phần nào người viết chưa chắc chắn** cần đánh dấu là giả thuyết thay vì kết luận?
+Before writing, ask yourself (or the user, if unclear):
 
-Câu trả lời cho 5 câu này quyết định báo cáo cần bao nhiêu mục ở bước 2. Nếu người dùng đã cung cấp đủ thông tin trong bản nháp, tự suy ra câu trả lời thay vì hỏi lại. Chỉ hỏi khi thực sự không đoán được (ví dụ không rõ vấn đề đã ảnh hưởng user thật hay chưa).
+1. **Is there concrete evidence of the root cause yet**, or is it still a guess?
+2. **Is there an equivalent system/version to cross-check against** (e.g. iOS vs Android, old version vs new, Cordova vs Flutter)?
+3. **Has the issue already affected real users/data**, or was it only caught during dev/test?
+4. **Severity/scope of impact** — one user or many, does it cause crashes/data loss/cost?
+5. **Is there anything the writer isn't sure about** that should be flagged as a hypothesis rather than a conclusion?
 
-### Bước 2 — Chọn mục cần có (checklist có điều kiện)
+The answers to these 5 questions determine how many sections the report needs in step 2. If the user already provided enough information in the draft, infer the answers instead of asking again. Only ask when it genuinely can't be inferred (e.g. unclear whether real users were affected yet).
 
-| Mục | Luôn có? | Điều kiện thêm vào |
+### Step 2 — Choose the sections needed (conditional checklist)
+
+| Section | Always included? | Condition to add |
 |---|---|---|
-| **Hiện tượng** (Symptom) | Luôn có | — |
-| **Nguyên nhân** (Root cause) | Luôn có | Nếu đã có bằng chứng code → trích dẫn cụ thể (file/hàm/logic). Nếu chưa chắc → ghi rõ là giả thuyết, không viết như kết luận chắc chắn. |
-| **Đối chiếu hệ thống liên quan** (Cross-check) | Chỉ khi có hệ thống/phiên bản tương đương | Bỏ qua nếu không có gì để so sánh. |
-| **Giải pháp — ngăn ngừa** (Forward-fix) | Luôn có | — |
-| **Giải pháp — khắc phục hậu quả** (Remediation) | Chỉ khi vấn đề đã ảnh hưởng dữ liệu/user thật | Bỏ qua nếu bug chưa từng chạy ở production hoặc không để lại hậu quả tồn đọng. |
-| **Đánh giá mức độ nghiêm trọng / phạm vi** (Impact & Severity) | Chỉ khi vấn đề đủ lớn (ảnh hưởng nhiều user, hoặc leader cần ưu tiên P0/P1/P2) | Bỏ qua với bug nhỏ, cô lập. |
-| **Ước lượng effort** (Estimate) | Chỉ khi cần lên kế hoạch sửa (có code fix đi kèm) | Bỏ qua nếu báo cáo chỉ để thông báo, chưa có hướng fix. |
-| **Việc cần xác nhận thêm** (Open questions) | Chỉ khi có phần chưa chắc chắn | Nếu mọi thứ đã rõ ràng và có bằng chứng, không cần mục này. |
+| **Symptom** | Always | — |
+| **Root cause** | Always | If code evidence exists → cite it concretely (file/function/logic). If uncertain → mark clearly as a hypothesis, don't state it as a firm conclusion. |
+| **Cross-check with related systems** | Only if an equivalent system/version exists | Skip if there's nothing to compare against. |
+| **Solution — prevention** | Always | — |
+| **Solution — remediation** | Only if the issue has already affected real data/users | Skip if the bug never ran in production or left no lasting consequence. |
+| **Impact & Severity** | Only if the issue is significant enough (affects many users, or the leader needs to prioritize P0/P1/P2) | Skip for small, isolated bugs. |
+| **Effort estimate** | Only if a fix needs to be planned (a code fix is attached) | Skip if the report is just informational, with no fix direction yet. |
+| **Open questions** | Only if something is still uncertain | Skip this section if everything is clear and backed by evidence. |
 
-**Quy tắc rút gọn:** nếu sau khi áp bảng trên, báo cáo chỉ còn 2 mục (Hiện tượng + Nguyên nhân) thì gộp thành một đoạn ngắn thay vì chia mục rời rạc — báo cáo nhỏ nên đọc liền mạch, không cần heading rườm rà.
+**Shortening rule:** if applying the table above leaves only 2 sections (Symptom + Root cause), merge them into one short paragraph instead of separate headings — a small report should read as one flowing block, no need for heavy headings.
 
-**Quy tắc mở rộng:** nếu vấn đề lớn (nhiều user, mất dữ liệu, liên quan nhiều team/hệ thống), có thể thêm mục phụ ngoài bảng trên nếu ngữ cảnh đòi hỏi (ví dụ: rủi ro bảo mật, ảnh hưởng compliance) — bảng trên là sàn tối thiểu, không phải giới hạn cứng.
+**Expansion rule:** for a large issue (many users, data loss, multiple teams/systems involved), add extra sections beyond the table if the context demands it (e.g. security risk, compliance impact) — the table above is a floor, not a hard limit.
 
-### Bước 3 — Viết/sửa báo cáo
+### Step 3 — Write/rewrite the report
 
-- Với mỗi mục **Nguyên nhân**: không viết "đây là bug do X" nếu chưa trích được đoạn code hoặc logic cụ thể. Nếu người dùng đưa link issue/PR liên quan, đối chiếu trực tiếp: "issue #X sửa ở đâu, và vì sao chỗ đang lỗi không nằm trong phạm vi sửa đó".
-- Với mục **Đối chiếu**: nêu rõ điểm giống/khác, không chỉ liệt kê hai hệ thống.
-- Với mục **Remediation**: luôn trả lời câu hỏi "vậy user đã bị ảnh hưởng rồi thì sao?" — đây là câu hỏi leader/PM gần như luôn hỏi nếu bug đã chạy ở production.
-- Giữ văn phong ngắn gọn, đúng thuật ngữ kỹ thuật đã dùng trong bản gốc (không tự ý đổi tên biến, tên hàm, tên issue).
-- Nếu người dùng viết bằng tiếng Việt, giữ nguyên tiếng Việt trong báo cáo output.
+- For **Root cause**: never write "this is a bug because of X" without citing the actual code or logic. If the user provides a related issue/PR link, cross-check directly: "where issue #X was fixed, and why the currently broken spot falls outside that fix's scope."
+- For **Cross-check**: state the similarities/differences explicitly, don't just list the two systems.
+- For **Remediation**: always answer "so what happens to users who were already affected?" — this is nearly always the leader/PM's first question if the bug already ran in production.
+- Keep the tone concise, and preserve the exact technical terms used in the original draft (don't rename variables, functions, or issue names).
+- Match the output language to the source draft's language by default, unless `lang` overrides it.
 
-### Bước 4 — Rà lại trước khi đưa ra bản cuối
+### Step 4 — Final check before delivering
 
-Tự kiểm tra bằng 3 câu hỏi:
-- Có kết luận nào chưa có bằng chứng đi kèm không? → nếu có, hạ xuống thành giả thuyết hoặc thêm bằng chứng.
-- Có câu hỏi "hiển nhiên" nào người đọc (leader) sẽ hỏi lại mà báo cáo chưa trả lời không? (ví dụ: "vậy user cũ thì sao", "vậy tại sao Android không bị")
-- Số mục có tương xứng với quy mô vấn đề không? (báo cáo nhỏ mà dài dòng, hoặc báo cáo lớn mà sơ sài, đều cần sửa lại)
+Check yourself against 3 questions:
+- Is there any conclusion stated without supporting evidence? → if so, downgrade it to a hypothesis or add evidence.
+- Is there an "obvious" question the reader (leader) would ask that the report doesn't answer? (e.g. "what about existing users", "why isn't Android affected")
+- Does the number of sections match the scope of the issue? (a small report that's too long, or a large report that's too thin, both need rework)
 
-## Ví dụ áp dụng độ dài theo quy mô
+## Length examples by scope
 
-**Bug nhỏ, đã rõ nguyên nhân, chưa ảnh hưởng ai:**
-> Hiện tượng: [X]. Nguyên nhân: [đoạn code Y gây ra Z]. Đã fix ở PR #N, không cần xử lý gì thêm cho user hiện tại.
+**Small bug, root cause already clear, hasn't affected anyone:**
+> Symptom: [X]. Root cause: [code Y causing Z]. Already fixed in PR #N, no further action needed for current users.
 
-(3 câu, không cần heading.)
+(3 sentences, no headings needed.)
 
-**Bug lớn, ảnh hưởng dữ liệu user thật, có hệ thống để đối chiếu (case Garmin là ví dụ điển hình):**
-> Đầy đủ các mục: Hiện tượng → Nguyên nhân (kèm bằng chứng code) → Đối chiếu (Cordova vs Flutter) → Giải pháp ngăn ngừa → Giải pháp khắc phục hậu quả → Ước lượng → Việc cần xác nhận thêm.
+**Large bug affecting real user data, with a system to cross-check against:**
+> Full set of sections: Symptom → Root cause (with code evidence) → Cross-check (e.g. Cordova vs Flutter) → Prevention → Remediation → Effort estimate → Open questions.

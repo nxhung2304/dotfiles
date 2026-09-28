@@ -4,15 +4,15 @@ allowed-tools: Read, Grep, Glob, Write
 description: Review specification for completeness and clarity. Use when user asks "review spec 1, review-specs #11..."
 ---
 
-Đọc spec từ `specs/issues/[issue-number]` → Phân tích → Ghi feedback vào `specs/comments/[ISSUE-NUMBER]-spec-review.md`
+Read the spec from `specs/issues/[issue-number]` → analyze → write feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md`
 
 **Steps:**
-1. Extract issue number từ user input
-2. Find spec: `grep -l "GitHub Issue.*#N" specs/issues/*.md`
+1. Extract the issue number from the user input
+2. Find the spec: `grep -l "GitHub Issue.*#N" specs/issues/*.md`
 3. Analyze:
    - Acceptance Criteria (clear? measurable? complete?)
-   - Implementation Checklist (specific? cover all?)
-   - Design Reference (nếu `specs/rules/` tồn tại → kiểm tra tokens; nếu không → bỏ qua)
+   - Implementation Checklist (specific? covers everything?)
+   - Design Reference (if `specs/rules/` exists → check tokens; otherwise → skip)
    - Dependencies (blocking/blocked?)
    - Edge cases (error? empty? loading? offline?)
 4. Create review file:
@@ -44,6 +44,6 @@ description: Review specification for completeness and clarity. Use when user as
    - [ ] READY
    - [ ] PENDING — needs clarification
    ```
-5. Output summary với score + next steps
+5. Output a summary with the score + next steps
 
 **Focus:** Clarity & completeness, NOT implementation details

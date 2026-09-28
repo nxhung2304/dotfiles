@@ -4,7 +4,7 @@ allowed-tools: Bash(git:*), Bash(cat:*), Read, Write, Bash(git commit:*)
 description: Create professional git commits with bullet-point message 
 ---
 
-Đọc staged changes → Format commit message → Create commit
+Read staged changes → format the commit message → create the commit
 
 **Format:**
 ```
@@ -19,7 +19,7 @@ type: subject (<70 chars, imperative)
 
 **Steps:**
 1. `git status` + `git diff --staged`
-2. Format message theo template
+2. Format the message following the template
 3. `git commit -m "$(cat <<'EOF'\n...\nEOF)"`
 4. `git log -1` verify
 

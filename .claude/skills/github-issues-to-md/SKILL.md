@@ -4,7 +4,7 @@ allowed-tools: Read, Write, mcp__github__get_issue
 description: Fetch a GitHub Issue and save it to local specs/issues/[issue-number].md. Use when user ask: "convert github issues to md, get github issue to md,..."
 ---
 
-Lấy GitHub Issue → Convert sang Markdown → Lưu local file
+Fetch a GitHub Issue → convert to Markdown → save as a local file
 
 **Input:**
 - issue_number (required)
@@ -41,10 +41,10 @@ Source: GitHub
    - Saved: specs/issues/#{number}.md
 
 **Rules:**
-- Nếu issue không tồn tại → báo lỗi + stop
-- Labels null → để trống
-- Body null → để empty string
-- Không tạo thêm metadata ngoài format trên
+- If the issue doesn't exist → report an error + stop
+- Labels null → leave blank
+- Body null → leave as an empty string
+- Do not add any metadata beyond the format above
 
 **Error handling:**
 | Error | Action |

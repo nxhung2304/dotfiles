@@ -1,51 +1,34 @@
 ---
 name: implement-local
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, Agent
-description: Implement issue locally — không commit, không push PR, không Slack. Chỉ code + quality check.
+description: Implement an issue locally — no commit, no PR push, no Slack. Code + quality check only.
 ---
 
-Mục đích: Giống `implement-issue` nhưng dừng sau quality check — không commit, không tạo PR, không notify Slack.
+Purpose: same as `implement-issue`, but stops after the quality check — no commit, no PR, no Slack notification.
 
-**CHẠY HOÀN TOÀN TỰ ĐỘNG, KHÔNG DỪNG GIỮA CÁC BƯỚC.**
+**RUN FULLY AUTOMATICALLY, DO NOT STOP BETWEEN STEPS.**
 
-## STEP 1: Prepare (pull, branch) — không Slack
+## STEP 1: Prepare
+Invoke the `implement-prepare` skill with the spec filename from ARGUMENTS, but explicitly skip its Slack notification step (do not send anything, regardless of `slack-channel-id` config). It still pulls, checks "Review: Approved", and creates the branch.
 
-1. git checkout develop → fallback to main
-2. git pull origin develop → fallback to main
-3. Parse issue info từ ARGUMENTS (spec filename như `@specs/issues/429-*.md`):
-   - Đọc spec file → lấy GitHub Issue number từ "GitHub Issue: #XX" (KHÔNG dùng prefix filename)
-   - Lấy title từ "Title:" field
-   - Kiểm tra "Review: Approved" — nếu không có → STOP và báo lỗi
-4. Tạo branch: `feature/hung-#[ISSUE_NUMBER]-[slug-title-tiếng-anh]`
-5. **KHÔNG notify Slack**
+## STEP 2: Code
+Invoke the `implement-code` skill. It reads the spec's Implementation Checklist and implements each item (calling rule-lookup, design-checker, code-reviewer as needed).
 
-## STEP 2: Code (thực hiện checklist)
-
-1. Đọc spec file → lấy Implementation Checklist
-2. Với MỖI checklist item:
-   - **ALWAYS** gọi rule-lookup subagent trước khi code (bắt buộc, không skip)
-   - Implement item
-   - Nếu UI/color → gọi design-checker subagent
-   - Sau mỗi item lớn → gọi code-reviewer subagent
-3. KHÔNG over-engineer, KHÔNG code ngoài spec
-
-## STEP 3: Quality (test & fix)
-
-1. Rails: rubocop → fix → rails test → fix
-2. Verify 0 errors/warnings
+## STEP 3: Quality
+Invoke the `implement-quality` skill. It detects the project's stack and runs the matching checks, fixing errors via error-fixer as needed.
 
 ## STEP 4: SUMMARY
 
-Report 1 lần ở cuối:
+Report once, at the end:
 - Files changed
 - Checklist items completed
 - Test results
-- Nhắc: "Chưa commit — chạy /implement-finalize khi sẵn sàng push"
+- Reminder: "Not committed yet — run /implement-finalize when ready to push"
 
 ---
 
 **CRITICAL RULES:**
-- KHÔNG dùng AskUserQuestion — luôn proceed với default
-- KHÔNG dừng giữa các steps
-- KHÔNG commit, KHÔNG push, KHÔNG tạo PR, KHÔNG notify Slack
-- Tests failed → fix → continue, KHÔNG dừng
+- Do NOT use AskUserQuestion — always proceed with the default
+- Do NOT stop between steps
+- Do NOT commit, push, create a PR, or notify Slack
+- Tests failing → fix → continue, do NOT stop

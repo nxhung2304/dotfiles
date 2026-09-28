@@ -54,12 +54,12 @@ Apply rules loaded in step 1 across these areas:
 - **Style**: indentation, line length, blank lines, guard clauses, condition formatting
 - **Security**: input validation, auth checks, hardcoded secrets, injection risks, object-level authorization/ownership (IDOR — see `security-authz.md`; for any action that resolves a resource by an id/slug from params/route/body, trace whether the lookup or the authorization rule checks the record's own owner/user/account FK against the current actor)
 - **Performance**: N+1 queries, unnecessary loops, memory leaks, heavy ops in hot paths
-- **Correctness / logic bugs**: off-by-one, inverted conditions, unhandled null/undefined, wrong operator, silently swallowed exceptions (`catch {}` rỗng)
-- **Concurrency / race conditions**: shared mutable state không lock, async/await read-modify-write không atomic, thread-safety của singleton/cache, deadlock tiềm ẩn, transaction isolation level sai
-- **Error handling & edge cases**: lỗi không được log/propagate, resource (file handle, DB connection, listener) không được đóng khi exception xảy ra giữa chừng, edge case như empty list/zero/negative number chưa xử lý
-- **Cleanup / hygiene**: code/import/biến không dùng còn sót lại, code bị comment-out, debug statement quên xoá (`console.log`, `print`, `debugger`), TODO/FIXME không có ticket, file/diff không liên quan lẫn vào commit
-- **Test coverage**: logic mới không có test đi kèm, test bị sửa để pass giả (skip/disable thay vì fix)
-- **Breaking changes / migration safety**: API contract thay đổi ảnh hưởng caller khác, migration không reversible, thiếu default cho cột `NOT NULL` mới, lock table lớn khi migrate
+- **Correctness / logic bugs**: off-by-one, inverted conditions, unhandled null/undefined, wrong operator, silently swallowed exceptions (empty `catch {}`)
+- **Concurrency / race conditions**: shared mutable state without locking, non-atomic async/await read-modify-write, singleton/cache thread-safety, potential deadlock, wrong transaction isolation level
+- **Error handling & edge cases**: errors not logged/propagated, a resource (file handle, DB connection, listener) not closed when an exception happens mid-way, unhandled edge cases like an empty list/zero/negative number
+- **Cleanup / hygiene**: leftover unused code/imports/variables, commented-out code, forgotten debug statements (`console.log`, `print`, `debugger`), TODO/FIXME with no ticket, unrelated files/diffs mixed into the commit
+- **Test coverage**: new logic with no accompanying test, a test modified to fake-pass (skip/disable instead of fixing it)
+- **Breaking changes / migration safety**: an API contract change affecting other callers, a non-reversible migration, a new `NOT NULL` column missing a default, locking a large table during migration
 
 ### 3.5 Verify before asserting (MANDATORY)
 

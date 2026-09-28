@@ -4,11 +4,11 @@ allowed-tools: Read, Edit, Grep, Write, mcp__github__create_issue, mcp__github__
 description: Sync local issue files to GitHub Issues. Use when user asks "sync issues to github"
 ---
 
-Đọc `specs/issues/*.md` → Tạo GitHub Issues → Update issue number vào file
+Read `specs/issues/*.md` → create GitHub Issues → update the issue number back into the file
 
 **Steps:**
 1. Verify MCP: `mcp__github__list_issues(per_page: 1)`
-2. Find files to sync (CẢ HAI điều kiện — case-insensitive match):
+2. Find files to sync (BOTH conditions must match — case-insensitive):
    - Has: `Review:` followed by `Approved` (any casing, any surrounding whitespace)
    - Has: `GitHub Issue: —` (no number yet)
 3. For each file:
@@ -16,14 +16,14 @@ description: Sync local issue files to GitHub Issues. Use when user asks "sync i
    - Call `mcp__github__create_issue(owner, repo, title, body, labels)`
    - Get `response.number`
    - Update file: `- GitHub Issue: —` → `- GitHub Issue: #N`
-   - Update ngay, không đợi batch
-4. Output summary với list created issues
+   - Update immediately, don't wait for a batch
+4. Output a summary with the list of created issues
 
 **Rules:**
-- Skip files đã có issue number
-- Skip files không approved
-- On error: log + continue, không dừng toàn bộ
-- Labels chưa tồn tại → MCP sẽ bỏ qua
+- Skip files that already have an issue number
+- Skip files that aren't approved
+- On error: log + continue, don't stop the whole run
+- Labels that don't exist yet → the MCP will skip them
 
 **Error handling:**
 | Error | Action |

@@ -47,10 +47,10 @@ If the user hands you a file/note that already lists multiple suspected causes (
 
 1. State what you actually read/checked (file, line, log) to verify it.
 2. Label the verdict explicitly as one of:
-   - **Đã xác nhận** (confirmed) — code/log directly shows this, cite the evidence (file:line or log excerpt).
-   - **Chưa xác nhận** (unconfirmed) — you have a plausible mechanism but no direct evidence it actually happened / actually causes the reported symptom. Say so in these words, don't blur it into a confirmed finding.
-   - **Không xác nhận được với thông tin hiện có** (cannot confirm with what's available) — say what extra info/repro would be needed to decide.
-3. Never upgrade a "chưa xác nhận" to a stated fact by proximity to a confirmed one in the same paragraph — a wrong confirmation here sends the whole investigation in the wrong direction, so keep each verdict visually and textually separate.
+   - **Confirmed** — code/log directly shows this, cite the evidence (file:line or log excerpt).
+   - **Unconfirmed** — you have a plausible mechanism but no direct evidence it actually happened / actually causes the reported symptom. Say so in these words, don't blur it into a confirmed finding.
+   - **Cannot confirm with what's available** — say what extra info/repro would be needed to decide.
+3. Never upgrade an "unconfirmed" to a stated fact by proximity to a confirmed one in the same paragraph — a wrong confirmation here sends the whole investigation in the wrong direction, so keep each verdict visually and textually separate.
 
 ### 4. Root cause analysis
 
@@ -104,37 +104,37 @@ Once confirmed, output a structured fix plan:
 - [What could break, and how to guard against it]
 ```
 
-## Phase 2 — Gate: bắt đầu fix thật chưa?
+## Phase 2 — Gate: is this a real fix yet?
 
-Sau khi có fix plan (Phase 1 step 6), **không tự scaffold file**. Hỏi rõ: *"Bắt đầu tạo branch fix cho issue này? Nếu có, mình sẽ tạo bộ file issue/investigate/implement/testcases/report."*
+Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. Ask clearly: *"Start a fix branch for this issue? If so, I'll create the issue/investigate/implement/testcases/report file set."*
 
-- Nếu user chỉ đang hỏi thử / review nghi ngờ / chưa xác nhận muốn fix → dừng ở đây, output vẫn là fix plan trong chat như Phase 1, không tạo file nào.
-- Chỉ sang Phase 3 khi user xác nhận đồng ý.
+- If the user is only asking a question / reviewing suspicions / hasn't confirmed they want a fix yet → stop here, the output stays as a fix plan in chat like Phase 1, no files created.
+- Only move to Phase 3 once the user explicitly confirms.
 
-## Phase 3 — Scaffold bộ file
+## Phase 3 — Scaffold the file set
 
-1. **Xác định slug**: ngắn gọn, đủ ý vấn đề, dưới 10 từ (ví dụ: `389-cleanup-periodic-bbi-zerocrossing-after-upload`). Nếu tên chưa rõ ràng từ issue/title, đề xuất 1 slug và hỏi user xác nhận trước khi tạo thư mục.
-2. **Xác định đường dẫn**:
-   - Nếu issue này là sub-issue của một issue cha đã có tại `specs/issues/<parent>/`, tạo tại `specs/issues/<parent>/sub-issues/<n>-<slug>/`.
-   - Nếu là issue độc lập, tạo tại `specs/issues/<n>-<slug>/`.
-3. **Sinh 5 file**, mỗi file mở đầu bằng section liên kết chéo tới 4 file còn lại (bỏ qua chính nó):
+1. **Determine the slug**: short, captures the issue, under 10 words (e.g. `389-cleanup-periodic-bbi-zerocrossing-after-upload`). If no clear name exists from the issue/title, propose one slug and confirm with the user before creating the directory.
+2. **Determine the path**:
+   - If this issue is a sub-issue of an existing parent at `specs/issues/<parent>/`, create it at `specs/issues/<parent>/sub-issues/<n>-<slug>/`.
+   - If it's a standalone issue, create it at `specs/issues/<n>-<slug>/`.
+3. **Generate 5 files**, each starting with a section cross-linking to the other 4 (skipping itself):
 
 ```
-## Liên quan
-- [Issue gốc](./issue.md)
-- [Điều tra](./investigate.md)
-- [Hướng fix](./implement.md)
+## Related
+- [Original issue](./issue.md)
+- [Investigation](./investigate.md)
+- [Fix direction](./implement.md)
 - [Testcases](./testcases.md)
-- [Report leader](./report.md)
+- [Report to leader](./report.md)
 ```
 
-   - **issue.md** — nội dung issue gốc, nguyên văn (copy từ input của user hoặc `gh issue view <n>`).
-   - **investigate.md** — tóm tắt Phase 1: hiện tượng, root cause với nhãn Đã xác nhận/Chưa xác nhận/Không xác nhận được (mục 3.5), câu hỏi cần hỏi leader nếu còn mở.
-   - **implement.md** — Fix Plan đầy đủ từ Phase 1 step 6 (Affected Files, Fix Plan, Risk). Không lặp lại phần Verification chi tiết — verification chuyển hết sang testcases.md.
-   - **testcases.md** — khung rỗng, chia 2 nhóm:
-     - "Test sinh code được" — checklist trống, dành cho các case thuần logic (unit test, mock/seed script) sẽ được sinh sau.
-     - "Test bắt buộc trên máy thật" — checklist trống, dành cho case phụ thuộc hardware/native SDK không giả lập được.
-   - **report.md** — chỉ chứa section "Liên quan" ở trên, không viết nội dung báo cáo. Nội dung report được điền sau, riêng, bằng skill `bug-report-writer` khi thực sự cần gửi leader.
+   - **issue.md** — the original issue content, verbatim (copied from the user's input or `gh issue view <n>`).
+   - **investigate.md** — Phase 1 summary: symptom, root cause labeled Confirmed/Unconfirmed/Cannot confirm (per section 3.5), open questions to ask the leader if any remain.
+   - **implement.md** — the full Fix Plan from Phase 1 step 6 (Affected Files, Fix Plan, Risk). Don't repeat the detailed Verification section — verification moves entirely to testcases.md.
+   - **testcases.md** — an empty skeleton, split into 2 groups:
+     - "Auto-generatable tests" — empty checklist, for purely logic-based cases (unit test, mock/seed script) to be generated later.
+     - "Tests required on a real device" — empty checklist, for cases depending on hardware/native SDKs that can't be simulated.
+   - **report.md** — contains only the "Related" section above, no report content written. The report content is filled in separately later, by the `bug-report-writer` skill, once it's actually needed for the leader.
 
 ## Rules
 

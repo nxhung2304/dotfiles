@@ -39,5 +39,5 @@ A soft "ok sounds good" / "được đó" mid-discussion is NOT a finalize signa
 ## Boundaries
 
 - Doesn't run `drill-issue`'s completeness checklist (CRUD/state/soft-delete/association questions) — hand off to `drill-issue` after finalizing if that rigor is still needed.
-- Doesn't create GitHub issues directly — that's `write-a-prd` (product-level PRD) or `md-to-github-issues` (sync an existing `specs/issues/` file to GitHub).
+- Doesn't create GitHub issues directly — use `md-to-github-issues` to sync an existing `specs/issues/` file to GitHub.
 - Never checks off or edits `Acceptance Criteria`/`Implementation Checklist` items for work that isn't actually implemented yet.
