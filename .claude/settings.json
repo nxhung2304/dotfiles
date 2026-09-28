@@ -22,6 +22,7 @@
       "mcp__claude_ai_Slack__slack_update_canvas"
     ]
   },
+  "model": "opus",
   "hooks": {
     "Notification": [
       {
