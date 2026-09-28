@@ -153,7 +153,7 @@ alias ip="ipconfig getifaddr en0"
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
 
 claude() {
-  tmux rename-window "claude:$(basename "$PWD")" 2>/dev/null
+  tmux rename-window "claude" 2>/dev/null
   command claude "$@"
 }
 alias cc="claude"
