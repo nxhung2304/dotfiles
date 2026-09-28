@@ -2,6 +2,7 @@ local opt = vim.opt
 local statusline = require("user.core.statusline")
 
 opt.cursorline = true -- Show current line
+opt.modeline = false
 
 opt.laststatus = 3 -- global statusline
 opt.showmode = false
