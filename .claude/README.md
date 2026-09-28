@@ -1,56 +1,88 @@
 # Claude Code - Commands, Skills & Agents
 
-## Tổng quan (Overview)
+## Overview
 
-Đây là tài liệu tham khảo về các commands, skills, và agents có sẵn trong Claude Code harness cho repository này.
+Reference documentation for the commands, skills, and agents available in the Claude Code harness for this repository.
 
 ---
 
 ## Skills
 
-Skills là các tác vụ có thể gọi lại thông qua lệnh `/skill-name` hoặc `Skill` tool:
+Skills are reusable tasks invoked via `/skill-name` or the `Skill` tool. The tables below list actual **usage** (params, examples) pulled from each `SKILL.md`, not just a generic description.
 
-### Dev Workflow
+### Git / Commit
 
-| Skill | Mô tả | Kích hoạt |
-|-------|-------|-----------|
-| `commit` | Tạo git commit chuyên nghiệp với bullet points và Co-Authored-By | `commit` hoặc `/commit` |
-| `review-branch` | Review code theo project rules | `review-branch` hoặc `/review-branch` |
-| `review-specs` | Review spec về tính hoàn chỉnh và rõ ràng | `review-specs` hoặc `/review-specs` |
-| `generate-issues` | Tạo issues từ specs/story.md | `generate-issues` hoặc `/generate-issues` |
-| `sync-github-issues` | Sync local issues sang GitHub Issues | `sync-github-issues` |
-| `refactor` | Refactor code để cải thiện readability và maintainability | `refactor` |
+| Skill | Usage | Notes |
+|-------|-------|-------|
+| `commit` | `/commit` (no args) | Reads staged changes, generates a `type: subject` commit message + WHAT/WHY bullets, **commits immediately, no confirmation** |
+| `short-commit` | `/short-commit` | Generates a one-line message, **shows it for user approval before committing** — never auto-commits |
+| `commit-push` | `/commit-push` | Calls `commit` → `git push` → reports commit hash + push result |
+| `commit-push-by-category` | `/commit-push-by-category` | Groups changed files by category (directory/file type), commits each group separately via `commit`, then pushes via `commit-push` |
+| `pr-desc [lang: <language>]` | `/pr-desc` or `/pr-desc lang: en` | Summarizes the diff/commit log between the current branch and base into a PR description (prints only, **does not create/update the PR on GitHub**). Defaults to Vietnamese |
+
+### Review
+
+| Skill | Usage | Notes |
+|-------|-------|-------|
+| `review-branch [<feature-branch>] [<base-branch>] [include-staged: true\|false]` | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/comments/[branch]-title.md` |
+| `review-issue [<feature-branch>] [<base-branch>] [lang: <language>]` | `/review-issue` | Orchestrator: runs `review-branch` (with `include-staged: true`) + the built-in `code-review` in parallel, merges + dedupes, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<issue-number>/comment.log`. Never edits code, never comments on the PR |
+| `review-specs` | `/review-specs #11` or state the issue number | Reviews the spec in `specs/issues/[issue-number]` (Acceptance Criteria, Checklist, edge cases...), writes feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md` |
+| `simplify` | `simplify` | Reviews changed code for reuse/simplification/efficiency opportunities and **applies the fixes itself** (quality only, not bug-hunting — use `/code-review` for that) |
+
+### Issue Lifecycle
+
+| Skill | Usage | Notes |
+|-------|-------|-------|
+| `feature-discuss <feature-name>` | `/feature-discuss <feature name>` | `discuss` mode (default, read-only): design discussion before an issue file exists. `finalize` mode: only on an explicit signal (`/feature-discuss finalize #<number>` or an unambiguous confirming sentence) does it write to `specs/issues/` |
+| `drill-issue` | point it at an issue file | Asks one question at a time to clarify requirements/edge cases, writes decisions back into the issue file (Key decisions, Notes) |
+| `grill-me` | `grill-me` | Interviews the user relentlessly about a plan/design until every decision branch is resolved (up to ~15 questions), ends with a Decision Summary |
+| `fix-issue` | `/fix-issue` or state the issue number/bug description | Phase 1: investigates the bug via Q&A + code tracing, produces a root cause + fix plan. Only scaffolds the 5 files (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) under `specs/issues/` once the user confirms they're starting a real fix |
+| `generate-issues` | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `issues/` (can target a specific number) |
+| `github-issues-to-md` | needs `owner`, `repo`, `issue_number` | Fetches a GitHub Issue via MCP, converts to Markdown, saves as `specs/issues/[issue-number].md` |
+| `md-to-github-issues` | `/md-to-github-issues` (no args) | Syncs files under `specs/issues/*.md` that are `Review: Approved` and have no `GitHub Issue: #` yet up to GitHub Issues, writes the issue number back into the file |
+| `bug-report-writer [lang: <language>]` | paste/write a bug report draft then invoke the skill | Rewrites/refines a bug investigation report before sending to a leader/reviewer; section count scales with severity |
+
+### Implement Flow (orchestrators)
+
+| Skill | Usage | Notes |
+|-------|-------|-------|
+| `implement-issue [spec-filename]` | `/implement-issue <spec-filename>` | Full-flow orchestrator, runs automatically without stopping: `implement-prepare` → `implement-code` → `implement-quality` → `implement-finalize`, then reports a summary |
+| `implement-local [spec-filename]` | `/implement-local <spec-filename>` | Same as above but stops after `implement-quality` — **no commit, no PR, no Slack** |
+| `implement-prepare [spec-filename]` | used internally by the two above | Checks out + pulls `develop`/`main`, verifies `Review: Approved`, creates branch `feature/[user]-#[issue]-[slug]`, notifies Slack if configured |
+| `implement-code` | used internally | Reads the spec's Implementation Checklist, codes each item, calls `rule-lookup`/`design-checker`/`code-reviewer` as needed |
+| `implement-quality` | used internally | Auto-detects the stack (Flutter/Rails/Go/Rust/Python/Node...) and runs the matching checks (`flutter analyze`, `rubocop`, ...), calls `error-fixer` on errors |
+| `implement-finalize` | used internally | Commits, updates spec status → `PR: Draft`, pushes, opens a Draft PR via GitHub MCP, notifies Slack |
 
 ### Development Tools
 
-| Skill | Mô tả | Kích hoạt |
-|-------|-------|-----------|
-| `claude-api` | Xây dựng, debug, optimize apps dùng Claude API/Anthropic SDK | Khi code import `anthropic` hoặc hỏi về Claude API |
-| `frontend-design:frontend-design` | Tạo frontend interfaces chất lượng cao | Khi hỏi về web components/pages/apps |
-| `simplify` | Review changed code và fix các vấn đề | `simplify` |
+| Skill | Description | Trigger |
+|-------|--------------|---------|
+| `claude-api` | Build, debug, optimize apps using the Claude API/Anthropic SDK | When code imports `anthropic` or asks about the Claude API |
+| `frontend-design:frontend-design` | Create high-quality frontend interfaces | When asked about web components/pages/apps |
+| `refactor` | Refactor code to improve readability and maintainability | `refactor` |
 
 ### Learning & Planning
 
-| Skill | Mô tả | Kích hoạt |
-|-------|-------|-----------|
-| `mentor` | Đóng vai coding mentor: gợi ý roadmap, notes, outlines | `mentor` |
+| Skill | Description | Trigger |
+|-------|--------------|---------|
+| `mentor` | Acts as a coding mentor: suggests roadmaps, notes, outlines | `mentor` |
 
 ---
 
 ## Agents
 
-Agents là các chuyên gia có khả năng và tools riêng:
+Agents are specialists with their own capabilities and tools:
 
-| Agent | Mô tả | Tools | Khi nào dùng |
-|-------|-------|-------|--------------|
-| **Explore** | Khám phá codebase nhanh, tìm files, search keywords | Tất cả (trừ Agent, ExitPlanMode, Edit, Write, NotebookEdit) | Tìm files theo pattern, search keywords, hiểu codebase |
-| **Plan** | Thiết kế implementation plan, trả lời questions về kiến trúc | Tất cả (trừ Agent, ExitPlanMode, Edit, Write, NotebookEdit) | Lập kế hoạch implementation, thiết kế kiến trúc |
-| **general-purpose** | Agent đa năng cho tasks phức tạp, multi-step | Tất cả tools | Tasks phức tạp không phù hợp với agent khác |
-| **code-reviewer** | Review code theo clean-code, code-style, project rules | Read, Grep, Bash(git diff) | Review code, read-only |
-| **rule-lookup** | Tra cứu rules theo ngôn ngữ và task | Read, Grep | Tìm rules trong core.md, general/, project-specific |
-| **error-fixer** | Fix lỗi flutter analyze và flutter test | Read, Edit, Write, Bash(flutter analyze/test), Grep | Fix Flutter errors, chỉ sửa files liên quan |
-| **design-checker** | Kiểm tra và đồng bộ colors, design tokens từ HTML wireframe sang AppColors | Read, Grep, Edit, Write | Sync design tokens |
-| **claude-code-guide** | Trả lời questions về Claude Code CLI, Agent SDK, API | Glob, Grep, Read, WebFetch, WebSearch | Hỏi về Claude Code features |
+| Agent | Description | Tools | When to use |
+|-------|--------------|-------|-------------|
+| **Explore** | Fast codebase exploration, find files, search keywords | All (except Agent, ExitPlanMode, Edit, Write, NotebookEdit) | Find files by pattern, search keywords, understand the codebase |
+| **Plan** | Design an implementation plan, answer architecture questions | All (except Agent, ExitPlanMode, Edit, Write, NotebookEdit) | Plan implementation, design architecture |
+| **general-purpose** | General-purpose agent for complex, multi-step tasks | All tools | Complex tasks that don't fit another agent |
+| **code-reviewer** | Reviews code against clean-code, code-style, project rules | Read, Grep, Bash(git diff) | Code review, read-only |
+| **rule-lookup** | Looks up rules by language and task | Read, Grep | Find rules in core.md, general/, project-specific |
+| **error-fixer** | Fixes flutter analyze and flutter test errors | Read, Edit, Write, Bash(flutter analyze/test), Grep | Fix Flutter errors, only touches related files |
+| **design-checker** | Checks and syncs colors/design tokens from an HTML wireframe to AppColors | Read, Grep, Edit, Write | Sync design tokens |
+| **claude-code-guide** | Answers questions about the Claude Code CLI, Agent SDK, API | Glob, Grep, Read, WebFetch, WebSearch | Questions about Claude Code features |
 
 ---
 
@@ -60,35 +92,35 @@ Agents là các chuyên gia có khả năng và tools riêng:
 ```
 user: "review code issue"
   → Skill: review-branch
-    → Agent: rule-lookup (tra cứu rules)
-    → Agent: code-reviewer (review theo rules)
+    → Agent: rule-lookup (look up rules)
+    → Agent: code-reviewer (review against rules)
 ```
 
 ### 2. Implementation Flow
 ```
 user: "implement feature X"
-  → EnterPlanMode (nếu task phức tạp)
-    → Agent: Explore (khám phá codebase)
-    → Agent: Plan (thiết kế kế hoạch)
-  → ExitPlanMode (user approve)
-  → Implementation (viết code)
-  → Agent: error-fixer (nếu có errors)
+  → EnterPlanMode (if the task is complex)
+    → Agent: Explore (explore the codebase)
+    → Agent: Plan (design the plan)
+  → ExitPlanMode (user approves)
+  → Implementation (write code)
+  → Agent: error-fixer (if errors)
 ```
 
 ### 3. Quality Check Flow
 ```
 user: "quality issue"
-  → Skill: review-branch / implement/quality
+  → Skill: review-branch / implement-quality
     → Agent: rule-lookup
     → Agent: code-reviewer
 ```
 
 ### 4. Commit Workflow
 ```
-user: "commit" hoặc "/commit"
+user: "commit" or "/commit"
   → Skill: commit
     → Bash: git status, git diff, git log
-    → Tạo commit message
+    → Generate commit message
     → Bash: git commit
 ```
 
@@ -98,7 +130,7 @@ user: "commit-push-pr"
   → Skill: commit-commands:commit-push-pr
     → Bash: git status, diff, log
     → Bash: git commit
-    → Bash: git push (nếu cần)
+    → Bash: git push (if needed)
     → Bash: gh pr create
 ```
 
@@ -106,26 +138,26 @@ user: "commit-push-pr"
 
 ## Token Strategy
 
-- **core.md**: Luôn loaded, chứa critical principles
-- **general/**: Rules theo ngôn ngữ (Ruby, Flutter, etc.)
-- **project-specific/**: Rules riêng cho project
-- **rule-lookup agent**: Tra cứu rules để tối ưu token
+- **core.md**: always loaded, contains critical principles
+- **general/**: rules by language (Ruby, Flutter, etc.)
+- **project-specific/**: rules specific to the project
+- **rule-lookup agent**: looks up rules to optimize token usage
 
 ---
 
-## Quy tắc quan trọng
+## Important Rules
 
-1. **Chỉ sử dụng skill khi appropriate** - Đọc user request kỹ
-2. **Agents cho parallel work** - Chạy nhiều agents cùng lúc để tăng performance
-3. **Plan mode cho complex tasks** - Dùng EnterPlanMode cho tasks cần thiết kế
-4. **Todo list cho tracking** - Dùng TaskCreate/TaskUpdate cho multi-step tasks
-5. **Dedicated tools over Bash** - Ưu tiên Read, Edit, Grep over cat/sed/grep
+1. **Only use a skill when appropriate** - read the user request carefully
+2. **Agents for parallel work** - run multiple agents at once to improve performance
+3. **Plan mode for complex tasks** - use EnterPlanMode for tasks that need design work
+4. **Todo list for tracking** - use TaskCreate/TaskUpdate for multi-step tasks
+5. **Dedicated tools over Bash** - prefer Read, Edit, Grep over cat/sed/grep
 
 ---
 
 ## Notes
 
-- File này nằm ở `.claude/README.md`
-- Các skill definitions nằm ở `.claude/skills/`
-- Settings cấu hình ở `~/.claude/settings.json`
-- Keybindings customization ở `~/.claude/keybindings.json`
+- This file lives at `.claude/README.md`
+- Skill definitions live at `.claude/skills/`
+- Settings config at `~/.claude/settings.json`
+- Keybindings customization at `~/.claude/keybindings.json`
