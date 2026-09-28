@@ -8,14 +8,15 @@ description: Review code changes between two branches for clean code, style conv
 
 ## Quick start
 
-`/review-branch [<feature-branch>] [<base-branch>]`
+`/review-branch [<feature-branch>] [<base-branch>] [include-staged: true|false]`
 
 All params are optional:
 - No params → review current branch against `main` (or `master` if `main` doesn't exist)
 - One param → use it as base branch, feature branch = current branch
 - Two params → explicit feature and base branch
+- `include-staged: true` — also review staged-but-uncommitted changes (default: `false`, i.e. committed changes only). Unstaged working-tree changes are never included, regardless of this flag.
 
-Example: `/review-branch` or `/review-branch feature/auth main`
+Example: `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true`
 
 ## Workflow
 
@@ -46,6 +47,14 @@ git branch -r | grep -E 'main|master' | head -1  # detect base branch
 git diff <base>..<branch> --stat
 git diff <base>..<branch>
 ```
+
+If `include-staged: true` was passed, also diff staged-but-uncommitted changes and review them alongside the branch diff (note in the report which findings come from staged changes):
+```bash
+git diff --cached --stat
+git diff --cached
+```
+
+Unstaged working-tree changes are out of scope in all cases — never run a plain `git diff` (no `--cached`) for review purposes.
 
 ### 3. Review each changed file
 

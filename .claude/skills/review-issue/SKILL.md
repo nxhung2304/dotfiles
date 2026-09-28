@@ -30,10 +30,12 @@ Does not write code, does not fix anything (never uses `--fix`), does not post t
 
 ## STEP 1: Run both review sources as background agents
 
+Scope of review: committed and staged changes only. Unstaged working-tree modifications and untracked files are out of scope — do not let either agent review them.
+
 Launch both as background agents in the same message (independent, no dependency between them), using the `Agent` tool:
 
-1. **Agent A** — prompt it to invoke the `review-branch` skill with the resolved `<feature-branch>` `<base-branch>`, and to report back only the structured list of Critical/Warning/Suggestion findings (file, location, problem, why it matters, what to change) — no prose, no fix, no comment.
-2. **Agent B** — prompt it to invoke the built-in `code-review` skill targeting the resolved branch/diff, **WITHOUT** `--comment` or `--fix`, and to report back only the structured list of confirmed bug/correctness findings (confidence ≥80).
+1. **Agent A** — prompt it to invoke the `review-branch` skill with the resolved `<feature-branch>` `<base-branch>` and `include-staged: true` (so committed + staged changes are both covered, unstaged working-tree changes stay excluded), and to report back only the structured list of Critical/Warning/Suggestion findings (file, location, problem, why it matters, what to change) — no prose, no fix, no comment.
+2. **Agent B** — prompt it to invoke the built-in `code-review` skill targeting the resolved branch/diff, explicitly instructing it to review only committed + staged changes (not unstaged/untracked files), **WITHOUT** `--comment` or `--fix`, and to report back only the structured list of confirmed bug/correctness findings (confidence ≥80).
 
 Do not proceed to STEP 2 until both agents' completion notifications have arrived — do not fabricate or guess their results while waiting. Once both are back, list A and list B are each agent's reported findings.
 
