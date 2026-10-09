@@ -6,6 +6,11 @@
 - Answer only what was asked. Do not end a response by proposing extra work, refactors, or follow-up changes beyond the current request ("want me to also fix/move/add X?") — that pushes scope decisions onto the user instead of just answering. Only raise an unrequested issue if it is a real bug/risk directly tied to the change just made, state it in one line as information (not an offer to expand scope), and stop there — let the user decide whether to ask for more, don't prompt them toward it.
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
 
+## Change scope (suggestions & plans)
+- Keep proposed changes to the minimum the task requires. Don't touch existing logic the spec doesn't require changing — no opportunistic refactors (e.g. replacing magic numbers with constants where the value doesn't change, renaming, restructuring old branches).
+- Don't propose fixing a suspected bug in existing code until it's confirmed (reproduced or tested). Record it as a risk to test, and let me decide after testing.
+- If touching old logic seems necessary, state why the current change requires it and what could break, then wait for my approval.
+
 ## Code style
 - Variable and method names must be self-explanatory and contextually appropriate — a reader should understand their purpose immediately without needing extra explanation.
 - Do not add comments when writing or modifying code. Well-named code is the explanation; a comment restating what the code already says is noise. This includes doc comments, section headers, and inline notes.

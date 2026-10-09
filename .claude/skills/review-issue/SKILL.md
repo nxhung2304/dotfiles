@@ -1,7 +1,7 @@
 ---
 name: review-issue
 allowed-tools: Read, Write, Grep, Glob, Bash(git:*), Bash(mkdir:*), Skill
-description: Orchestrator that runs review-branch + code-review in parallel, merges the results, translates them into MUST/SHOULD/NIT format, and writes them to specs/issues/<issue>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
+description: Orchestrator that runs review-branch + code-review in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<issue>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
 ---
 
 # Review Issue
@@ -15,7 +15,7 @@ Does not write code, does not fix anything (never uses `--fix`), does not post t
 **Language:**
 - Default output language: Vietnamese
 - If ARGUMENTS specifies a language (e.g. `lang: en`, `lang: english`, `en`), write the report in that language instead
-- Keep the field labels (File / Location / Problem / Why it matters / What to change / Suggestion) translated to match the chosen language
+- Keep the field labels (Source / Classification / File / Location / Problem / Why it matters / What to change / Suggestion) translated to match the chosen language
 
 ## STEP 0: Resolve branch + issue number
 
@@ -48,14 +48,33 @@ Both A and B already self-verify internally (A: concrete failure scenario; B: co
 
 1. Walk each finding in A and B, grouped by `file`.
 2. If two findings are in the same file, within ≤5 lines of each other, and describe the same issue → treat as a duplicate, merge into one entry, note "found by both review-branch and code-review" (higher confidence).
-3. A finding that appears in only A or only B → keep as-is; track its source internally (not required in the final output, just for tracing if needed).
+3. A finding that appears in only A or only B → keep as-is and record its source (`review-branch` or `code-review`); the source is written in the final output (STEP 4).
+
+## STEP 2.5: Classify each finding
+
+Classifying is not originating a finding — it only labels findings A/B already reported. For each merged finding, set two labels:
+
+1. **Scope** — one of:
+   - `In scope`: the flagged code was added or changed on `<feature-branch>` (appears in the STEP 0.3 diff) and relates to the issue's goal.
+   - `Out of scope — pre-existing`: the flagged behaviour already existed at the merge-base. Check with `git show <merge-base>:<file>`; if the same logic is there unchanged, it is pre-existing.
+   - `Partly in scope`: part of the flagged code is new on the branch, part is pre-existing.
+   - `No change needed — required by spec`: the finding questions a change that the issue spec (`specs/issues/<issue-number>*.md` or `specs/issues/<issue-number>/issue.md`, if present) explicitly requires.
+2. **Basis** — one of:
+   - `Verified`: the source gave a concrete failure scenario grounded in the code, or a confidence score ≥80.
+   - `Assumption`: the source itself says the finding relies on unverified SDK/library/device behaviour, or code-review returned no confidence score for it and the scenario depends on behaviour outside this repo.
 
 ## STEP 3: Map severity → MUST / SHOULD / NIT
 
-- `Critical` (from review-branch) or a bug from `code-review` → **MUST**
-- `Warning` (from review-branch) or a cleanup/simplification from `code-review` → **SHOULD**
-- `Suggestion` (from review-branch) → **NIT**
-- A finding confirmed by both sources → always **MUST** (regardless of original severity), since it's double-confirmed
+Classification from STEP 2.5 gates severity first; the source severity only applies to findings that pass the gate.
+
+1. `No change needed — required by spec` → not in the fix list; list it in the "Out of scope / no change needed" section (STEP 4) with one line explaining why.
+2. `Out of scope — pre-existing` → not in the fix list and no severity; list it in the "Out of scope / no change needed" section.
+3. `In scope` or `Partly in scope` → map the source severity:
+   - `Critical` (from review-branch) or a bug from `code-review` → **MUST**
+   - `Warning` (from review-branch) or a cleanup/simplification from `code-review` → **SHOULD**
+   - `Suggestion` (from review-branch) → **NIT**
+   - A finding confirmed by both sources → **MUST** (regardless of original severity), since it's double-confirmed
+4. Cap: a finding with Basis `Assumption` is at most **SHOULD**, even if step 3 gave MUST, and its entry must say what to verify before fixing.
 
 ## STEP 4: Translate + write the file
 
@@ -63,13 +82,24 @@ For each merged finding, write it in this format (clear, natural language — no
 
 ```markdown
 ### [No.]. [Severity: MUST / SHOULD / NIT]
+- **Source:** `review-branch`, `code-review`, or both
+- **Classification:** Scope + Basis from STEP 2.5 (e.g. "Out of scope — pre-existing · Verified"), plus a short reason (e.g. the merge-base already sets the flag unconditionally)
 - **File:** file path
 - **Location:** line or code block to fix
 - **Problem:** short description of what's wrong
 - **Why it matters:** the risk or impact if left unfixed
-- **What to change:** concrete instructions for the change needed
-- **Suggestion:** if applicable, a suggested fix or logic
+- **What to change:** concrete instructions for the change needed; for an `Assumption` finding, start with what to verify first (test, device, SDK doc) and when the fix can be skipped
+- **Suggestion:** the solution, following the rules below
 ```
+
+Rules for **Suggestion** (goal: lowest risk, smallest impact, least likely to draw a follow-up review comment):
+- Read the flagged code before writing the solution, and check the solution against it: it must not reintroduce the problem, break ordering/concurrency the branch relies on, or change behaviour outside the finding.
+- Default to one solution: the smallest diff, no new abstraction, matching how the surrounding code is written.
+- If more than one reasonable solution exists, list at most 3, one line each with its trade-off, and mark the recommended one.
+- If every fix carries more risk than the problem itself, write "Do not fix in this PR" with the reason, plus a ready-to-send reply for the reviewer.
+- Any code snippet is labelled "sketch, not compiled".
+
+After the numbered fix list, add a section "Out of scope / no change needed" listing the findings excluded in STEP 3 (steps 1–2): one short entry each with Source, Classification (with reason), File, Location and Problem. Omit the section if it is empty.
 
 (The field labels above are shown in English; write them in the target language — Vietnamese by default.)
 
@@ -80,15 +110,17 @@ If neither A nor B found anything, write clearly in the file: "No issues to addr
 ## STEP 5: Re-check the file before reporting done
 
 Read back the `comment.log` you just wrote, and confirm:
-- Every entry has all 5 fields filled in meaningfully (none left blank without reason).
+- Every fix-list entry has Source, Classification, File, Location, Problem, Why it matters, What to change and Suggestion filled in meaningfully (none left blank without reason).
+- No `Out of scope` or `required by spec` finding sits in the fix list, and no `Assumption` finding is MUST.
+- Every Suggestion follows the Suggestion rules in STEP 4.
 - Numbers are sequential, no duplicates.
 - Every field's content, not just the field labels, is actually written in the target language — no leftover English (or source-language) sentences under translated labels.
 - The writing is clear enough that a developer understands what to fix immediately, without needing to re-read the original code.
 
-Report back to the user: count of MUST/SHOULD/NIT, and the log file path — do not repeat the full report content in chat.
+Report back to the user: count of MUST/SHOULD/NIT, how many are assumption-based, how many were moved to the out-of-scope section, and the log file path — do not repeat the full report content in chat.
 
 ## Rules
 
 - Never fix code yourself, never use `--fix`, never post a PR comment.
-- Never review beyond the scope of the two skills above — this orchestrator only coordinates + merges + translates, it never originates new findings.
+- Never review beyond the scope of the two skills above — this orchestrator only coordinates + merges + classifies + translates + writes solutions for the reported findings, it never originates new findings.
 - If one of the two skills errors or can't run (e.g. missing `gh` auth for code-review), continue with the other's results, and note clearly at the top of the log file which source is missing.

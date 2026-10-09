@@ -1,11 +1,17 @@
 ---
-name: bug-report-writer
-description: Rewrite or refine a bug investigation report / technical report before sending to a leader, reviewer, or team channel. Use this whenever the user drafts or pastes a bug report, investigation summary, root-cause analysis, or "báo cáo điều tra bug" and wants it improved, checked for gaps, or restructured before reporting. Also trigger when the user asks "báo cáo này đã đủ chưa", "còn thiếu gì không", "sửa lại báo cáo", or wants to prepare a report to leader/PM/reviewer about a technical issue. The skill adapts the number of sections to the size/severity of the issue — small issues get a short report, large/high-impact issues get a fuller report — rather than forcing every report into a fixed template.
+name: report
+description: Rewrite or refine a bug investigation report / technical report before sending to a leader, reviewer, or team channel, in plain, easy-to-understand language with as little jargon as possible, written like a real person talking. Use this whenever the user drafts or pastes a bug report, investigation summary, root-cause analysis, or "báo cáo điều tra bug" and wants it improved, checked for gaps, or restructured before reporting. Also trigger when the user asks "báo cáo này đã đủ chưa", "còn thiếu gì không", "sửa lại báo cáo", or wants to prepare a report to leader/PM/reviewer about a technical issue. The skill adapts the number of sections to the size/severity of the issue — small issues get a short report, large/high-impact issues get a fuller report — rather than forcing every report into a fixed template.
 ---
 
-# Bug Report Writer
+# Report
 
 Help write or rewrite a bug/technical investigation report before it's sent to a leader, reviewer, or team, so the report is deep enough that the reader doesn't have to ask basic follow-up questions (what the root cause is based on, what was cross-checked, how the consequences were handled).
+
+**Plain language first.** The reader should understand the report on the first read, without knowing the code:
+- Explain what happens in everyday words (e.g. "the app shows 'stopped' without waiting for the watch to confirm"), not in code terms (`result()` called before the `Task` finishes).
+- Keep function/file/variable names out of the main text. Add them only where the reader actually needs them to act or check, and keep them short (one reference in parentheses, or a short evidence line at the end).
+- Any unavoidable technical term gets a few-word explanation the first time.
+- Sound like a real person telling a colleague: short sentences, natural flow, no stiff or templated wording, no filler.
 
 **Core principle: do NOT force a rigid 6-7 section template onto every report.** The number of sections depends on the size/severity of the issue. A small, isolated bug that hasn't affected anyone needs only 3-4 lines. A bug affecting real user data across multiple systems needs the full set of sections.
 
@@ -32,7 +38,7 @@ The answers to these 5 questions determine how many sections the report needs in
 | Section | Always included? | Condition to add |
 |---|---|---|
 | **Symptom** | Always | — |
-| **Root cause** | Always | If code evidence exists → cite it concretely (file/function/logic). If uncertain → mark clearly as a hypothesis, don't state it as a firm conclusion. |
+| **Root cause** | Always | If code evidence exists → explain the mechanism in plain words, with one short code reference only as backing. If uncertain → mark clearly as a hypothesis, don't state it as a firm conclusion. |
 | **Cross-check with related systems** | Only if an equivalent system/version exists | Skip if there's nothing to compare against. |
 | **Solution — prevention** | Always | — |
 | **Solution — remediation** | Only if the issue has already affected real data/users | Skip if the bug never ran in production or left no lasting consequence. |
@@ -46,15 +52,16 @@ The answers to these 5 questions determine how many sections the report needs in
 
 ### Step 3 — Write/rewrite the report
 
-- For **Root cause**: never write "this is a bug because of X" without citing the actual code or logic. If the user provides a related issue/PR link, cross-check directly: "where issue #X was fixed, and why the currently broken spot falls outside that fix's scope."
+- For **Root cause**: never write "this is a bug because of X" without evidence behind it — explain it in plain words, and keep the code reference short and secondary. If the user provides a related issue/PR link, cross-check directly: "where issue #X was fixed, and why the currently broken spot falls outside that fix's scope."
 - For **Cross-check**: state the similarities/differences explicitly, don't just list the two systems.
 - For **Remediation**: always answer "so what happens to users who were already affected?" — this is nearly always the leader/PM's first question if the bug already ran in production.
-- Keep the tone concise, and preserve the exact technical terms used in the original draft (don't rename variables, functions, or issue names).
+- Keep the tone concise. When a variable, function, or issue name does appear, keep it exactly as in the original draft (don't rename it) — but prefer a plain description over the name itself.
 - Match the output language to the source draft's language by default, unless `lang` overrides it.
 
 ### Step 4 — Final check before delivering
 
-Check yourself against 3 questions:
+Check yourself against 4 questions:
+- Would someone who doesn't read the code understand it on the first read, and does it sound like a person talking? → if not, rewrite the jargon-heavy or stiff parts.
 - Is there any conclusion stated without supporting evidence? → if so, downgrade it to a hypothesis or add evidence.
 - Is there an "obvious" question the reader (leader) would ask that the report doesn't answer? (e.g. "what about existing users", "why isn't Android affected")
 - Does the number of sections match the scope of the issue? (a small report that's too long, or a large report that's too thin, both need rework)

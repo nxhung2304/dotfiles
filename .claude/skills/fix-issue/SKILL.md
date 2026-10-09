@@ -134,7 +134,9 @@ Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. 
    - **testcases.md** — an empty skeleton, split into 2 groups:
      - "Auto-generatable tests" — empty checklist, for purely logic-based cases (unit test, mock/seed script) to be generated later.
      - "Tests required on a real device" — empty checklist, for cases depending on hardware/native SDKs that can't be simulated.
-   - **report.md** — contains only the "Related" section above, no report content written. The report content is filled in separately later, by the `bug-report-writer` skill, once it's actually needed for the leader.
+   - **report.md** — contains only the "Related" section above, no report content written. The report content is filled in separately later, by the `report` skill, once it's actually needed for the leader.
+
+4. **Keep every file short — just enough, no padding.** Short bullets, one idea per line, steps joined with `→` where they read naturally. Keep only what the reader needs to act: steps, observable result, verdict, decision. Drop explanations of *why* a step works, background the code already shows, and anything already said in another file — link to it instead of repeating. Applies to every later edit of these files too, not only the first scaffold.
 
 ## Rules
 
@@ -145,4 +147,5 @@ Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. 
 - End every investigation with an explicit fix plan **only if** the root cause is confirmed — otherwise end with what's confirmed, what's not, and how to confirm it next
 - When multiple suspicions exist, verify and label each independently (confirmed / unconfirmed / cannot confirm) — never blend them into one conclusion
 - Never scaffold the 5-file doc set without an explicit Phase 2 confirmation from the user
-- `report.md` is created empty (link section only) — never pre-write its content; that's `bug-report-writer`'s job, invoked separately when the user is ready to report
+- Doc files stay concise — just enough to act on, no long explanations, no repeating content from another file
+- `report.md` is created empty (link section only) — never pre-write its content; that's `report`'s job, invoked separately when the user is ready to report

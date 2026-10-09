@@ -21,7 +21,7 @@
 | **[drill-issue](./drill-issue/SKILL.md)** | point it at an issue file | Asks one question at a time to clarify requirements/edge cases, writes decisions back into the issue file (Key decisions, Notes). |
 | **[grill-me](./grill-me/SKILL.md)** | `grill-me` | Interviews the user relentlessly about a plan/design until every decision branch is resolved (up to ~15 questions), ends with a Decision Summary. |
 | **[fix-issue](./fix-issue/SKILL.md)** | `/fix-issue` or state the issue number/bug description | Phase 1: investigates the bug via Q&A + code tracing, produces a root cause + fix plan. Only scaffolds the 5 files (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) under `specs/issues/` once the user confirms they're starting a real fix. |
-| **[bug-report-writer](./bug-report-writer/SKILL.md)** | paste/write a bug report draft then invoke the skill | Rewrites/refines a bug investigation report before sending to a leader/reviewer; section count scales with severity. |
+| **[report](./report/SKILL.md)** | paste/write a bug report draft then invoke the skill | Rewrites/refines a bug investigation report before sending to a leader/reviewer; section count scales with severity. |
 | **[md-to-github-issues](./md-to-github-issues/SKILL.md)** | `/md-to-github-issues` (no args) | Syncs files under `specs/issues/*.md` that are `Review: Approved` and have no `GitHub Issue: #` yet up to GitHub Issues, writes the issue number back into the file. |
 | **[generate-issues](./generate-issues/SKILL.md)** | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `issues/` (can target a specific number). |
 
@@ -56,7 +56,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | Clarify requirements/edge cases on an existing issue file | `drill-issue` |
 | Stress-test my own plan by getting interrogated about it | `grill-me` |
 | Investigate a reported bug and find the root cause | `fix-issue` |
-| Write/polish a bug report before sending it to a leader | `bug-report-writer` |
+| Write/polish a bug report before sending it to a leader | `report` |
 | Turn `specs/story.md` tasks into individual issue files | `generate-issues` |
 | Pull a GitHub Issue into a local spec file, or push local specs to GitHub | `github-issues-to-md` / `md-to-github-issues` |
 | Sanity-check a spec before implementation starts | `review-specs` |
@@ -87,7 +87,7 @@ fix-issue                        # investigate, root cause, fix plan
   → implement-local or manual fix
   → review-branch include-staged: true   # review before committing
   → commit-push
-  → bug-report-writer              # if a report needs to go to a leader/reviewer
+  → report                         # if a report needs to go to a leader/reviewer
 ```
 
 **Story → GitHub, spec-driven:**
