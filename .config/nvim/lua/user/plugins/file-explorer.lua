@@ -105,6 +105,17 @@ return {
 					api.tree.change_root(vim.fn.getcwd(-1, -1))
 				end, o)
 
+				vim.keymap.set("n", "r", function()
+					local node = api.tree.get_node_under_cursor()
+					if not node or node.type ~= "file" then
+						return
+					end
+
+					require("user.plugins.flutter.flutter_utils").rename_nvim_tree_node(node, function()
+						api.fs.rename(node)
+					end)
+				end, o)
+
 				-- Find folder by name, cd into it; press "-" to go back up
 				vim.keymap.set("n", "f", function()
 					local cwd = vim.fn.getcwd()

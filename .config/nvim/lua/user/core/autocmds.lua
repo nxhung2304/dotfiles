@@ -35,16 +35,6 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 	end,
 })
 
-vim.api.nvim_create_autocmd("FileChangedShellPost", {
-	desc = "Show notification when file changed",
-	pattern = "*",
-	callback = function()
-		vim.api.nvim_echo({
-			{ "File changed on disk. Buffer reloaded.", "WarningMsg" },
-		}, true, {})
-	end,
-})
-
 vim.api.nvim_create_autocmd("FileType", {
 	group = augroup("wrap_spell"),
 	pattern = { "text", "plaintex", "typst", "gitcommit", "markdown" },
@@ -95,4 +85,3 @@ vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 		end
 	end,
 })
-

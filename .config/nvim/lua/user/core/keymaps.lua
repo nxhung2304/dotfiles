@@ -211,3 +211,25 @@ end, { desc = "Next test failure" })
 keymap("n", "[f", function()
 	test().goto_failure(-1)
 end, { desc = "Prev test failure" })
+
+local saved_zen_state = nil
+keymap("n", "<leader>uz", function()
+	if saved_zen_state then
+		vim.o.laststatus = saved_zen_state.laststatus
+		vim.o.winbar = saved_zen_state.global_winbar
+		for window, winbar in pairs(saved_zen_state.winbars) do
+			if vim.api.nvim_win_is_valid(window) then
+				vim.wo[window].winbar = winbar
+			end
+		end
+		saved_zen_state = nil
+		return
+	end
+	saved_zen_state = { laststatus = vim.o.laststatus, global_winbar = vim.o.winbar, winbars = {} }
+	for _, window in ipairs(vim.api.nvim_list_wins()) do
+		saved_zen_state.winbars[window] = vim.wo[window].winbar
+		vim.wo[window].winbar = ""
+	end
+	vim.o.laststatus = 0
+	vim.o.winbar = ""
+end, { desc = "Zen mode (hide statusline + winbar)" })
