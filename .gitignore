@@ -6,6 +6,7 @@ backups/
 .claude/ide/
 .claude/skills/synced/
 .claude/skills/.system/
+.claude/skills/.trash/
 
 .config/github-copilot/apps.json
 .config/github-copilot/auth.db
