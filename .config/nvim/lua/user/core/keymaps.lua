@@ -56,7 +56,7 @@ keymap("t", "<Esc>", "<C-\\><C-n>")
 keymap("v", ">", ">gv", { desc = "Indent in" })
 keymap("v", "<", "<gv", { desc = "Indent out" })
 
-vim.keymap.set("n", "<leader>cd", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Copy current diagnostic" })
+vim.keymap.set("n", "<leader>cD", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Copy current diagnostic" })
 
 -- Diagnostics
 keymap("n", "]e", function()

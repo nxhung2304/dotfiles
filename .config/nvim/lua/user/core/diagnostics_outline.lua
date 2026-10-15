@@ -144,7 +144,7 @@ function M.open()
 	vim.bo[state.buf].modifiable = false
 	vim.bo[state.buf].undolevels = -1
 
-	vim.cmd("botright vsplit")
+	vim.cmd("botright 12split")
 	state.win = vim.api.nvim_get_current_win()
 	vim.api.nvim_win_set_buf(state.win, state.buf)
 
@@ -154,6 +154,7 @@ function M.open()
 	wo.signcolumn     = "no"
 	wo.wrap           = true
 	wo.cursorline     = true
+	wo.winfixheight   = true
 	wo.winbar         = "%#Title# 󰒡 Diagnostics%*"
 
 	local map = function(lhs, rhs) vim.keymap.set("n", lhs, rhs, { buffer = state.buf, nowait = true }) end
@@ -207,5 +208,7 @@ function M.toggle_errors_only()
 	state.errors_only = not state.errors_only
 	M.render()
 end
+
+vim.keymap.set("n", "<leader>cd", M.toggle, { desc = "Toggle diagnostics outline" })
 
 return M

@@ -2,7 +2,6 @@
 -- part of the sidebar switcher). Reuses the documentSymbol cache maintained by
 -- `user.core.symbol`.
 local symbol = require("user.core.symbol")
-local diagnostics_outline = require("user.core.diagnostics_outline")
 
 local M = {}
 
@@ -234,10 +233,8 @@ end
 function M.toggle()
 	if is_open() then
 		M.close()
-		diagnostics_outline.close()
 	else
 		M.open()
-		diagnostics_outline.open()
 	end
 end
 

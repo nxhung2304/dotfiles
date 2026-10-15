@@ -24,9 +24,6 @@ vim.api.nvim_create_user_command("CopyCurrentDiagnostic", function()
 
 	if current_diagnostic then
 		vim.fn.setreg("+", current_diagnostic)
-		print("Copy diagnostics to clipboard!")
-	else
-		print("Not found diagnostics at current cursor")
 	end
 end, {})
 

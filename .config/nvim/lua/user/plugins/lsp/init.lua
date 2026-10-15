@@ -54,7 +54,7 @@ return {
 				"ts_ls",
 				"volar",
 				"vtsls",
-				"kotlin_language_server",
+				"kotlin_lsp",
 			}
 
 			local utils = require("user.core.utils")
@@ -110,7 +110,6 @@ return {
 				"typescript-language-server",
 				"vtsls",
 				"vue-language-server",
-				"kotlin-language-server",
 				-- Formatters & Linters
 				"clang-format",
 				"clangd",
