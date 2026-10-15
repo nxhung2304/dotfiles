@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+unset TMUX
+
+project_path=$1
+[[ -z $project_path ]] && exit 1
+session_name=$(basename "$project_path" | tr . _)
+
+tmux has-session -t "=$session_name" 2>/dev/null || tmux new-session -ds "$session_name" -c "$project_path"
+
+if [[ -n $(tmux list-clients 2>/dev/null) ]]; then
+    tmux switch-client -t "=$session_name"
+    osascript -e 'tell application "Ghostty" to activate'
+else
+    open -na Ghostty --args -e /opt/homebrew/bin/tmux attach-session -t "=$session_name"
+fi

@@ -26,4 +26,4 @@ windows:
     start_directory: ~/Dev/personal/elearning
     panes:
       - shell_command:
-          - bin/rails server
+          - bin/rails server -b 0.0.0.0
