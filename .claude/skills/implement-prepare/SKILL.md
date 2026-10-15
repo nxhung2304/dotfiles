@@ -1,6 +1,6 @@
 ---
 name: implement-prepare
-allowed-tools: Read, Bash(git checkout:*), Bash(git pull:*), Bash(git branch:*), Bash(mkdir *), mcp__slack__*
+allowed-tools: Read, Bash(git checkout:*), Bash(git pull:*), Bash(git branch:*), Bash(mkdir *), mcp__claude_ai_Slack__*
 description: Prepare before coding — pull, create branch, check approved, notify Slack.
 ---
 
@@ -27,7 +27,7 @@ Steps:
 
 4. Notify Slack that work is starting (optional — only if `slack-channel-id` is present in CLAUDE.md)
 - If absent → skip, `thread_ts = null`
-- If present → use `mcp__slack__slack_post_message`, save `thread_ts`
+- If present → use `mcp__claude_ai_Slack__slack_send_message` (load it via ToolSearch first if deferred), save the returned message `ts` as `thread_ts`
 
 **IMPORTANT:** Do NOT report a summary to the user — only return the result so the orchestrator can continue to the next step.
 Return: { branch_name, issue_number, title, thread_ts }

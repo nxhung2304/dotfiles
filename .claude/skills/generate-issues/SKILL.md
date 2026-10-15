@@ -30,18 +30,22 @@ Read story.md, parse: `- [ ] [number]. [title]`
 - Skip if file already exists
 
 ### 4. Issue structure
-Every issue contains these sections in order:
+Follow `template.md` (next to this file) for format. Every issue contains these sections in order:
 
 | Section | Always? | Notes |
 |---|---|---|
-| Status + Metadata | ✓ | title, phase, issue tracker link (if any) |
+| Status + Metadata | ✓ | title, phase, depends on, issue tracker link (if any) |
 | Description | ✓ | 2–4 lines, context only, don't repeat the checklist |
-| Acceptance Criteria | ✓ | checkbox list, testable |
-| Implementation Checklist | ✓ | checkbox list, actionable steps |
-| User Flow | UI features only | navigation tree, stack-agnostic |
-| Wireframe | UI features only | ASCII mockup of the main screens |
-| Flow Diagram | Non-UI features | request/response, state machine, data flow |
-| Key Decisions | ✓ | bullet list, only what's non-obvious |
+| Design | UI features only | link to the design file + screen name; no content copied from it |
+| Acceptance Criteria | ✓ | checkbox list, testable, max 8 items |
+| Implementation Checklist | ✓ | flat checkbox list, max 8 items, one line each — no sub-headings, no code |
+| User Flow | Only if navigating across 2+ screens | navigation tree, stack-agnostic |
+| Wireframe | Only if no design file exists | ASCII mockup of the main screens |
+| Flow Diagram | Only for non-trivial non-UI logic | request/response, state machine, data flow |
+| Key Decisions | Only if there is one | bullet list, only what's non-obvious |
+| Notes | Only if there is one | max 4 bullets |
+
+**Length:** target 40–60 lines per issue. If it runs longer, cut detail from the checklist and optional sections first — implementation detail belongs to the implement step, not the issue.
 
 ---
 
@@ -82,7 +86,7 @@ Skip this section if the feature has no user-facing screen (jobs, migrations, AP
 
 ---
 
-### 6. Wireframe *(UI features only)*
+### 6. Wireframe *(UI features with no design file only)*
 
 ASCII mockup, main screens only. No need for modal/toast/edge-case UI.
 
@@ -162,7 +166,9 @@ Only record what's non-obvious:
 - Skeleton code with an empty body (signature + empty body adds no value)
 - Empty test stubs (test name with no content)
 - Snippets for obvious code (a 3-line route, a 1-line config)
-- Only add a snippet when the syntax is genuinely non-obvious or error-prone — and it must have real content, never left blank
+- Code snippets of any kind
+- Content copied from a design file (colors, spacing, layout specs) — link to it instead
+- Empty optional sections or placeholder text
 
 ---
 

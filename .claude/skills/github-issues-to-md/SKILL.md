@@ -1,6 +1,6 @@
 ---
 name: github-issues-to-md
-allowed-tools: Read, Write, mcp__github__get_issue
+allowed-tools: Read, Write, Bash(gh auth:*), Bash(gh api:*), Bash(gh issue view:*)
 description: Fetch a GitHub Issue and save it to local specs/issues/[issue-number].md. Use when user ask: "convert github issues to md, get github issue to md,..."
 ---
 
@@ -12,8 +12,8 @@ Fetch a GitHub Issue → convert to Markdown → save as a local file
 - repo (required)
 
 **Steps:**
-1. Verify MCP:
-   - Call `mcp__github__get_issue(owner, repo, issue_number)`
+1. Select GitHub account: if the project `CLAUDE.md` has `github-account: <user>` and `gh api user -q .login` differs → `gh auth switch --hostname github.com --user <user>`
+   - Fetch: `gh issue view <issue_number> --repo <owner>/<repo> --json number,title,body,labels,assignees,state`
 2. Parse response:
    - title
    - body
@@ -49,6 +49,6 @@ Source: GitHub
 **Error handling:**
 | Error | Action |
 |-------|--------|
-| MCP auth fail | Stop, guide user set token |
+| gh auth fail | Stop, guide user to run `gh auth login` |
 | Issue not found | Stop + log issue_number |
 | Write file fail | Log error |

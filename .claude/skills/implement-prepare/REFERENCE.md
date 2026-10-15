@@ -11,26 +11,10 @@ The `slack-channel-id` value is the Slack channel ID (not the name). To find it:
 
 ### How it works
 
-- If `slack-channel-id` is present → skill calls `mcp__slack__slack_post_message` and stores `thread_ts` for reply threading
+- If `slack-channel-id` is present → skill calls `mcp__claude_ai_Slack__slack_send_message` and stores the message `ts` as `thread_ts` for reply threading
 - If absent → Slack step is silently skipped, `thread_ts = null`
 
-### MCP requirement
+### Requirements
 
-Slack notifications require the `mcp__slack__*` MCP server to be configured. Add to `.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "slack": {
-      "command": "npx",
-      "args": ["-y", "@anthropic-ai/mcp-server-slack"],
-      "env": {
-        "SLACK_BOT_TOKEN": "xoxb-...",
-        "SLACK_TEAM_ID": "T0XXXXXXXXX"
-      }
-    }
-  }
-}
-```
-
-`SLACK_BOT_TOKEN` requires the `chat:write` and `channels:read` OAuth scopes.
+- Slack: the claude.ai Slack connector must be connected with write access enabled (`/mcp` lists `slack_send_message`)
+- GitHub: `gh` CLI installed and logged in (`gh auth status`) — PRs are created with `gh pr create --draft`

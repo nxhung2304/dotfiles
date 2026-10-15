@@ -1,77 +1,120 @@
 ---
 name: report
-description: Rewrite or refine a bug investigation report / technical report before sending to a leader, reviewer, or team channel, in plain, easy-to-understand language with as little jargon as possible, written like a real person talking. Use this whenever the user drafts or pastes a bug report, investigation summary, root-cause analysis, or "báo cáo điều tra bug" and wants it improved, checked for gaps, or restructured before reporting. Also trigger when the user asks "báo cáo này đã đủ chưa", "còn thiếu gì không", "sửa lại báo cáo", or wants to prepare a report to leader/PM/reviewer about a technical issue. The skill adapts the number of sections to the size/severity of the issue — small issues get a short report, large/high-impact issues get a fuller report — rather than forcing every report into a fixed template.
+description: Write, rewrite, or tighten any message meant for someone else to read — leader, PM, reviewer, customer, team channel — so it is plain, jargon-light, short but complete, and sized to the scope of the task. Covers bug investigation reports, estimates and task proposals, status updates/recaps, and decision or trade-off asks. Use whenever the user wants to report or explain something to another person ("báo leader", "gửi leader", "nói với leader", "báo cáo", "report", "estimate", "báo estimate", "ước lượng", "đề xuất", "kế hoạch", "tóm tắt gửi team", "status", "recap", "giải thích cho leader hiểu", "nói sao cho dễ hiểu / thuyết phục"), pastes a draft and asks "đủ chưa", "còn thiếu gì", "sửa lại", "ngắn gọn hơn", "dễ hiểu hơn", "ít kỹ thuật hơn", or when a technical discussion ends and the user asks to summarize it for someone else. Adapts structure and length to the task instead of forcing a fixed template.
 ---
 
 # Report
 
-Help write or rewrite a bug/technical investigation report before it's sent to a leader, reviewer, or team, so the report is deep enough that the reader doesn't have to ask basic follow-up questions (what the root cause is based on, what was cross-checked, how the consequences were handled).
+Turn technical work into a message the reader understands on the first read, can act on without follow-up questions, and finds short. The reader usually does not read the code.
 
-**Plain language first.** The reader should understand the report on the first read, without knowing the code:
-- Explain what happens in everyday words (e.g. "the app shows 'stopped' without waiting for the watch to confirm"), not in code terms (`result()` called before the `Task` finishes).
-- Keep function/file/variable names out of the main text. Add them only where the reader actually needs them to act or check, and keep them short (one reference in parentheses, or a short evidence line at the end).
-- Any unavoidable technical term gets a few-word explanation the first time.
-- Sound like a real person telling a colleague: short sentences, natural flow, no stiff or templated wording, no filler.
+**Language:** match the user's language (default: the draft's or the conversation's language). `lang: en` / `lang: vi` in ARGUMENTS overrides it.
 
-**Core principle: do NOT force a rigid 6-7 section template onto every report.** The number of sections depends on the size/severity of the issue. A small, isolated bug that hasn't affected anyone needs only 3-4 lines. A bug affecting real user data across multiple systems needs the full set of sections.
+## Core rules (every report type)
 
-**Language:**
-- Default: match the language of the input report/draft
-- If ARGUMENTS specifies a language (e.g. `lang: en`, `lang: vi`), write the output in that language instead
+1. **Plain language.** Describe what happens in everyday words ("the screen only says 'failed', not what actually went wrong"), not code terms. Any unavoidable technical term gets a few-word explanation the first time. Short sentences, natural tone, like a person talking to a colleague.
+2. **Name things by feature, not by code.** Say "login", "payment", "data upload" — not file, class, or function names. Drop counts and ratios unless they change the reader's decision.
+3. **Concrete over abstract.** "Most cases aren't handled yet" is vague; "handled: A, B, C — not handled: X, Y, Z" is clear. When the reader can't picture what a phrase refers to, replace it with a short have/lack list in feature terms.
+4. **Short but complete.** Every line must answer a question the reader would ask; cut everything else. Prefer labelled one-liners (`Vấn đề:` / `Giải pháp:` / `Rủi ro:`) over paragraphs. Shortening means compressing wording, never dropping an idea the reader needs.
+5. **Verified or labelled.** Before writing a claim (feasible / not feasible, root cause, "SDK doesn't support X"), check the code, SDK, or docs. If it can't be checked, write it as a guess. An estimate is always an estimate.
+6. **Paste-ready output.** Give the report as one block the user can paste as-is. Notes meant only for the user (sources, file references, which numbers are guesses) go after a `---` separator, in one or two lines. Keep hedging and code references out of the paste-ready block.
+7. **Iterate in place.** When the user asks for a change (shorter, clearer, less technical, add X), return the full updated block, not a diff, so it stays paste-ready.
 
-## Process
+## Step 1 — Identify the type and the scope
 
-### Step 1 — Assess the scope of the issue
+Pick the type (a report can mix them, e.g. bug + estimate for the fix):
 
-Before writing, ask yourself (or the user, if unclear):
+| Type | The reader wants to know |
+|---|---|
+| **Bug investigation** | What broke, why, is it fixed, who was affected |
+| **Estimate / proposal** | What's wrong, what we'll do, how long, what could go wrong, what they must decide |
+| **Status / recap** | Where things stand, what's next, anything blocked |
+| **Decision / trade-off ask** | The options, the cost of each, what you recommend, what you need from them |
 
-1. **Is there concrete evidence of the root cause yet**, or is it still a guess?
-2. **Is there an equivalent system/version to cross-check against** (e.g. iOS vs Android, old version vs new, Cordova vs Flutter)?
-3. **Has the issue already affected real users/data**, or was it only caught during dev/test?
-4. **Severity/scope of impact** — one user or many, does it cause crashes/data loss/cost?
-5. **Is there anything the writer isn't sure about** that should be flagged as a hypothesis rather than a conclusion?
+Size it by scope:
 
-The answers to these 5 questions determine how many sections the report needs in step 2. If the user already provided enough information in the draft, infer the answers instead of asking again. Only ask when it genuinely can't be inferred (e.g. unclear whether real users were affected yet).
-
-### Step 2 — Choose the sections needed (conditional checklist)
-
-| Section | Always included? | Condition to add |
+| Scope | Signals | Shape |
 |---|---|---|
-| **Symptom** | Always | — |
-| **Root cause** | Always | If code evidence exists → explain the mechanism in plain words, with one short code reference only as backing. If uncertain → mark clearly as a hypothesis, don't state it as a firm conclusion. |
-| **Cross-check with related systems** | Only if an equivalent system/version exists | Skip if there's nothing to compare against. |
-| **Solution — prevention** | Always | — |
-| **Solution — remediation** | Only if the issue has already affected real data/users | Skip if the bug never ran in production or left no lasting consequence. |
-| **Impact & Severity** | Only if the issue is significant enough (affects many users, or the leader needs to prioritize P0/P1/P2) | Skip for small, isolated bugs. |
-| **Effort estimate** | Only if a fix needs to be planned (a code fix is attached) | Skip if the report is just informational, with no fix direction yet. |
-| **Open questions** | Only if something is still uncertain | Skip this section if everything is clear and backed by evidence. |
+| **Small** | One change, low risk, nothing to decide | 2–5 lines, no headings |
+| **Medium** | A few parts, some risk, or one decision | Labelled sections, one line each where possible |
+| **Large** | Several steps or systems, real user impact, or several decisions | One block per step, then Total / Recommendation / Confirm |
 
-**Shortening rule:** if applying the table above leaves only 2 sections (Symptom + Root cause), merge them into one short paragraph instead of separate headings — a small report should read as one flowing block, no need for heavy headings.
+Infer the type and scope from the conversation. Ask only when it genuinely blocks the report (e.g. unknown whether real users were affected).
 
-**Expansion rule:** for a large issue (many users, data loss, multiple teams/systems involved), add extra sections beyond the table if the context demands it (e.g. security risk, compliance impact) — the table above is a floor, not a hard limit.
+## Step 2 — Sections by type (include only what applies)
 
-### Step 3 — Write/rewrite the report
+### Bug investigation
 
-- For **Root cause**: never write "this is a bug because of X" without evidence behind it — explain it in plain words, and keep the code reference short and secondary. If the user provides a related issue/PR link, cross-check directly: "where issue #X was fixed, and why the currently broken spot falls outside that fix's scope."
-- For **Cross-check**: state the similarities/differences explicitly, don't just list the two systems.
-- For **Remediation**: always answer "so what happens to users who were already affected?" — this is nearly always the leader/PM's first question if the bug already ran in production.
-- Keep the tone concise. When a variable, function, or issue name does appear, keep it exactly as in the original draft (don't rename it) — but prefer a plain description over the name itself.
-- Match the output language to the source draft's language by default, unless `lang` overrides it.
+| Section | Include when |
+|---|---|
+| **Symptom** | Always |
+| **Root cause** | Always. With evidence → explain the mechanism in plain words, at most one short code reference as backing. Without evidence → mark as a hypothesis. |
+| **Cross-check** | An equivalent system/version exists (another platform, an older version, a similar module). State the actual difference, don't just list both. |
+| **Prevention** | Always |
+| **Remediation** | The bug already affected real users/data — answer "what happens to users already affected?" |
+| **Impact & severity** | Many users, or the reader must set priority |
+| **Effort estimate** | A fix must be planned — use the estimate rules below |
+| **Open questions** | Something is still uncertain |
 
-### Step 4 — Final check before delivering
+If only Symptom + Root cause remain, merge them into one short paragraph.
 
-Check yourself against 4 questions:
-- Would someone who doesn't read the code understand it on the first read, and does it sound like a person talking? → if not, rewrite the jargon-heavy or stiff parts.
-- Is there any conclusion stated without supporting evidence? → if so, downgrade it to a hypothesis or add evidence.
-- Is there an "obvious" question the reader (leader) would ask that the report doesn't answer? (e.g. "what about existing users", "why isn't Android affected")
-- Does the number of sections match the scope of the issue? (a small report that's too long, or a large report that's too thin, both need rework)
+### Estimate / proposal
 
-## Length examples by scope
+One block per step (a single block if the task is small):
 
-**Small bug, root cause already clear, hasn't affected anyone:**
-> Symptom: [X]. Root cause: [code Y causing Z]. Already fixed in PR #N, no further action needed for current users.
+- **Vấn đề / Problem** — what exists vs. what's missing, in feature terms (core rule 3).
+- **Giải pháp / Solution** — one or two sentences covering the whole idea of the step.
+- **Ước lượng / Estimate** — the step total in the heading; one line splitting it into parts in hours (e.g. "code A 2–3h, B 1h, test 2–3h").
+- **Rủi ro / Risk** — only real ones; "Thấp" is a valid answer.
 
-(3 sentences, no headings needed.)
+Then, once for the whole report:
 
-**Large bug affecting real user data, with a system to cross-check against:**
-> Full set of sections: Symptom → Root cause (with code evidence) → Cross-check (e.g. Cordova vs Flutter) → Prevention → Remediation → Effort estimate → Open questions.
+- **Tổng / Total** — the sum, plus the assumptions behind it: AI-assisted or not, test included, how testing is done.
+- **Đề xuất / Recommendation** — which step to do first and why, in one or two sentences. Name the step that alone delivers most of the value, and any step that depends on another.
+- **Cần xác nhận / To confirm** — only questions whose answer changes scope or estimate, each with its effect ("if not needed, step 3 drops ~3h").
+
+Estimate rules:
+- Split each step into parts with hours so the reader sees where the time goes; a bare "1–1.5 days" is not convincing.
+- Separate coding time from testing time. If the user works with an AI assistant, coding shrinks but testing in a real environment doesn't; state which applies.
+- Prefer simulated tests (unit tests, mocked state or responses, forced events, emulators, local environments) and keep real-environment runs for what can't be faked. Say so in the total.
+- Check the arithmetic: parts sum to each step, steps sum to the total.
+- Split steps by the value each delivers, so the reader can approve them one at a time.
+- Before claiming something can or can't be done, check the code, SDK, or docs (core rule 5).
+
+### Status / recap
+
+Conclusion first → done → in progress → blocked (and what unblocks it) → next. Add risks only if they affect the plan.
+
+### Decision / trade-off ask
+
+Context in one line → options (a table when there are two or more) with the cost of each → your recommendation and why → exactly what you need from the reader.
+
+## Step 3 — Self-check before delivering
+
+Read it as the recipient and fix whatever triggers one of these questions:
+- "Cái này là gì?" — a vague phrase → make it concrete (have/lack, feature names).
+- "Sao lâu vậy?" — an estimate without a breakdown → add the parts in hours.
+- "Rồi làm gì tiếp / anh cần quyết gì?" — missing recommendation or confirm question.
+- "Chắc chưa?" — a claim not verified → verify it or mark it as a guess.
+- Any file name, function name, or count the reader doesn't need → remove.
+- Length doesn't match scope → shorten a small one, add what's missing to a large one.
+
+## Shape examples
+
+**Small bug, root cause clear, nobody affected:**
+> Symptom: [X]. Cause: [Y, in plain words]. Fixed in PR #N; no action needed for current users.
+
+**Medium decision ask:**
+> We need to pick how to handle [X]. A: keep the current approach — no extra work, but it breaks down at [limit]. B: [change] — 1 day, removes the limit. I recommend B, because [next step] will push past that limit. Need your OK to go with B.
+
+**Large estimate (shape only):**
+> **Step 1: [what the reader gets]** (1–1.25 days)
+> - Problem: currently saved: A, B. Not saved: X, Y, Z.
+> - Solution: [one or two sentences].
+> - Estimate: part A 2–3h, part B 1h, part C 2h, simulated test 2–3h.
+> - Risk: [one line].
+>
+> **Step 2 …**
+>
+> **Total:** 3–3.5 days (AI-assisted, mostly simulated tests, one final run in a real environment).
+> **Recommendation:** do all steps in order; merge step 1 first so the team can use it right away.
+> **To confirm:** [only questions that change scope or estimate].

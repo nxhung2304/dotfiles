@@ -1,6 +1,6 @@
 ---
 name: implement-issue
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, mcp__github__*, mcp__slack__*
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, mcp__claude_ai_Slack__*
 description: Orchestrator for the full implement-an-issue flow. Does not code directly.
 ---
 

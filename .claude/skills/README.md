@@ -17,11 +17,12 @@
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
 | **[github-issues-to-md](./github-issues-to-md/SKILL.md)** | needs `owner`, `repo`, `issue_number` | Fetches a GitHub Issue via MCP, converts to Markdown, saves as `specs/issues/[issue-number].md`. |
-| **[feature-discuss](./feature-discuss/SKILL.md)** | `/feature-discuss <feature-name>` | `discuss` mode (default, read-only): design discussion before an issue file exists. `finalize` mode: only on an explicit signal (`/feature-discuss finalize #<number>` or an unambiguous confirming sentence) does it write to `specs/issues/`. |
+| **[feature-discuss](./feature-discuss/SKILL.md)** | `/feature-discuss <feature-name>`, `/feature-discuss save`, `/feature-discuss finalize #<number>` | `discuss` (default, read-only): design discussion for a feature/improvement/proposal. `save`: persists the discussion via `issue-docs`, no issue number needed. `finalize`: on an explicit signal with an issue number, writes the pipeline spec file `specs/issues/<n>-<slug>.md` and links it to the saved folder. |
 | **[drill-issue](./drill-issue/SKILL.md)** | point it at an issue file | Asks one question at a time to clarify requirements/edge cases, writes decisions back into the issue file (Key decisions, Notes). |
 | **[grill-me](./grill-me/SKILL.md)** | `grill-me` | Interviews the user relentlessly about a plan/design until every decision branch is resolved (up to ~15 questions), ends with a Decision Summary. |
-| **[fix-issue](./fix-issue/SKILL.md)** | `/fix-issue` or state the issue number/bug description | Phase 1: investigates the bug via Q&A + code tracing, produces a root cause + fix plan. Only scaffolds the 5 files (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) under `specs/issues/` once the user confirms they're starting a real fix. |
-| **[report](./report/SKILL.md)** | paste/write a bug report draft then invoke the skill | Rewrites/refines a bug investigation report before sending to a leader/reviewer; section count scales with severity. |
+| **[fix-issue](./fix-issue/SKILL.md)** | `/fix-issue` or state the issue number/bug description | Phase 1: investigates the bug via Q&A + code tracing, produces a root cause + fix plan. Only saves the issue docs (via `issue-docs`) under `specs/issues/` once the user confirms they're starting a real fix. |
+| **[issue-docs](./issue-docs/SKILL.md)** | `/issue-docs` or "lưu vào specs/issues"; also called by `fix-issue` | Creates/updates linked docs under `specs/issues/<n>-<slug>/` for any task type, picking only the files the current stage needs (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) and reusing existing ones. |
+| **[report](./report/SKILL.md)** | `/report` or ask to report/estimate for a leader | Writes/refines any leader-facing message (bug report, estimate/proposal, status, decision ask) in plain language; structure scales with task scope. |
 | **[md-to-github-issues](./md-to-github-issues/SKILL.md)** | `/md-to-github-issues` (no args) | Syncs files under `specs/issues/*.md` that are `Review: Approved` and have no `GitHub Issue: #` yet up to GitHub Issues, writes the issue number back into the file. |
 | **[generate-issues](./generate-issues/SKILL.md)** | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `issues/` (can target a specific number). |
 
@@ -56,7 +57,8 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | Clarify requirements/edge cases on an existing issue file | `drill-issue` |
 | Stress-test my own plan by getting interrogated about it | `grill-me` |
 | Investigate a reported bug and find the root cause | `fix-issue` |
-| Write/polish a bug report before sending it to a leader | `report` |
+| Save a discussion/investigation into `specs/issues/` to continue later | `issue-docs` |
+| Write/polish a report, estimate, or status update for a leader | `report` |
 | Turn `specs/story.md` tasks into individual issue files | `generate-issues` |
 | Pull a GitHub Issue into a local spec file, or push local specs to GitHub | `github-issues-to-md` / `md-to-github-issues` |
 | Sanity-check a spec before implementation starts | `review-specs` |

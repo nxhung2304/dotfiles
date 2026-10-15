@@ -5,39 +5,44 @@
 ## Metadata
 - **Title:** [title]
 - **Phase:** [phase number & name]
+- **Depends on:** [issue numbers, or —]
 - **GitHub Issue:** (to be filled after sync)
 
 ---
 
 ## Description
-[Short description of what this task does and why]
+[2–4 lines: what this task does and why]
+
+---
+
+## Design
+- [design file path] — [screen name]
 
 ---
 
 ## Acceptance Criteria
-- [ ] [Specific, testable criterion]
+- [ ] [Specific, testable criterion — max 8 items]
 - [ ] [...]
 
 ---
 
-## Key Decisions
-- **[Decision topic]** — [Why this approach, what was ruled out, constraints to respect]
-- **[...]**
-
----
-
 ## Implementation Checklist
-- [ ] [Ordered step with file path — no code, just what to do and where]
+- [ ] [One line per step with file path — max 8 items, no code]
 - [ ] [...]
 
 ---
 
 ## Flow
 ```
-[ASCII diagram — state transitions, request flow, or data write path. Under 20 lines.]
+[ASCII diagram — only for non-trivial logic. Under 15 lines.]
 ```
 
 ---
 
+## Key Decisions
+- **[Decision topic]** — [Why this approach, what was ruled out]
+
+---
+
 ## Notes
-[Gotchas, dependencies on other tasks, edge cases — 2-4 bullet points max]
+[Gotchas, dependencies, edge cases — max 4 bullets]

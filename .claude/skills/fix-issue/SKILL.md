@@ -1,6 +1,6 @@
 ---
 name: fix-issue
-description: Interactively investigate a reported bug through systematic reproduction, root cause analysis, and fix planning, then — only once the user confirms they're starting a real fix — scaffold the 5 linked docs (issue.md, investigate.md, implement.md, testcases.md, report.md) under specs/issues/. Use when user asks "investigate bug", "fix issue", "tìm lỗi", "điều tra bug", "đánh giá bug/lỗi", "đánh giá thử", "review nghi ngờ", or points to an existing investigation/bug report file (e.g. investigate.md, root-cause note with a list of "nghi ngờ"/suspicions) and wants an assessment of it — not only when starting a fresh investigation from scratch. A plain "review nghi ngờ" ask stays in Phase 1 and never scaffolds files on its own.
+description: Interactively investigate a reported bug through systematic reproduction, root cause analysis, and fix planning, then — only once the user confirms they're starting a real fix — save the linked docs (issue.md, investigate.md, implement.md, testcases.md, ... — only those needed) under specs/issues/ via issue-docs. Use when user asks "investigate bug", "fix issue", "tìm lỗi", "điều tra bug", "đánh giá bug/lỗi", "đánh giá thử", "review nghi ngờ", or points to an existing investigation/bug report file (e.g. investigate.md, root-cause note with a list of "nghi ngờ"/suspicions) and wants an assessment of it — not only when starting a fresh investigation from scratch. A plain "review nghi ngờ" ask stays in Phase 1 and never scaffolds files on its own.
 ---
 
 # Fix Issue
@@ -106,37 +106,17 @@ Once confirmed, output a structured fix plan:
 
 ## Phase 2 — Gate: is this a real fix yet?
 
-Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. Ask clearly: *"Start a fix branch for this issue? If so, I'll create the issue/investigate/implement/testcases/report file set."*
+Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. Ask clearly: *"Start a fix branch for this issue? If so, I'll save the issue docs under specs/issues/."*
 
 - If the user is only asking a question / reviewing suspicions / hasn't confirmed they want a fix yet → stop here, the output stays as a fix plan in chat like Phase 1, no files created.
 - Only move to Phase 3 once the user explicitly confirms.
 
 ## Phase 3 — Scaffold the file set
 
-1. **Determine the slug**: short, captures the issue, under 10 words (e.g. `389-cleanup-periodic-bbi-zerocrossing-after-upload`). If no clear name exists from the issue/title, propose one slug and confirm with the user before creating the directory.
-2. **Determine the path**:
-   - If this issue is a sub-issue of an existing parent at `specs/issues/<parent>/`, create it at `specs/issues/<parent>/sub-issues/<n>-<slug>/`.
-   - If it's a standalone issue, create it at `specs/issues/<n>-<slug>/`.
-3. **Generate 5 files**, each starting with a section cross-linking to the other 4 (skipping itself):
-
-```
-## Related
-- [Original issue](./issue.md)
-- [Investigation](./investigate.md)
-- [Fix direction](./implement.md)
-- [Testcases](./testcases.md)
-- [Report to leader](./report.md)
-```
-
-   - **issue.md** — the original issue content, verbatim (copied from the user's input or `gh issue view <n>`).
-   - **investigate.md** — Phase 1 summary: symptom, root cause labeled Confirmed/Unconfirmed/Cannot confirm (per section 3.5), open questions to ask the leader if any remain.
-   - **implement.md** — the full Fix Plan from Phase 1 step 6 (Affected Files, Fix Plan, Risk). Don't repeat the detailed Verification section — verification moves entirely to testcases.md.
-   - **testcases.md** — an empty skeleton, split into 2 groups:
-     - "Auto-generatable tests" — empty checklist, for purely logic-based cases (unit test, mock/seed script) to be generated later.
-     - "Tests required on a real device" — empty checklist, for cases depending on hardware/native SDKs that can't be simulated.
-   - **report.md** — contains only the "Related" section above, no report content written. The report content is filled in separately later, by the `report` skill, once it's actually needed for the leader.
-
-4. **Keep every file short — just enough, no padding.** Short bullets, one idea per line, steps joined with `→` where they read naturally. Keep only what the reader needs to act: steps, observable result, verdict, decision. Drop explanations of *why* a step works, background the code already shows, and anything already said in another file — link to it instead of repeating. Applies to every later edit of these files too, not only the first scaffold.
+Invoke the `issue-docs` skill; it picks which files to create and reuses existing ones. Hand it what Phase 1 produced:
+- **investigate.md** ← symptom, repro, root cause labeled Confirmed/Unconfirmed/Cannot confirm (per section 3.5), open questions.
+- **implement.md** ← the Fix Plan from Phase 1 step 6 (Affected Files, Fix Plan, Risk), without the Verification section.
+- **testcases.md** ← the Verification items, split into auto-generatable vs real-device; empty lists if none.
 
 ## Rules
 
@@ -146,6 +126,6 @@ Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. 
 - State the root cause as a clear hypothesis, not a vague guess
 - End every investigation with an explicit fix plan **only if** the root cause is confirmed — otherwise end with what's confirmed, what's not, and how to confirm it next
 - When multiple suspicions exist, verify and label each independently (confirmed / unconfirmed / cannot confirm) — never blend them into one conclusion
-- Never scaffold the 5-file doc set without an explicit Phase 2 confirmation from the user
+- Never save the issue docs without an explicit Phase 2 confirmation from the user
 - Doc files stay concise — just enough to act on, no long explanations, no repeating content from another file
 - `report.md` is created empty (link section only) — never pre-write its content; that's `report`'s job, invoked separately when the user is ready to report

@@ -1,0 +1,29 @@
+session_name: elearning
+start_directory: ~/Dev/personal
+
+windows:
+  - window_name: mobile
+    start_directory: ~/Dev/personal/elearning_mobile
+    layout: even-horizontal
+    panes:
+      - shell_command:
+          - nvim
+        focus: true
+      - shell_command:
+          - claude
+
+  - window_name: rails
+    start_directory: ~/Dev/personal/elearning
+    layout: even-horizontal
+    panes:
+      - shell_command:
+          - nvim
+        focus: true
+      - shell_command:
+          - claude
+
+  - window_name: rails-run
+    start_directory: ~/Dev/personal/elearning
+    panes:
+      - shell_command:
+          - bin/rails server
