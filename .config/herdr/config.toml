@@ -19,8 +19,9 @@ prompt_new_tab_name = false
 pane_borders = true
 pane_gaps = true
 
+status_indicators = "symbols"
 [ui.toast]
-delivery = "herdr"
+delivery = "off"
 delay_seconds = 1
 
 [ui.toast.herdr]
@@ -42,8 +43,8 @@ swap_pane_down = "prefix+alt+j"
 swap_pane_up = "prefix+alt+k"
 swap_pane_right = "prefix+alt+l"
 
-split_vertical = "prefix+v"
-split_horizontal = "prefix+minus"
+split_vertical = ["prefix+v", "prefix+%"]
+split_horizontal = ["prefix+minus", "prefix+\""]
 close_pane = "prefix+x"
 zoom = "prefix+z"
 resize_mode = "prefix+r"
@@ -51,17 +52,17 @@ resize_pane_left = "ctrl+alt+shift+left"
 resize_pane_down = "ctrl+alt+shift+down"
 resize_pane_up = "ctrl+alt+shift+up"
 resize_pane_right = "ctrl+alt+shift+right"
-rename_pane = "prefix+shift+p"
+rename_pane = "prefix+alt+p"
 
 new_tab = "prefix+c"
 previous_tab = ["prefix+p", "prefix+ctrl+p"]
 next_tab = ["prefix+n", "prefix+ctrl+n"]
 switch_tab = "prefix+1..9"
-rename_tab = "prefix+shift+t"
+rename_tab = ["prefix+shift+t", "prefix+comma"]
 close_tab = "prefix+shift+x"
 
 new_workspace = "prefix+shift+n"
-rename_workspace = "prefix+shift+w"
+rename_workspace = ["prefix+shift+w", "prefix+$"]
 close_workspace = "prefix+shift+d"
 workspace_picker = "prefix+w"
 previous_workspace = "prefix+shift+left"
@@ -75,8 +76,10 @@ goto = "prefix+g"
 last_pane = "prefix+tab"
 cycle_pane_next = "prefix+ctrl+tab"
 cycle_pane_previous = "prefix+shift+tab"
-reload_config = "prefix+shift+r"
+reload_config = "prefix+alt+r"
 
+navigate_workspace_up = ["up", "k"]
+navigate_workspace_down = ["down", "j"]
 navigate_pane_left = "h"
 navigate_pane_down = "j"
 navigate_pane_up = "k"
@@ -103,27 +106,67 @@ command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
 description = "clear pane screen"
 
 [[keys.command]]
-key = "prefix+alt+g"
-type = "popup"
-width = "80%"
-height = "80%"
-command = "lazygit"
-description = "lazygit"
-
-[[keys.command]]
 key = "prefix+shift+c"
-type = "pane"
-command = "claude"
-description = "claude code"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab claude claude"
+description = "claude code tab"
 
 [[keys.command]]
 key = "prefix+shift+e"
-type = "pane"
-command = "nvim"
-description = "neovim"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab neovim nvim"
+description = "neovim tab"
 
 [[keys.command]]
 key = "prefix+shift+s"
-type = "pane"
-command = "bundle exec rails server"
-description = "rails server"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab rails-server bundle exec rails server"
+description = "rails server tab"
+
+[[keys.command]]
+key = "prefix+shift+r"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
+description = "open PR or repo in browser"
+
+[[keys.command]]
+key = "prefix+shift+p"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page pulls"
+description = "open repo pulls in browser"
+
+[[keys.command]]
+key = "prefix+shift+i"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page issues"
+description = "open repo issues in browser"
+
+[[keys.command]]
+key = "prefix+d"
+type = "popup"
+width = "80%"
+height = "40%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/drag-drop"
+description = "drag and drop files into cwd"
+
+[experimental]
+switch_ascii_input_source_in_prefix = true
+
+[ui.sidebar.agents.rows_by_agent]
+claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
+
+[[keys.command]]
+key = "prefix+o"
+type = "popup"
+width = "80%"
+height = "60%"
+command = "wt switch"
+description = "worktrunk: switch worktree"
+
+[[keys.command]]
+key = "prefix+shift+o"
+type = "popup"
+width = "60%"
+height = "20%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-create"
+description = "worktrunk: new worktree"

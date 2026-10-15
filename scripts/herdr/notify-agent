@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+terminal_bundle_id() {
+    if pgrep -xq ghostty; then
+        echo com.mitchellh.ghostty
+    elif pgrep -xq wezterm-gui; then
+        echo com.github.wez.wezterm
+    fi
+}
+
+terminal_is_frontmost() {
+    local bundle_id=$1
+    [[ -n $bundle_id ]] && lsappinfo info -only bundleid "$(lsappinfo front)" | grep -q "\"$bundle_id\""
+}
+
+focus_agent() {
+    local pane_id=$1
+    local pane_json workspace_id tab_id bundle_id
+
+    pane_json=$(herdr pane get "$pane_id")
+    workspace_id=$(jq -r '.result.pane.workspace_id' <<<"$pane_json")
+    tab_id=$(jq -r '.result.pane.tab_id' <<<"$pane_json")
+
+    herdr workspace focus "$workspace_id" >/dev/null
+    herdr tab focus "$tab_id" >/dev/null
+    herdr agent focus "$pane_id" >/dev/null
+
+    bundle_id=$(terminal_bundle_id)
+    [[ -n $bundle_id ]] && open -b "$bundle_id"
+    return 0
+}
+
+notify() {
+    local kind=$1
+    local pane_id=${HERDR_PANE_ID:-}
+    [[ -n $pane_id ]] || exit 0
+
+    local hook_message=""
+    if [[ ! -t 0 ]]; then
+        hook_message=$(jq -r '.message // empty' 2>/dev/null || true)
+    fi
+
+    local pane_json bundle_id workspace_id workspace_label task_title
+    pane_json=$(herdr pane get "$pane_id")
+    bundle_id=$(terminal_bundle_id)
+
+    if [[ $(jq -r '.result.pane.focused' <<<"$pane_json") == true ]] && terminal_is_frontmost "$bundle_id"; then
+        exit 0
+    fi
+
+    workspace_id=$(jq -r '.result.pane.workspace_id' <<<"$pane_json")
+    workspace_label=$(herdr workspace get "$workspace_id" | jq -r '.result.workspace.label')
+    task_title=$(jq -r '.result.pane.terminal_title_stripped // ""' <<<"$pane_json")
+
+    local title message sound
+    case $kind in
+        done)
+            title="✅ Claude xong việc"
+            message=$task_title
+            sound=default
+            ;;
+        input)
+            title="🔔 Claude cần bạn"
+            message=${hook_message:-$task_title}
+            sound=Basso
+            ;;
+    esac
+
+    local script_path socket_env=""
+    script_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    if [[ -n ${HERDR_SOCKET_PATH:-} ]]; then
+        socket_env="HERDR_SOCKET_PATH=$(printf '%q' "$HERDR_SOCKET_PATH") "
+    fi
+
+    terminal-notifier \
+        -title "$title" \
+        -subtitle "$workspace_label" \
+        -message "${message:- }" \
+        -sound "$sound" \
+        -group "herdr-$pane_id" \
+        -execute "${socket_env}$(printf '%q' "$script_path") --focus $(printf '%q' "$pane_id")" \
+        >/dev/null
+}
+
+case ${1:-} in
+    --focus) focus_agent "${2:?pane id required}" ;;
+    done | input) notify "$1" ;;
+    *)
+        echo "usage: notify-agent done|input | --focus <pane_id>" >&2
+        exit 2
+        ;;
+esac

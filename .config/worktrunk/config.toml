@@ -1,0 +1,37 @@
+# Each worktree gets its own tmux session so opensessions can track it
+# independently (branch/dirty-state shown correctly per worktree).
+# See: https://worktrunk.dev/tips-patterns/#tmux-session-per-worktree
+
+[post-switch]
+herdr = """
+[ -n "$HERDR_ENV" ] || exit 0
+~/dotfiles/scripts/herdr/worktree-workspace open '{{ worktree_path }}' '{{ repo }}/{{ branch }}'
+"""
+
+[post-remove]
+herdr = """
+[ -n "$HERDR_ENV" ] || exit 0
+~/dotfiles/scripts/herdr/worktree-workspace close '{{ worktree_path }}'
+"""
+
+[pre-start]
+tmux = """
+[ -z "$HERDR_ENV" ] || exit 0
+S={{ repo }}-{{ branch | sanitize }}
+W={{ worktree_path }}
+
+tmux new-session -d -s "$S" -c "$W"
+tmux send-keys -t "$S" 'claude' Enter
+
+if [ -n "$TMUX" ]; then
+  tmux switch-client -t "$S"
+else
+  echo "✓ Session '$S' — attach with: tmux attach -t $S"
+fi
+"""
+
+[pre-remove]
+tmux = """
+[ -z "$HERDR_ENV" ] || exit 0
+tmux kill-session -t {{ repo }}-{{ branch | sanitize }} 2>/dev/null || true
+"""

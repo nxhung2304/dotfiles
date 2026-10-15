@@ -1,33 +1,110 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -eq 1 ]]; then
-    selected=$1
-else
-    selected=$(find ~ ~/Dev/personal ~/Dev/rights -mindepth 1 -maxdepth 1 -type d | fzf)
-fi
+project_roots=("$HOME/Dev/personal" "$HOME/Dev/rights")
+recent_repo_limit=30
 
-if [[ -z ${selected:-} ]]; then
-    exit 0
-fi
+workspace_name_for() {
+    echo "$(basename "$(dirname "$1")")/$(basename "$1")"
+}
 
-selected_name=$(basename "$selected" | tr . _)
+open_workspace_rows() {
+    local workspaces panes
+    workspaces=$(herdr workspace list)
+    panes=$(herdr pane list)
+    jq -r --argjson panes "$panes" '
+        def rank: {"blocked": 0, "done": 1, "working": 2, "idle": 3}[.] // 4;
+        [.result.workspaces[] | . as $workspace | {
+            id: .workspace_id,
+            label: .label,
+            status: .agent_status,
+            cwd: (($panes.result.panes | map(select(.workspace_id == $workspace.workspace_id)) | first | .cwd) // "")
+        }]
+        | sort_by(.status | rank)
+        | .[] | [.status, .id, .label, .cwd] | @tsv' <<<"$workspaces"
+}
 
-existing=$(herdr workspace list | jq -r --arg name "$selected_name" \
-    '.result.workspaces[] | select(.label == $name) | .workspace_id' | head -1)
+status_cell() {
+    case $1 in
+        blocked) printf '\033[31m◆ blocked\033[0m' ;;
+        done) printf '\033[32m✔ done   \033[0m' ;;
+        working) printf '\033[33m◐ working\033[0m' ;;
+        idle) printf '\033[2m○ idle   \033[0m' ;;
+        *) printf '         ' ;;
+    esac
+}
 
-if [[ -n $existing ]]; then
-    herdr workspace focus "$existing" >/dev/null
-    exit 0
-fi
+recent_repo_dirs() {
+    zoxide query -l | while IFS= read -r dir; do
+        [[ -e $dir/.git ]] && echo "$dir"
+    done | sed -n "1,${recent_repo_limit}p"
+}
 
-created=$(herdr workspace create --cwd "$selected" --label "$selected_name" --focus)
-root_pane=$(echo "$created" | jq -r '.result.root_pane.pane_id')
+build_menu() {
+    local open_paths_file dir status workspace_id label cwd
+    open_paths_file=$(mktemp)
 
-for hydrate_file in "$selected/.tmux-sessionizer" "$HOME/.tmux-sessionizer"; do
-    if [[ -f $hydrate_file ]]; then
-        herdr pane send-text "$root_pane" "source $hydrate_file" >/dev/null
-        herdr pane send-keys "$root_pane" enter >/dev/null
-        break
+    while IFS=$'\t' read -r status workspace_id label cwd; do
+        printf '%s  %s\tws:%s\n' "$(status_cell "$status")" "$label" "$workspace_id"
+        [[ -n $cwd ]] && echo "$cwd" >>"$open_paths_file"
+    done < <(open_workspace_rows)
+
+    {
+        recent_repo_dirs
+        find "${project_roots[@]}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort
+    } | awk 'NR == FNR { open[$0]; next } !($0 in open) && !seen[$0]++' "$open_paths_file" - |
+        while IFS= read -r dir; do
+            printf '%s  %s\tdir:%s\n' "$(status_cell none)" "$(workspace_name_for "$dir")" "$dir"
+        done
+
+    rm -f "$open_paths_file"
+}
+
+open_workspace_id_for_path() {
+    open_workspace_rows | awk -F'\t' -v path="$1" '$4 == path { print $2; exit }'
+}
+
+open_directory() {
+    local selected=$1
+    local existing created root_pane hydrate_file
+
+    existing=$(open_workspace_id_for_path "$selected")
+    if [[ -n $existing ]]; then
+        herdr workspace focus "$existing" >/dev/null
+        return 0
     fi
-done
+
+    zoxide add "$selected"
+    created=$(herdr workspace create --cwd "$selected" --label "$(workspace_name_for "$selected")" --focus)
+    root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
+
+    for hydrate_file in "$selected/.tmux-sessionizer" "$HOME/.tmux-sessionizer"; do
+        if [[ -f $hydrate_file ]]; then
+            herdr pane send-text "$root_pane" "source $hydrate_file" >/dev/null
+            herdr pane send-keys "$root_pane" enter >/dev/null
+            break
+        fi
+    done
+}
+
+main() {
+    if [[ $# -eq 1 ]]; then
+        open_directory "$1"
+        return 0
+    fi
+
+    local selection target
+    selection=$(build_menu | fzf --ansi --delimiter=$'\t' --with-nth=1 --tiebreak=index \
+        --prompt='workspace> ' --header='open workspaces first, then recent repos') || return 0
+    [[ -n $selection ]] || return 0
+
+    target=${selection##*$'\t'}
+    case $target in
+        ws:*) herdr workspace focus "${target#ws:}" >/dev/null ;;
+        dir:*) open_directory "${target#dir:}" ;;
+    esac
+}
+
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    main "$@"
+fi

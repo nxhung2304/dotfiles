@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+workspace_ids_under_path() {
+    local path=$1
+    herdr pane list | jq -r --arg path "$path" '
+        [.result.panes[]
+            | select(
+                .cwd == $path
+                or (.cwd | startswith($path + "/"))
+                or (.cwd | contains("/.git/wt/trash/" + ($path | split("/") | last) + "-")))
+            | .workspace_id]
+        | unique | .[]'
+}
+
+open_workspace() {
+    local worktree_path=$1
+    local label=$2
+    local existing_id created root_pane
+
+    existing_id=$(workspace_ids_under_path "$worktree_path" | head -1)
+    if [[ -n $existing_id ]]; then
+        herdr workspace focus "$existing_id" >/dev/null
+        return 0
+    fi
+
+    created=$(herdr workspace create --cwd "$worktree_path" --label "$label" --focus)
+    root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
+    herdr agent start claude --kind claude --pane "$root_pane" >/dev/null || true
+}
+
+close_workspaces() {
+    local worktree_path=$1
+    local own_workspace_id=${HERDR_WORKSPACE_ID:-}
+    local workspace_id
+
+    while IFS= read -r workspace_id; do
+        [[ -n $workspace_id && $workspace_id != "$own_workspace_id" ]] && herdr workspace close "$workspace_id" >/dev/null
+    done < <(workspace_ids_under_path "$worktree_path")
+
+    if workspace_ids_under_path "$worktree_path" | grep -qx "$own_workspace_id"; then
+        herdr workspace close "$own_workspace_id" >/dev/null
+    fi
+    return 0
+}
+
+[[ -n ${HERDR_ENV:-} ]] || exit 0
+
+case ${1:-} in
+    open) open_workspace "${2:?worktree path required}" "${3:?label required}" ;;
+    close) close_workspaces "${2:?worktree path required}" ;;
+    *)
+        echo "usage: worktree-workspace open <path> <label> | close <path>" >&2
+        exit 2
+        ;;
+esac

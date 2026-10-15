@@ -1,5 +1,6 @@
 # CLI Tools
 brew "tmux"
+brew "herdr"
 brew "neovim"
 brew "git"
 brew "stow"

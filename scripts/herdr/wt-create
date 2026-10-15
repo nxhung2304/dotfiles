@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+read -r -p "new branch> " branch_name
+[[ -n $branch_name ]] || exit 0
+
+wt switch --create "$branch_name"

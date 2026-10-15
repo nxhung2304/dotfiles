@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+page=$1
+
+cd "$(herdr pane current --current | jq -r '.result.pane.cwd')"
+
+case $page in
+    current)
+        url=$(gh pr view --json url -q .url 2>/dev/null || true)
+        [[ -z $url ]] && url=$(gh repo view --json url -q .url)
+        ;;
+    pulls | issues)
+        url=$(gh repo view --json url -q .url)/$page
+        ;;
+esac
+
+~/.local/bin/scripts/open-or-focus-tab "$url"

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tab_label=$1
+shift
+
+current_pane=$(herdr pane current --current | jq -r '.result.pane')
+workspace_id=$(jq -r '.workspace_id' <<<"$current_pane")
+current_cwd=$(jq -r '.cwd' <<<"$current_pane")
+
+existing_tab_id=$(herdr tab list --workspace "$workspace_id" | jq -r --arg label "$tab_label" \
+    '.result.tabs[] | select(.label == $label) | .tab_id' | head -1)
+
+if [[ -n $existing_tab_id ]]; then
+    herdr tab focus "$existing_tab_id" >/dev/null
+    exit 0
+fi
+
+created=$(herdr tab create --workspace "$workspace_id" --cwd "$current_cwd" --label "$tab_label" --focus)
+root_pane_id=$(jq -r '.result.root_pane.pane_id' <<<"$created")
+herdr pane run "$root_pane_id" "$@" >/dev/null
