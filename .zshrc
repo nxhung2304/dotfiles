@@ -43,6 +43,7 @@ eval "$(direnv hook zsh)"
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH="/usr/local/opt/postgresql@17/bin:$PATH"
 export PATH="$HOME/fvm/default/bin:$PATH"
+export PATH="~/Dev/personal/scripts/tmux-sessionizer:$PATH"
 
 # ASDF
 export PATH="$HOME/.asdf/shims:$PATH"
@@ -131,6 +132,10 @@ t() {
 alias ta="tmux attach"
 alias da="tmux detach"
 
+alias wtn="wt switch --create"
+alias wtd="wt remove"
+alias wtl="wt list"
+
 alias pe="cd ~/Dev/personal"
 alias ri="cd ~/Dev/rights"
 
@@ -192,3 +197,6 @@ upgrade_nvim() {
   chmod +x ./upgrade_stable.sh
   ./upgrade_stable.sh
 }
+
+
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
