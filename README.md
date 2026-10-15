@@ -54,7 +54,7 @@ chmod +x install.sh
 |------|-------------|-------------|
 | Flutter | `.config/flutter/` | Flutter SDK settings and device preferences |
 | Homebrew | `Brewfile` | Declarative list of all brew packages and casks |
-| Herdr | `.config/herdr/` | Terminal session manager settings |
+| Herdr | `.config/herdr/` | Agent multiplexer settings (tmux-style keys, sessionizer, git/drag-drop shortcuts) |
 
 ### AI Coding Assistants
 | Tool | Config path | Description |
@@ -69,6 +69,6 @@ chmod +x install.sh
 | `scripts/install/` | Modular install steps (stow, terminal, etc.) sourced by `install.sh` |
 | `scripts/nvim/`, `scripts/tmux/` | Helper scripts for Neovim and tmux |
 | `scripts/tmux-sessionizer` | Fuzzy-find and jump between tmux sessions |
-| `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane` | Herdr session helpers |
+| `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane`, `scripts/herdr/` | Herdr session, focus-or-create tab, git page and drag-drop helpers |
 | `scripts/open-or-focus-tab` | Open or focus an existing terminal tab |
 
