@@ -30,6 +30,12 @@
 | **[review-branch](./review-branch/SKILL.md)** | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Thin skill that invokes the `review-branch` agent (`agents/review-branch.md`). Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/issues/<n>-<slug>/branch-review.md` (fallback `specs/comments/<branch>.md` when no issue). |
 | **[review-issue](./review-issue/SKILL.md)** | `/review-issue` | **Orchestrator** — runs the `review-branch` agent (with `include-staged: true`) + the built-in `code-review` skill in parallel, merges/dedupes findings, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<n>-<slug>/comment.log`. Never fixes code or comments on the PR. |
 
+### 🎨 Design
+
+| Skill | Usage | Description |
+| :--- | :--- | :--- |
+| **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Researched UI/UX process: understand the problem → gather references (Mobbin/Refero/Land-book/Dribbble) → fix design tokens → build prototype → export HTML + review → iterate → handoff. Tokens live in `:root` of `specs/designs/*.html`; rules/decision log in `specs/rules/design.md`; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
+
 ### 🚀 Implementation Pipeline
 
 Complete automated workflow for implementing issues from spec to merged PR:
@@ -54,6 +60,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | Turn `specs/story.md` tasks into individual issue files | `generate-issues` |
 | Pull a GitHub Issue into a local spec file, or push local specs to GitHub | `github-issues-to-md` / `md-to-github-issues` |
 | Sanity-check a spec before implementation starts | `review-specs` |
+| Design/mock up/prototype a screen or app UI with real references | `ui-ux-workflow` |
 | Implement an approved spec end-to-end (branch → code → tests → PR) | `implement-issue` |
 | Implement locally without touching git/PR/Slack yet | `implement-issue <spec> local=true` |
 | Review a branch/diff against project rules | `review-branch` |

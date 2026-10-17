@@ -1,0 +1,28 @@
+:root {
+  --bg: ;
+  --surface: ;
+  --text: ;
+  --text-muted: ;
+  --border: ;
+  --primary: ;
+  --primary-contrast: ;
+  --success: ;
+  --warning: ;
+  --error: ;
+
+  --font-sans: "...", system-ui, sans-serif;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px;
+  --text-lg: 20px; --text-xl: 24px; --text-2xl: 32px;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px;
+  --space-4: 16px; --space-6: 24px; --space-8: 32px;
+
+  --radius-sm: ; --radius-md: ; --radius-lg: ;
+  --shadow-sm: ; --shadow-md: ;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: ; --surface: ; --text: ; --text-muted: ; --border: ;
+  }
+}
