@@ -2,6 +2,7 @@
 name: md-to-github-issues
 allowed-tools: Read, Edit, Grep, Write, Bash(gh auth:*), Bash(gh api:*), Bash(gh repo:*), Bash(gh issue:*), Bash(gh label:*)
 description: Sync local issue files to GitHub Issues. Use when user asks "sync issues to github"
+disable-model-invocation: true
 ---
 
 Read `specs/issues/*.md` → create GitHub Issues → update the issue number back into the file

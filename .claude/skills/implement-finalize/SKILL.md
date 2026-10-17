@@ -5,7 +5,7 @@ description: Commit, create the PR, update status, notify Slack.
 ---
 
 1. Commit (only add files that actually changed)
-    - Use the short-commit skill with ARGUMENTS `footer=true auto=true`
+    - Use the commit skill with ARGUMENTS `format=short footer=true auto=true`
 
 2. Update the status in the spec file to "PR: Draft"
 Change the status line:

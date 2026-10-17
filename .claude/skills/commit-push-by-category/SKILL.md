@@ -1,10 +1,11 @@
 ---
 name: commit-push-by-category
 allowed-tools: Bash(git:*), Skill
-description: Group unstaged changes by category, commit each group via /commit, then push via /commit-push
+description: Group unstaged changes by category, commit each group via /commit, pushing with the last commit
+disable-model-invocation: true
 ---
 
-Group all changed files by logical category → run /commit per category → push via /commit-push.
+Group all changed files by logical category → run /commit per category → push with the last /commit (`push=true`).
 
 **Steps:**
 
@@ -17,6 +18,5 @@ Group all changed files by logical category → run /commit per category → pus
    - **Feature + test files together**: if a feature file and its test file are clearly paired (same name, same directory scope), keep them in the same commit — do not split into separate `feature` and `test` commits
 3. For each non-empty category:
    - `git add <files in this category>`
-   - Use /commit skill to create the commit (with scope set to the category name)
-4. After all categories are committed, use /commit-push skill to push
-5. Report all commit hashes and push result
+   - Use /commit skill to create the commit (with scope set to the category name); pass `push=true` only for the last category
+4. Report all commit hashes and push result
