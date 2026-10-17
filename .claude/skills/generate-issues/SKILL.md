@@ -4,7 +4,7 @@ allowed-tools: Grep, Bash(touch:*), Bash(mkdir -p *), Bash(cat:*), Bash(ls:*), B
 description: Create issues from specs/story.md. Use when user asks "Generate issues, generate issue [number].[title]"
 ---
 
-Read `story.md` → Parse tasks → Create individual issue files in `issues/`
+Read `story.md` → Parse tasks → Create individual issue files in `specs/issues/`
 
 **Steps:**
 
@@ -14,7 +14,7 @@ Read `story.md` → Parse tasks → Create individual issue files in `issues/`
 - Inspect folder structure (`app/`, `src/`, `lib/`, `test/`, `screens/`, etc.)
 - Infer conventions from existing files (naming, test framework, routing style)
 - **Find story.md**: check `specs/story.md` → `story.md` → search project root. Use whichever exists.
-- **Issues folder**: sibling of story.md → `issues/` subfolder (e.g. `specs/issues/` or `issues/`)
+- **Issues folder**: always `specs/issues/` (create it if missing), even when story.md lives elsewhere
 
 ### 1. Parse tasks
 Read story.md, parse: `- [ ] [number]. [title]`

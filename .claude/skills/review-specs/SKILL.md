@@ -4,7 +4,7 @@ allowed-tools: Read, Grep, Glob, Write
 description: Review specification for completeness and clarity. Use when user asks "review spec 1, review-specs #11..."
 ---
 
-Read the spec from `specs/issues/[issue-number]` → analyze → write feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md`
+Read the spec from `specs/issues/[issue-number]` → analyze → write feedback to `specs/issues/<spec-stem>/spec-review.md` (`<spec-stem>` = the spec file's name without `.md`; create the folder if missing, reuse an existing `specs/issues/<n>-*/` folder for the same issue). If no spec file is found, write to `specs/comments/[ISSUE-NUMBER]-spec-review.md` instead.
 
 **Steps:**
 1. Extract the issue number from the user input

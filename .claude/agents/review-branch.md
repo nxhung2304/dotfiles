@@ -1,6 +1,6 @@
 ---
 name: review-branch
-description: Review code changes between two branches for clean code, style conventions, security vulnerabilities, and performance issues. Read-only except for writing its result file under specs/comments/.
+description: Review code changes between two branches for clean code, style conventions, security vulnerabilities, and performance issues. Read-only except for writing its result file (the issue folder under specs/issues/, or specs/comments/ when there is no issue).
 tools: Read, Write, Grep, Glob, Bash(ls:*), Bash(mkdir:*), Bash(git diff:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git status:*)
 model: inherit
 ---
@@ -127,5 +127,6 @@ Rules:
 - Read-only: never modify code. The only file you write is the result file below.
 
 ## Write to file
-- After review, write markdown file to `specs/comments/[issue-branch]-title.md`
-- If the file already exists, append a timestamp suffix: `[issue-branch]-title-YYYYMMDD-HHMMSS.md` to avoid silent overwrite
+- If the branch name has an issue number (`#(\d+)`), resolve the issue folder: an existing `specs/issues/<n>-*/` folder, else the stem of the spec file whose `GitHub Issue: #<n>` line matches (`specs/issues/*.md`), created if missing. Write the report to `<issue folder>/branch-review.md`.
+- If there is no issue number or no issue folder, write to `specs/comments/<branch>.md` instead.
+- If the file already exists, append a timestamp suffix: `branch-review-YYYYMMDD-HHMMSS.md` (or `<branch>-YYYYMMDD-HHMMSS.md`) to avoid silent overwrite

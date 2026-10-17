@@ -14,21 +14,21 @@
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
-| **[github-issues-to-md](./github-issues-to-md/SKILL.md)** | needs `owner`, `repo`, `issue_number` | Fetches a GitHub Issue via MCP, converts to Markdown, saves as `specs/issues/[issue-number].md`. |
+| **[github-issues-to-md](./github-issues-to-md/SKILL.md)** | needs `owner`, `repo`, `issue_number` | Fetches a GitHub Issue via MCP, converts to Markdown, saves as `specs/issues/[issue-number]-[slug].md`. |
 | **[feature-discuss](./feature-discuss/SKILL.md)** | `/feature-discuss <feature-name>`, `/feature-discuss save`, `/feature-discuss finalize #<number>` | `discuss` (default, read-only): design discussion for a feature/improvement/proposal. `save`: persists the discussion via `issue-docs`, no issue number needed. `finalize`: on an explicit signal with an issue number, writes the pipeline spec file `specs/issues/<n>-<slug>.md` and links it to the saved folder. Before writing, `finalize` runs a trigger-based completeness checklist (state/auth/soft-delete/association/validation/CRUD/self-targeting questions + contradiction check) and writes the decisions into the spec. |
 | **[fix-issue](./fix-issue/SKILL.md)** | `/fix-issue` or state the issue number/bug description | Phase 1: investigates the bug via Q&A + code tracing, produces a root cause + fix plan. Only saves the issue docs (via `issue-docs`) under `specs/issues/` once the user confirms they're starting a real fix. |
 | **[issue-docs](./issue-docs/SKILL.md)** | `/issue-docs` or "lưu vào specs/issues"; also called by `fix-issue` | Creates/updates linked docs under `specs/issues/<n>-<slug>/` for any task type, picking only the files the current stage needs (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) and reusing existing ones. |
 | **[report](./report/SKILL.md)** | `/report` or ask to report/estimate for a leader | Writes/refines any leader-facing message (bug report, estimate/proposal, status, decision ask) in plain language; structure scales with task scope. |
 | **[md-to-github-issues](./md-to-github-issues/SKILL.md)** | `/md-to-github-issues` (no args) | Syncs files under `specs/issues/*.md` that are `Review: Approved` and have no `GitHub Issue: #` yet up to GitHub Issues, writes the issue number back into the file. Manual-only (`disable-model-invocation`). |
-| **[generate-issues](./generate-issues/SKILL.md)** | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `issues/` (can target a specific number). |
+| **[generate-issues](./generate-issues/SKILL.md)** | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `specs/issues/` (can target a specific number). |
 
 ### 🔍 Review & Quality
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
-| **[review-specs](./review-specs/SKILL.md)** | `/review-specs #11` or state the issue number | Reviews the spec in `specs/issues/[issue-number]` (Acceptance Criteria, Checklist, edge cases...), writes feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md`. |
-| **[review-branch](./review-branch/SKILL.md)** | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Thin skill that invokes the `review-branch` agent (`agents/review-branch.md`). Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/comments/[branch]-title.md`. |
-| **[review-issue](./review-issue/SKILL.md)** | `/review-issue` | **Orchestrator** — runs the `review-branch` agent (with `include-staged: true`) + the built-in `code-review` skill in parallel, merges/dedupes findings, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<issue-number>/comment.log`. Never fixes code or comments on the PR. |
+| **[review-specs](./review-specs/SKILL.md)** | `/review-specs #11` or state the issue number | Reviews the spec in `specs/issues/[issue-number]` (Acceptance Criteria, Checklist, edge cases...), writes feedback to `specs/issues/<n>-<slug>/spec-review.md` (fallback `specs/comments/[ISSUE-NUMBER]-spec-review.md` if no spec file). |
+| **[review-branch](./review-branch/SKILL.md)** | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Thin skill that invokes the `review-branch` agent (`agents/review-branch.md`). Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/issues/<n>-<slug>/branch-review.md` (fallback `specs/comments/<branch>.md` when no issue). |
+| **[review-issue](./review-issue/SKILL.md)** | `/review-issue` | **Orchestrator** — runs the `review-branch` agent (with `include-staged: true`) + the built-in `code-review` skill in parallel, merges/dedupes findings, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<n>-<slug>/comment.log`. Never fixes code or comments on the PR. |
 
 ### 🚀 Implementation Pipeline
 

@@ -15,4 +15,4 @@ Example: `/review-branch` or `/review-branch feature/auth main` or `/review-bran
 ## Steps
 
 1. Invoke the `review-branch` agent (Agent tool, `subagent_type: review-branch`), passing ARGUMENTS verbatim as its prompt.
-2. Relay the agent's result to the user as-is: its summary and the path of the file it wrote under `specs/comments/`. Do not add findings of your own.
+2. Relay the agent's result to the user as-is: its summary and the path of the file it wrote. Do not add findings of your own.

@@ -1,7 +1,7 @@
 ---
 name: github-issues-to-md
 allowed-tools: Read, Write, Bash(gh auth:*), Bash(gh api:*), Bash(gh issue view:*)
-description: Fetch a GitHub Issue and save it to local specs/issues/[issue-number].md. Use when user ask: "convert github issues to md, get github issue to md,..."
+description: Fetch a GitHub Issue and save it to local specs/issues/[issue-number]-[slug].md. Use when user ask: "convert github issues to md, get github issue to md,..."
 ---
 
 Fetch a GitHub Issue → convert to Markdown → save as a local file
@@ -31,14 +31,15 @@ Source: GitHub
 {body}
 
 4. Save file:
-   - Path: `specs/issues/#{number}.md`
+   - Path: `specs/issues/{number}-{slug}.md` — slug from the issue title: English, lowercase, spaces → `-`
+   - Existing file: look for a file in `specs/issues/` whose `GitHub Issue: #{number}` line matches (also legacy `specs/issues/#{number}.md`) and reuse its path instead of creating a second one
    - If file already exists: read it and check for local edits (any section beyond the base metadata/body)
      - If local edits detected → warn user and ask: "File already exists with local changes. Overwrite? (yes/no)"
      - If no local edits → overwrite silently
      - If user says no → skip and log
 
 5. Output summary:
-   - Saved: specs/issues/#{number}.md
+   - Saved: the path used in step 4
 
 **Rules:**
 - If the issue doesn't exist → report an error + stop

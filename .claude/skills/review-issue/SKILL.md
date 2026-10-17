@@ -1,7 +1,7 @@
 ---
 name: review-issue
 allowed-tools: Read, Write, Grep, Glob, Bash(git:*), Bash(mkdir:*), Skill
-description: Orchestrator that runs review-branch + code-review in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<issue>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
+description: Orchestrator that runs review-branch + code-review in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<n>-<slug>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
 ---
 
 # Review Issue
@@ -28,6 +28,7 @@ Does not write code, does not fix anything (never uses `--fix`), does not post t
    - Regex `#(\d+)` on the branch name.
    - If not found, fall back to: `specs/comments/<feature-branch>.log` (keep `review-branch`'s existing fallback convention — do not ask the user).
 3. Compute the diff boundary: `git merge-base <base-branch> <feature-branch>`. The review scope is only the changes reachable from `<feature-branch>` but not from that merge-base (i.e. `git diff <merge-base>...<feature-branch>`), plus any staged changes on top. Do not let this boundary silently widen — if `<feature-branch>` contains a merge from `<base-branch>` or another branch, changes that arrived only through that merge (not authored on `<feature-branch>` itself) are out of scope.
+4. Resolve the issue folder (only when an issue number was found): an existing `specs/issues/<n>-*/` folder if there is one; otherwise the stem of the spec file whose `GitHub Issue: #<n>` line matches (`grep -l "GitHub Issue.*#<n>" specs/issues/*.md`), created if missing. If neither exists, treat the issue number as not found for the write path in STEP 4.
 
 ## STEP 1: Run both review sources as background agents
 
@@ -58,7 +59,7 @@ Classifying is not originating a finding — it only labels findings A/B already
    - `In scope`: the flagged code was added or changed on `<feature-branch>` (appears in the STEP 0.3 diff) and relates to the issue's goal.
    - `Out of scope — pre-existing`: the flagged behaviour already existed at the merge-base. Check with `git show <merge-base>:<file>`; if the same logic is there unchanged, it is pre-existing.
    - `Partly in scope`: part of the flagged code is new on the branch, part is pre-existing.
-   - `No change needed — required by spec`: the finding questions a change that the issue spec (`specs/issues/<issue-number>*.md` or `specs/issues/<issue-number>/issue.md`, if present) explicitly requires.
+   - `No change needed — required by spec`: the finding questions a change that the issue spec (the spec file found in STEP 0.4, or `<issue folder>/issue.md`, if present) explicitly requires.
 2. **Basis** — one of:
    - `Verified`: the source gave a concrete failure scenario grounded in the code, or a confidence score ≥80.
    - `Assumption`: the source itself says the finding relies on unverified SDK/library/device behaviour, or code-review returned no confidence score for it and the scenario depends on behaviour outside this repo.
@@ -103,7 +104,7 @@ After the numbered fix list, add a section "Out of scope / no change needed" lis
 
 (The field labels above are shown in English; write them in the target language — Vietnamese by default.)
 
-Write to `specs/issues/<issue-number>/comment.log` (create the directory if missing). If no issue number was found in STEP 0, write to `specs/comments/<feature-branch>.log`. This report reflects the current state of the branch, so if the file already exists, overwrite it — do not append to a previous run's content.
+Write to `<issue folder>/comment.log` (the folder from STEP 0.4, `specs/issues/<n>-<slug>/`). If no issue number or issue folder was found in STEP 0, write to `specs/comments/<feature-branch>.log`. This report reflects the current state of the branch, so if the file already exists, overwrite it — do not append to a previous run's content.
 
 If neither A nor B found anything, write clearly in the file: "No issues to address on this branch (reviewed via review-branch + code-review)." (translated to the target language).
 

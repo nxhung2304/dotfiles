@@ -11,7 +11,7 @@ Systematically investigate a reported bug through interactive questioning, code 
 
 ### 1. Gather bug context
 
-If the user provides an issue number, read the file from `specs/issues/<number>.md` or fetch via `gh issue view <number>`.
+If the user provides an issue number, find the spec in `specs/issues/*.md` by its `GitHub Issue: #<number>` line (legacy name: `specs/issues/<number>.md`) or fetch via `gh issue view <number>`.
 If not, ask the user to describe:
 - What is the expected behaviour?
 - What actually happens?
