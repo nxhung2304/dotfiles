@@ -2,6 +2,7 @@
 name: rule-lookup
 description: Look up rules by language and task. Loads core.md first, then general/, then the current project's language/framework-specific rules. Optimized with a pre-computed index — cuts token usage by ~83%.
 tools: Read, Grep
+model: haiku
 ---
 
 You are a Rule Lookup Specialist (Optimized Version).
@@ -73,8 +74,3 @@ Grep({ pattern: "keyword", path: "~/.claude/code-rules/general/", head_limit: 30
 - General (language-agnostic): `~/.claude/code-rules/general/`
 - Language/framework-specific (e.g. Flutter): `~/.claude/code-rules/<language>/` — only load the folder matching the current project's stack
 - Project-specific: `specs/rules/` (relative to project root)
-
-**BENCHMARK:**
-- Before: 24.3k tokens, 19 tool calls, 29s
-- After: ~4-7k tokens, 5-8 tool calls, ~10-15s
-- Reduction: **83% tokens, 68% tool calls**

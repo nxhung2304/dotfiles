@@ -27,8 +27,8 @@
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
 | **[review-specs](./review-specs/SKILL.md)** | `/review-specs #11` or state the issue number | Reviews the spec in `specs/issues/[issue-number]` (Acceptance Criteria, Checklist, edge cases...), writes feedback to `specs/comments/[ISSUE-NUMBER]-spec-review.md`. |
-| **[review-branch](./review-branch/SKILL.md)** | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/comments/[branch]-title.md`. |
-| **[review-issue](./review-issue/SKILL.md)** | `/review-issue` | **Orchestrator** — runs `review-branch` (with `include-staged: true`) + the built-in `code-review` skill in parallel, merges/dedupes findings, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<issue-number>/comment.log`. Never fixes code or comments on the PR. |
+| **[review-branch](./review-branch/SKILL.md)** | `/review-branch` or `/review-branch feature/auth main` or `/review-branch include-staged: true` | Thin skill that invokes the `review-branch` agent (`agents/review-branch.md`). Reviews against project clean-code/style/security/performance rules. Default diffs branch-vs-base only (committed); `include-staged: true` also reviews staged changes. Writes `specs/comments/[branch]-title.md`. |
+| **[review-issue](./review-issue/SKILL.md)** | `/review-issue` | **Orchestrator** — runs the `review-branch` agent (with `include-staged: true`) + the built-in `code-review` skill in parallel, merges/dedupes findings, maps severity to MUST/SHOULD/NIT, writes `specs/issues/<issue-number>/comment.log`. Never fixes code or comments on the PR. |
 
 ### 🚀 Implementation Pipeline
 

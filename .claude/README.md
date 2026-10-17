@@ -40,8 +40,9 @@ Agents are specialists with their own capabilities and tools:
 | **general-purpose** | General-purpose agent for complex, multi-step tasks | All tools | Complex tasks that don't fit another agent |
 | **code-reviewer** | Reviews code against clean-code, code-style, project rules | Read, Grep, Bash(git diff) | Code review, read-only |
 | **rule-lookup** | Looks up rules by language and task | Read, Grep | Find rules in core.md, general/, project-specific |
-| **error-fixer** | Fixes flutter analyze and flutter test errors | Read, Edit, Write, Bash(flutter analyze/test), Grep | Fix Flutter errors, only touches related files |
-| **design-checker** | Checks and syncs colors/design tokens from an HTML wireframe to AppColors | Read, Grep, Edit, Write | Sync design tokens |
+| **quality-runner** | Detects the stack, runs analyze/lint/test, fixes source errors (max 3 attempts per failing check); never edits tests to make them pass | Read, Edit, Grep, Glob, Bash scoped to stack commands | Quality check step of `implement-issue` |
+| **review-branch** | Reviews a branch diff against project rules, writes its result under `specs/comments/` (the `/review-branch` skill invokes it) | Read, Write, Grep, Glob, read-only Bash/git | Branch review, read-only except the result file |
+| **design-checker** | Checks colors/design tokens from an HTML wireframe against AppColors and proposes changes (Flutter only) | Read, Grep | Design token check |
 | **claude-code-guide** | Answers questions about the Claude Code CLI, Agent SDK, API | Glob, Grep, Read, WebFetch, WebSearch | Questions about Claude Code features |
 
 ---
@@ -52,8 +53,7 @@ Agents are specialists with their own capabilities and tools:
 ```
 user: "review code issue"
   → Skill: review-branch
-    → Agent: rule-lookup (look up rules)
-    → Agent: code-reviewer (review against rules)
+    → Agent: review-branch (loads rules, reviews the diff, writes the result file)
 ```
 
 ### 2. Implementation Flow
@@ -64,13 +64,13 @@ user: "implement feature X"
     → Agent: Plan (design the plan)
   → ExitPlanMode (user approves)
   → Implementation (write code)
-  → Agent: error-fixer (if errors)
+  → Agent: quality-runner (analyze/lint/test, fixes errors)
 ```
 
 ### 3. Quality Check Flow
 ```
 user: "quality issue"
-  → Skill: review-branch / implement-quality
+  → Skill: review-branch / Agent: quality-runner
     → Agent: rule-lookup
     → Agent: code-reviewer
 ```

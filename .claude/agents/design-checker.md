@@ -1,7 +1,7 @@
 ---
 name: design-checker
 description: Kiểm tra và đồng bộ colors, design tokens từ HTML wireframe sang AppColors.
-tools: Read, Grep, Edit, Write
+tools: Read, Grep
 model: inherit
 ---
 

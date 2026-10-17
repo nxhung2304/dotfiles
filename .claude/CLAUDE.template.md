@@ -61,7 +61,7 @@ project-root/
 # Flow:
 1. implement-prepare → git pull, create branch, validate approved
 2. implement-code → do checklist, call rule-lookup per item
-3. implement-quality → flutter analyze, flutter test, fix errors
+3. quality-runner agent → flutter analyze, flutter test, fix errors
 4. implement-finalize → commit, push, create PR
 ```
 
@@ -97,8 +97,8 @@ project-root/
 |-------|---------|-------|
 | rule-lookup | Tra cứu rules theo task context | Read, Grep |
 | code-reviewer | Review code (read-only) | Read, Grep, Glob, git diff |
-| error-fixer | Fix flutter analyze/test errors | Read, Edit, Write, flutter commands |
-| design-checker | Sync colors/tokens from HTML specs | Read, Grep, Edit, Write |
+| quality-runner | Run analyze/lint/test per stack, fix source errors | Read, Edit, Grep, Glob, stack commands |
+| design-checker | Check colors/tokens from HTML specs (proposes changes) | Read, Grep |
 
 ---
 
