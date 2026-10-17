@@ -5,6 +5,12 @@
 - When giving concrete examples to illustrate a concept (e.g. "logic X could look like Y"), verify each example against the actual codebase/docs first. Any example not verified/grounded must be explicitly labeled as hypothetical/illustrative, not mixed in with grounded examples as if equally real.
 - Answer only what was asked. Do not end a response by proposing extra work, refactors, or follow-up changes beyond the current request ("want me to also fix/move/add X?") — that pushes scope decisions onto the user instead of just answering. Only raise an unrequested issue if it is a real bug/risk directly tied to the change just made, state it in one line as information (not an offer to expand scope), and stop there — let the user decide whether to ask for more, don't prompt them toward it.
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
+- Structure every chat reply as below, omitting any section that has no content:
+  - **Kết luận** — 1–2 lines that directly answer the question.
+  - **Anh cần làm** — decisions or actions needed from me.
+  - **Còn treo** — what is pending or still unclear.
+  - **Chi tiết** — only when needed, short, placed last.
+- By default keep **Chi tiết** minimal or omit it. When I ask for detail ("giải thích", "chi tiết", "vì sao", "là sao"), keep the same structure but make **Chi tiết** complete: still just enough, one idea per line, concrete examples where they help understanding, and nothing I didn't ask about.
 
 ## Change scope (suggestions & plans)
 - Keep proposed changes to the minimum the task requires. Don't touch existing logic the spec doesn't require changing — no opportunistic refactors (e.g. replacing magic numbers with constants where the value doesn't change, renaming, restructuring old branches).
