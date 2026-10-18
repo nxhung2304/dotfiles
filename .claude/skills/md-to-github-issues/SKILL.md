@@ -1,5 +1,6 @@
 ---
 name: md-to-github-issues
+model: haiku
 allowed-tools: Read, Edit, Grep, Write, Bash(gh auth:*), Bash(gh api:*), Bash(gh repo:*), Bash(gh issue:*), Bash(gh label:*)
 description: Sync local issue files to GitHub Issues. Use when user asks "sync issues to github"
 disable-model-invocation: true

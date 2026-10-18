@@ -1,5 +1,6 @@
 ---
 name: ui-ux-workflow
+model: claude-opus-5-5
 description: Quy trình thiết kế UI/UX có nghiên cứu cho vibe coding — hiểu vấn đề, tra cứu tham khảo thật (Mobbin, Refero, Land-book, Dribbble), chốt design token, dựng prototype bằng Claude Design, xuất HTML, review và lặp feedback. Dùng skill này bất cứ khi nào người dùng muốn thiết kế, dựng, mockup, prototype hoặc làm lại giao diện/màn hình/landing page/app/web/dashboard, hỏi "làm UI cho…", "thiết kế màn hình…", "UI trông generic quá", hoặc cần tham khảo thiết kế — kể cả khi họ không nhắc chữ "UI/UX". Also use for English requests to design, mock up, prototype or redesign any app or web interface.
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: implement-prepare
+model: haiku
 allowed-tools: Read, Bash(git checkout:*), Bash(git pull:*), Bash(git branch:*), Bash(mkdir *), mcp__claude_ai_Slack__*
 description: Prepare before coding — pull, create branch, check approved, notify Slack.
 ---

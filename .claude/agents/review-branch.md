@@ -2,7 +2,7 @@
 name: review-branch
 description: Review code changes between two branches for clean code, style conventions, security vulnerabilities, and performance issues. Read-only except for writing its result file (the issue folder under specs/issues/, or specs/comments/ when there is no issue).
 tools: Read, Write, Grep, Glob, Bash(ls:*), Bash(mkdir:*), Bash(git diff:*), Bash(git branch:*), Bash(git merge-base:*), Bash(git log:*), Bash(git show:*), Bash(git status:*)
-model: inherit
+model: claude-opus-5-5
 ---
 
 # Review Branch

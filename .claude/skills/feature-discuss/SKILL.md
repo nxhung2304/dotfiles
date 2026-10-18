@@ -1,5 +1,6 @@
 ---
 name: feature-discuss
+model: claude-opus-5-5
 allowed-tools: Read, Grep, Glob, Bash(find:*), Bash(ls:*), Edit, Write, Skill
 description: Interactive technical design discussion for a feature, improvement, or proposal before it's ready to implement — explores the codebase, surfaces open questions, compares approaches with trade-offs, and gives a recommendation. Can save the discussion to specs/issues/ at any time without an issue number (save mode, via issue-docs), and writes the pipeline spec file only on an explicit finalize with an issue number. Use when the user wants to think through a feature or design decision, says "feature-discuss", "thảo luận feature", "bàn thiết kế", "lưu lại thảo luận", or wants to "chốt" a discussion into an issue file.
 ---

@@ -1,5 +1,6 @@
 ---
 name: risk-issue
+model: claude-opus-5-5
 description: Find architectural risks that an issue's spec/plan (implement.md, plan, design note) fails to mention, by checking its decisions against the actual code — concurrency and queue blocking, timeout/cancellation, state divergence between components, silent failures, partial state and retry, contract gaps, competing flows, compatibility and merge order, black-box dependency behaviour, testability, production observability. Works for any project, language or framework. Reports risks only, no fixes. Defaults to Vietnamese output, accepts a `lang` override. Use whenever the user says "risk-issue", asks what risks a spec/plan is missing ("implement.md thiếu rủi ro gì", "còn rủi ro kiến trúc nào", "check rủi ro", "spec này có lỗ hổng gì", "what could go wrong with this plan"), or wants a plan stress-tested against the codebase before coding — even if they don't say "risk" explicitly.
 ---
 

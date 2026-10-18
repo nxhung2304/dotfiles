@@ -1,5 +1,6 @@
 ---
 name: commit
+model: haiku
 allowed-tools: Bash(git:*), Bash(cat:*), Read, Write, Bash(git commit:*)
 description: Create git commits from staged changes — full bullet-point message or short one-liner, optional approval step, optional push
 ---

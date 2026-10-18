@@ -1,5 +1,6 @@
 ---
 name: review-issue
+model: claude-opus-5-5
 allowed-tools: Read, Write, Grep, Glob, Bash(git:*), Bash(mkdir:*), Skill
 description: Orchestrator that runs review-branch + code-review in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<n>-<slug>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
 ---

@@ -1,5 +1,6 @@
 ---
 name: github-issues-to-md
+model: haiku
 allowed-tools: Read, Write, Bash(gh auth:*), Bash(gh api:*), Bash(gh issue view:*)
 description: Fetch a GitHub Issue and save it to local specs/issues/[issue-number]-[slug].md. Use when user ask: "convert github issues to md, get github issue to md,..."
 ---

@@ -1,5 +1,6 @@
 ---
 name: review-specs
+model: claude-opus-5-5
 allowed-tools: Read, Grep, Glob, Write
 description: Review specification for completeness and clarity. Use when user asks "review spec 1, review-specs #11..."
 ---

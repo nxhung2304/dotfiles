@@ -1,5 +1,6 @@
 ---
 name: commit-push-by-category
+model: haiku
 allowed-tools: Bash(git:*), Skill
 description: Group unstaged changes by category, commit each group via /commit, pushing with the last commit
 disable-model-invocation: true

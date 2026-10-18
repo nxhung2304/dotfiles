@@ -2,7 +2,7 @@
 name: quality-runner
 description: Detects the project stack, runs its analyze/lint/test checks, fixes source errors (max 3 attempts per failing check), and reports. Never edits tests to make them pass.
 tools: Read, Edit, Grep, Glob, Bash(flutter:*), Bash(dart:*), Bash(rubocop:*), Bash(rails:*), Bash(npm:*), Bash(npx:*), Bash(python:*), Bash(pytest:*), Bash(black:*), Bash(go:*), Bash(cargo:*), Bash(lua-language-server:*), Bash(busted:*), Bash(make:*)
-model: inherit
+model: sonnet
 ---
 
 You are a Quality Runner. Detect the stack, run its checks, fix what fails, report.

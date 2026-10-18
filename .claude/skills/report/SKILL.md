@@ -1,5 +1,6 @@
 ---
 name: report
+model: claude-opus-5-5
 description: Write, rewrite, or tighten any message meant for someone else to read — leader, PM, reviewer, customer, team channel — so it is plain, jargon-light, short but complete, and sized to the scope of the task. Covers bug investigation reports, estimates and task proposals, status updates/recaps, and decision or trade-off asks. Use whenever the user wants to report or explain something to another person ("báo leader", "gửi leader", "nói với leader", "báo cáo", "report", "estimate", "báo estimate", "ước lượng", "đề xuất", "kế hoạch", "tóm tắt gửi team", "status", "recap", "giải thích cho leader hiểu", "nói sao cho dễ hiểu / thuyết phục"), pastes a draft and asks "đủ chưa", "còn thiếu gì", "sửa lại", "ngắn gọn hơn", "dễ hiểu hơn", "ít kỹ thuật hơn", or when a technical discussion ends and the user asks to summarize it for someone else. Adapts structure and length to the task instead of forcing a fixed template.
 ---
 
