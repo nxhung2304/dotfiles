@@ -182,13 +182,48 @@ return {
 
 			-- Open (or focus) the tmux window that tails the flutter dev log.
 			-- Reuse existing window named flutter-log; open new one only if absent.
+			local flutter_log_tab_label = "flutter-log"
+
+			local function herdr_json(args)
+				local output = vim.fn.system(args)
+				if vim.v.shell_error ~= 0 then
+					return nil
+				end
+				local ok, decoded = pcall(vim.json.decode, output)
+				return ok and decoded or nil
+			end
+
+			local function find_flutter_log_tab()
+				local response = herdr_json({ "herdr", "tab", "list", "--workspace", vim.env.HERDR_WORKSPACE_ID })
+				for _, tab in ipairs(response and response.result.tabs or {}) do
+					if tab.label == flutter_log_tab_label then
+						return tab
+					end
+				end
+			end
+
 			local function open_flutter_log_window()
+				if vim.env.HERDR_ENV ~= "1" then
+					vim.notify("Not inside a herdr session", vim.log.levels.WARN)
+					return
+				end
 				if vim.fn.filereadable(flutter_log_path) == 0 then
 					vim.fn.writefile({}, flutter_log_path)
 				end
-				local existing = vim.fn.system("tmux select-window -t flutter-log 2>&1")
-				if existing:find("no window named") or existing:find("can't find") or existing:find("error") then
-					vim.fn.system("tmux new-window -n 'flutter-log' 'tail -f " .. flutter_log_path .. "'")
+				local existing_tab = find_flutter_log_tab()
+				if existing_tab then
+					vim.fn.system({ "herdr", "tab", "focus", existing_tab.tab_id })
+					return
+				end
+				local created = herdr_json({
+					"herdr", "tab", "create",
+					"--workspace", vim.env.HERDR_WORKSPACE_ID,
+					"--cwd", vim.fn.getcwd(),
+					"--label", flutter_log_tab_label,
+					"--focus",
+				})
+				if created then
+					vim.fn.system({ "herdr", "pane", "run", created.result.root_pane.pane_id, "tail -f " .. flutter_log_path })
 				end
 			end
 
@@ -198,8 +233,20 @@ return {
 			local function clear_flutter_log()
 				vim.cmd("FlutterLogClear")
 				vim.fn.writefile({}, flutter_log_path)
-				local tail_cmd = "clear && tail -f " .. flutter_log_path
-				vim.fn.system("tmux respawn-pane -t flutter-log -k '" .. tail_cmd .. "' 2>/dev/null")
+				if vim.env.HERDR_ENV ~= "1" then
+					return
+				end
+				local log_tab = find_flutter_log_tab()
+				if not log_tab then
+					return
+				end
+				local panes = herdr_json({ "herdr", "pane", "list", "--workspace", vim.env.HERDR_WORKSPACE_ID })
+				for _, pane in ipairs(panes and panes.result.panes or {}) do
+					if pane.tab_id == log_tab.tab_id then
+						vim.fn.system({ "herdr", "pane", "send-keys", pane.pane_id, "ctrl+c" })
+						vim.fn.system({ "herdr", "pane", "run", pane.pane_id, "clear && tail -f " .. flutter_log_path })
+					end
+				end
 			end
 
 			-- Auto-pick a default device on project open: prefer a real, physically
@@ -252,9 +299,44 @@ return {
 				end)
 			end
 
+			local function ensure_project_config()
+				local root = vim.fs.root(vim.fn.getcwd(), "pubspec.yaml")
+				if not root then
+					return
+				end
+				local config_path = root .. "/.nvim.lua"
+				if vim.uv.fs_stat(config_path) then
+					return
+				end
+				local entry_points = vim.fn.glob(root .. "/lib/main_*.dart", false, true)
+				if #entry_points == 0 then
+					return
+				end
+				local lines = { 'require("flutter-tools").setup_project({' }
+				for _, entry_point in ipairs(entry_points) do
+					local flavor = (vim.fn.fnamemodify(entry_point, ":t:r"):gsub("^main_", ""))
+					local name = flavor:sub(1, 1):upper() .. flavor:sub(2)
+					table.insert(
+						lines,
+						string.format(
+							'\t{ name = "%s", flavor = "%s", target = "lib/main_%s.dart" },',
+							name,
+							flavor,
+							flavor
+						)
+					)
+				end
+				table.insert(lines, "})")
+				vim.fn.writefile(lines, config_path)
+				vim.secure.trust({ action = "allow", path = config_path })
+				dofile(config_path)
+				vim.notify("Generated " .. config_path, vim.log.levels.INFO, { title = "Flutter" })
+			end
+
 			vim.api.nvim_create_autocmd("VimEnter", {
 				once = true,
 				callback = function()
+					ensure_project_config()
 					if vim.fs.find("pubspec.yaml", { upward = true, path = vim.fn.getcwd() })[1] then
 						vim.defer_fn(detect_preferred_device, 300)
 					end
@@ -365,7 +447,7 @@ return {
 			vim.keymap.set("n", "<leader>Fs", "<cmd>FlutterRestart<CR>", { desc = "Flutter: Hot Restart" })
 			vim.keymap.set("n", "<leader>FR", "<cmd>FlutterReload<CR>", { desc = "Flutter: Hot Reload" })
 			vim.keymap.set("n", "<leader>Fq", "<cmd>FlutterQuit<CR>", { desc = "Flutter: Quit" })
-			vim.keymap.set("n", "<leader>Fl", open_flutter_log_window, { desc = "Flutter: Log in tmux pane" })
+			vim.keymap.set("n", "<leader>Fl", open_flutter_log_window, { desc = "Flutter: Log in herdr tab" })
 			vim.keymap.set("n", "<leader>FL", clear_flutter_log, { desc = "Flutter: Clear Log" })
 			vim.keymap.set("n", "<leader>Fd", function()
 				flutter_with_loading("Loading devices", "FlutterDevices")

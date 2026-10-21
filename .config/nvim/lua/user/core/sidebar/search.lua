@@ -59,6 +59,37 @@ local LABEL_W = 8
 
 local _search_job = nil
 
+local function open_buffer_filetypes()
+	local filetypes = {}
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.bo[bufnr].buftype == "" then
+			local filetype = vim.bo[bufnr].filetype
+			if filetype == "" then
+				filetype = vim.filetype.match({ buf = bufnr, filename = vim.api.nvim_buf_get_name(bufnr) }) or ""
+			end
+			if filetype ~= "" then filetypes[filetype] = true end
+		end
+	end
+	return filetypes
+end
+
+local function sort_by_open_filetypes(results)
+	local open_filetypes = open_buffer_filetypes()
+	local file_rank = {}
+	for index, result in ipairs(results) do
+		result.original_index = index
+		if file_rank[result.path] == nil then
+			local filetype = vim.filetype.match({ filename = result.path })
+			file_rank[result.path] = (filetype and open_filetypes[filetype]) and 0 or 1
+		end
+	end
+	table.sort(results, function(a, b)
+		local rank_a, rank_b = file_rank[a.path], file_rank[b.path]
+		if rank_a ~= rank_b then return rank_a < rank_b end
+		return a.original_index < b.original_index
+	end)
+end
+
 local function run_search(cb)
 	if _search_job then
 		vim.fn.jobstop(_search_job)
@@ -82,6 +113,8 @@ local function run_search(cb)
 	if state.case_sensitive then table.insert(args, "--case-sensitive")
 	else                         table.insert(args, "--smart-case") end
 	if state.whole_word     then table.insert(args, "--word-regexp") end
+
+	table.insert(args, "--glob"); table.insert(args, "!.git")
 
 	for pat in state.include:gmatch("[^,]+") do
 		pat = pat:match("^%s*(.-)%s*$")
@@ -121,6 +154,7 @@ local function run_search(cb)
 		on_exit = function()
 			vim.schedule(function()
 				_search_job = nil
+				sort_by_open_filetypes(result_lines)
 				state.results   = result_lines
 				state.collapsed = {}
 				state.excluded  = {}
