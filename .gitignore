@@ -20,3 +20,5 @@ backups/
 .config/iterm2/
 .config/flutter/
 .config/gh/hosts.yml
+.config/herdr/sessions/
+reset-trial-crossover.sh
