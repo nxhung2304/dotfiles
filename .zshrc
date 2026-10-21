@@ -17,7 +17,6 @@ plugins=(
     git
     zsh-autosuggestions
     zsh-syntax-highlighting
-    z
     fzf-tab
 )
 
@@ -30,6 +29,8 @@ setopt appendhistory
 
 # Hook direnv: https://direnv.net
 eval "$(direnv hook zsh)"
+
+eval "$(zoxide init zsh)"
 
 
 ## [Completion]
@@ -198,5 +199,21 @@ upgrade_nvim() {
   ./upgrade_stable.sh
 }
 
+[[ -f ~/.env ]] && source ~/.env
+
+herdr_auto_rename_tab() {
+  [[ -n $HERDR_ENV && -n $HERDR_TAB_ID ]] || return
+  local command_name=${${(z)3}[1]:t}
+  [[ -n $command_name && $command_name != $HERDR_AUTO_TAB_LABEL ]] || return
+  local current_label
+  current_label=$(herdr tab get "$HERDR_TAB_ID" 2>/dev/null | jq -r '.result.tab.label // empty')
+  [[ -n $current_label ]] || return
+  [[ $current_label =~ '^[0-9]+$' || $current_label == $HERDR_AUTO_TAB_LABEL ]] || return
+  HERDR_AUTO_TAB_LABEL=$command_name
+  herdr tab rename "$HERDR_TAB_ID" "$command_name" >/dev/null 2>&1
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec herdr_auto_rename_tab
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
+export PATH=/opt/homebrew/opt/ffmpeg-full/bin:$PATH
