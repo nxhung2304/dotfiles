@@ -1,6 +1,6 @@
 ---
 name: pr-desc
-model: claude-opus-5-5
+model: claude-sonnet-5-5
 allowed-tools: Bash(git:*), Read
 description: Generate a short, plain-language PR description from the diff/commit log between the current branch and base, so a leader/reviewer understands what was done at a glance. Prints content only — does not create/update the PR on GitHub. Defaults to Vietnamese, accepts a `lang` override via ARGUMENTS. Trigger on "viết PR content", "tạo nội dung PR", "tóm tắt PR", "pr-desc", "write PR description".
 ---

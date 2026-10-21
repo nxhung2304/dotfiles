@@ -48,6 +48,12 @@ Flow: `plan-idea → plan-prd → plan-stack → plan-story → generate-issues`
 | :--- | :--- | :--- |
 | **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Researched UI/UX process: understand the problem → gather references (Mobbin/Refero/Land-book/Dribbble) → fix design tokens → build prototype → export HTML + review → iterate → handoff. Tokens live in `:root` of `specs/designs/*.html`; rules/decision log in `specs/rules/design.md`; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
 
+### 🎬 YouTube Channel
+
+| Skill | Usage | Description |
+| :--- | :--- | :--- |
+| **[script-writing](./script-writing/SKILL.md)** | say "viết kịch bản" or pick an idea from `trend-scanner/ideas.md` | Writes a ~10-minute script for the Tí Ớt YouTube channel (`~/Dev/personal/youtube-channel`, multi-topic, finance first): agree on a distinct angle → research sourced numbers → write in the `ech-pipeline` format → self-check (every number listed as `nguồn`/`ước tính` comments) → viewer cost sheet CSV. |
+
 ### 🚀 Implementation Pipeline
 
 Complete automated workflow for implementing issues from spec to merged PR:

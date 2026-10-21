@@ -21,8 +21,11 @@ type: subject (<70 chars, imperative)
 
 - What changed (bullet, no markdown)
 - Why it matters
+closes #<issue>
 
 ```
+
+`closes #<issue>` goes on its own line right after the last bullet. Take `<issue>` from the branch name (`git branch --show-current`, regex `#(\d+)`); if there is no match, omit the line.
 
 **Format (`short`):**
 ```
@@ -47,6 +50,7 @@ Co-Authored-By: <current model> <noreply@anthropic.com>
 
 **Rules:**
 - Subject < 70 chars, imperative mood
+- Never put `closes #<issue>` in the subject; it only goes at the end of the bullets in `full` format. `short` has no `closes` line
 - `full`: bullets use `-`, no markdown; WHAT & WHY, not HOW
 - `short`: single line only, no body, no bullets; if there are multiple unrelated changes, summarize the most important one
 - No Co-Authored-By unless `footer=true`
