@@ -12,7 +12,8 @@ name = "gruvbox"
 auto_switch = false
 
 [ui]
-sidebar_width = 32
+sidebar_width = 35
+sidebar_max_width = 45
 mouse_capture = true
 confirm_close = true
 prompt_new_tab_name = false

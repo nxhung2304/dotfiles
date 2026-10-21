@@ -18,7 +18,7 @@ workspace_ids_under_path() {
 open_workspace() {
     local worktree_path=$1
     local label=$2
-    local existing_id created root_pane
+    local existing_id created root_pane repo_root
 
     existing_id=$(workspace_ids_under_path "$worktree_path" | head -1)
     if [[ -n $existing_id ]]; then
@@ -26,7 +26,8 @@ open_workspace() {
         return 0
     fi
 
-    created=$(herdr workspace create --cwd "$worktree_path" --label "$label" --focus)
+    repo_root=$(dirname "$(git -C "$worktree_path" rev-parse --path-format=absolute --git-common-dir)")
+    created=$(herdr worktree open --cwd "$repo_root" --path "$worktree_path" --label "$label" --focus)
     root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
     herdr agent start claude --kind claude --pane "$root_pane" >/dev/null || true
 }
