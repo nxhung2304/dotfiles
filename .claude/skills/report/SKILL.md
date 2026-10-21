@@ -18,7 +18,9 @@ Turn technical work into a message the reader understands on the first read, can
 4. **Short but complete.** Every line must answer a question the reader would ask; cut everything else. Prefer labelled one-liners (`Vấn đề:` / `Giải pháp:` / `Rủi ro:`) over paragraphs. Shortening means compressing wording, never dropping an idea the reader needs.
 5. **Verified or labelled.** Before writing a claim (feasible / not feasible, root cause, "SDK doesn't support X"), check the code, SDK, or docs. If it can't be checked, write it as a guess. An estimate is always an estimate.
 6. **Paste-ready output.** Give the report as one block the user can paste as-is. Notes meant only for the user (sources, file references, which numbers are guesses) go after a `---` separator, in one or two lines. Keep hedging and code references out of the paste-ready block.
-7. **Iterate in place.** When the user asks for a change (shorter, clearer, less technical, add X), return the full updated block, not a diff, so it stays paste-ready.
+7. **Default to the shortest form.** Write only the conclusion and the point the reader must act on. No background, old-logic recap, recommendation or extra questions unless the user asks for them or the reader cannot answer without them.
+8. **Never ask what is already decided.** Before including a question, check the spec/decision notes and the conversation; drop any point already confirmed.
+9. **Iterate in place.** When the user asks for a change (shorter, clearer, less technical, add X), return the full updated block, not a diff, so it stays paste-ready.
 
 ## Step 1 — Identify the type and the scope
 
@@ -30,6 +32,7 @@ Pick the type (a report can mix them, e.g. bug + estimate for the fix):
 | **Estimate / proposal** | What's wrong, what we'll do, how long, what could go wrong, what they must decide |
 | **Status / recap** | Where things stand, what's next, anything blocked |
 | **Decision / trade-off ask** | The options, the cost of each, what you recommend, what you need from them |
+| **Confirmation ask** | Which behaviour is wanted — the current one or the alternative |
 
 Size it by scope:
 
@@ -89,6 +92,20 @@ Conclusion first → done → in progress → blocked (and what unblocks it) →
 
 Context in one line → options (a table when there are two or more) with the cost of each → your recommendation and why → exactly what you need from the reader.
 
+### Confirmation ask
+
+Shape, in this order (omit a part only when it doesn't apply):
+1. **Addressee + ask** — `@<name>` if given, then who confirms (e.g. "Nhờ chị xác nhận với bên khách hàng:").
+2. **Context** — only the rule the reader needs to answer, as a short condition list (e.g. "X only shows On when: - A - B"). No history, no old bug.
+3. **Current behaviour** — one sentence, marked as already implemented.
+4. **Question** — "<trigger>, thì <current behaviour> như hiện tại, hay <alternative>?" Always offer the current behaviour and one concrete alternative; never an open or yes/no question.
+
+Wording rules:
+- Describe user actions with the exact on-screen labels in their original language (e.g. "chọn この機能を使う rồi nhấn 設定する"), and point to a screenshot when one is attached ("như ảnh đính kèm").
+- Other keywords: English with the original in parentheses, e.g. "Always (常に許可)"; repeat the original only on first use.
+- Several undecided points → number them, each with its own current/alternative question.
+- No recommendation, no file/code names, no technical reason unless the user asks.
+
 ## Step 3 — Self-check before delivering
 
 Read it as the recipient and fix whatever triggers one of these questions:
@@ -103,6 +120,16 @@ Read it as the recipient and fix whatever triggers one of these questions:
 
 **Small bug, root cause clear, nobody affected:**
 > Symptom: [X]. Cause: [Y, in plain words]. Fixed in PR #N; no action needed for current users.
+
+**Confirmation ask:**
+> @[name]
+> Nhờ chị xác nhận với bên Nhật:
+>
+> Mục Current location (現在地取得) chỉ hiện On (オン) khi đủ 2 điều kiện:
+> - Quyền vị trí là Always (常に許可)
+> - Người dùng bật On trong app: chọn この機能を使う rồi nhấn 設定する (như ảnh đính kèm)
+>
+> Khi quyền vị trí chuyển sang Always, app tự bật On (em đã implement). Sau đó nếu người dùng chọn Off trong app (chọn 設定せず使う rồi nhấn 設定する) thì giữ Off (オフ) như hiện tại, hay app tự bật lại On?
 
 **Medium decision ask:**
 > We need to pick how to handle [X]. A: keep the current approach — no extra work, but it breaks down at [limit]. B: [change] — 1 day, removes the limit. I recommend B, because [next step] will push past that limit. Need your OK to go with B.

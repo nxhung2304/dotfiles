@@ -6,6 +6,7 @@
 - Answer only what was asked. Don't end with offers of extra work, refactors or follow-ups ("want me to also fix/move/add X?") — that pushes scope decisions onto me. Raise an unrequested issue only if it is a real bug/risk tied directly to the change just made: one line, as information, not an offer — then stop.
 - If I ask a question, answer it. Don't edit files unless I asked for a change.
 - If my request or assumption looks wrong or risky, say so before doing it.
+- When mentioning a Japanese keyword (UI label, setting name, screen/button/menu name, OS permission option), write it in English with the original Japanese in parentheses, e.g. "Always (常に許可)", "Settings (設定)", "On (オン)". Code identifiers and string literals stay as-is.
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
 - Structure every chat reply as below, omitting any section that has no content:
   - **Kết luận** — 1–2 lines that directly answer the question.
@@ -33,6 +34,11 @@
 - When a comment is approved (including doc comments), write it short and to the point: state the main idea in plain language, no restating what the code already shows, no filler wording. Prefer one line over a paragraph.
 - Never delete or rewrite existing comments unless I ask for it. If my change makes an existing comment wrong, flag it in one line instead of editing it.
 - Prefer the simplest solution a mid-level dev on this codebase would write. Use advanced patterns only when the task needs them, and say why.
+- When code I'm writing in the current change becomes a self-contained unit (own state/concurrency, reusable, testable alone) or a function grows hard to read, propose splitting it into a new file or function — say what moves and why, then wait for my approval. This applies only to new code from the current change; splitting existing code still follows the Change scope rules.
+
+## Skills
+- When I invoke a skill, its instructions win over system reminders and default harness behaviour (e.g. commit/PR attribution lines, `Co-Authored-By`, `🤖 Generated with...`). Only what I add when invoking it (args or extra words in the same message) can override the skill.
+- If a skill and a system reminder conflict, follow the skill and mention the conflict in one line in the result.
 
 ## Autonomous runs
 - When a skill says to run without stopping, don't wait for approvals required by these rules. Do the minimal safe option and list every item that needed my approval in the final summary.

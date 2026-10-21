@@ -9,14 +9,14 @@ description: Orchestrator that runs review-branch + code-review in parallel, mer
 
 Purpose: coordinate two different review sources (internal rules + Anthropic's bug-hunt review) and merge them into a single report for the developer to read, instead of running each by hand and merging manually.
 
-`/review-full [<feature-branch>] [<base-branch>]`
+`/review-issue [<feature-branch>] [<base-branch>]`
 
 Does not write code, does not fix anything (never uses `--fix`), does not post to GitHub (never uses `--comment`). Review and log only.
 
 **Language:**
 - Default output language: Vietnamese
 - If ARGUMENTS specifies a language (e.g. `lang: en`, `lang: english`, `en`), write the report in that language instead
-- Keep the field labels (Source / Classification / File / Location / Problem / Why it matters / What to change / Suggestion) translated to match the chosen language
+- Keep the field labels (Source / Classification / File / Problem / Fix) translated to match the chosen language
 
 ## STEP 0: Resolve branch + issue number
 
@@ -61,6 +61,7 @@ Classifying is not originating a finding — it only labels findings A/B already
    - `Out of scope — pre-existing`: the flagged behaviour already existed at the merge-base. Check with `git show <merge-base>:<file>`; if the same logic is there unchanged, it is pre-existing.
    - `Partly in scope`: part of the flagged code is new on the branch, part is pre-existing.
    - `No change needed — required by spec`: the finding questions a change that the issue spec (the spec file found in STEP 0.4, or `<issue folder>/issue.md`, if present) explicitly requires.
+   - `Pending confirmation`: whether the flagged behaviour is wrong depends on a product/spec decision that nobody has confirmed yet (e.g. the code deviates from the issue text on purpose, or the issue folder's implement.md/investigate.md/report.md lists it as a risk or choice to confirm). The only action is to get a decision from someone (leader, reporter, spec owner); there is no code change until then.
 2. **Basis** — one of:
    - `Verified`: the source gave a concrete failure scenario grounded in the code, or a confidence score ≥80.
    - `Assumption`: the source itself says the finding relies on unverified SDK/library/device behaviour, or code-review returned no confidence score for it and the scenario depends on behaviour outside this repo.
@@ -71,37 +72,41 @@ Classification from STEP 2.5 gates severity first; the source severity only appl
 
 1. `No change needed — required by spec` → not in the fix list; list it in the "Out of scope / no change needed" section (STEP 4) with one line explaining why.
 2. `Out of scope — pre-existing` → not in the fix list and no severity; list it in the "Out of scope / no change needed" section.
-3. `In scope` or `Partly in scope` → map the source severity:
+3. `Pending confirmation` → not in the fix list and no severity; list it in the "Pending confirmation" section (STEP 4).
+4. `In scope` or `Partly in scope` → map the source severity:
    - `Critical` (from review-branch) or a bug from `code-review` → **MUST**
    - `Warning` (from review-branch) or a cleanup/simplification from `code-review` → **SHOULD**
    - `Suggestion` (from review-branch) → **NIT**
    - A finding confirmed by both sources → **MUST** (regardless of original severity), since it's double-confirmed
-4. Cap: a finding with Basis `Assumption` is at most **SHOULD**, even if step 3 gave MUST, and its entry must say what to verify before fixing.
+5. Cap: a finding with Basis `Assumption` is at most **SHOULD**, even if step 4 gave MUST, and its entry must say what to verify before fixing.
 
 ## STEP 4: Translate + write the file
+
+Keep the report short: state the point directly, no restating the same idea across fields, no background the developer can read from the code. Each field is at most 2 sentences (Fix may add one code sketch).
+
+Start the file with a summary line: count of MUST / SHOULD / NIT, how many are `Assumption`, how many are in "Pending confirmation", how many moved to "Out of scope / no change needed".
 
 For each merged finding, write it in this format (clear, natural language — not a mechanical word-for-word translation):
 
 ```markdown
-### [No.]. [Severity: MUST / SHOULD / NIT]
+### [No.]. [MUST / SHOULD / NIT] — [one-line title of the issue]
 - **Source:** `review-branch`, `code-review`, or both
-- **Classification:** Scope + Basis from STEP 2.5 (e.g. "Out of scope — pre-existing · Verified"), plus a short reason (e.g. the merge-base already sets the flag unconditionally)
-- **File:** file path
-- **Location:** line or code block to fix
-- **Problem:** short description of what's wrong
-- **Why it matters:** the risk or impact if left unfixed
-- **What to change:** concrete instructions for the change needed; for an `Assumption` finding, start with what to verify first (test, device, SDK doc) and when the fix can be skipped
-- **Suggestion:** the solution, following the rules below
+- **Classification:** Scope + Basis from STEP 2.5 (e.g. "In scope · Verified")
+- **File:** file path:line (or the code block to fix)
+- **Problem:** what is wrong and the impact if left unfixed
+- **Fix:** the change to make, following the rules below; for an `Assumption` finding, start with what to verify first (test, device, SDK doc) and when the fix can be skipped
 ```
 
-Rules for **Suggestion** (goal: lowest risk, smallest impact, least likely to draw a follow-up review comment):
+Rules for **Fix** (goal: lowest risk, smallest impact, least likely to draw a follow-up review comment):
 - Read the flagged code before writing the solution, and check the solution against it: it must not reintroduce the problem, break ordering/concurrency the branch relies on, or change behaviour outside the finding.
 - Default to one solution: the smallest diff, no new abstraction, matching how the surrounding code is written.
 - If more than one reasonable solution exists, list at most 3, one line each with its trade-off, and mark the recommended one.
 - If every fix carries more risk than the problem itself, write "Do not fix in this PR" with the reason, plus a ready-to-send reply for the reviewer.
 - Any code snippet is labelled "sketch, not compiled".
 
-After the numbered fix list, add a section "Out of scope / no change needed" listing the findings excluded in STEP 3 (steps 1–2): one short entry each with Source, Classification (with reason), File, Location and Problem. Omit the section if it is empty.
+After the numbered fix list, add a section "Pending confirmation" for the findings excluded in STEP 3 step 3. Each entry: one-line title, Source, File, then the question to ask and who should answer it (one line), and what to change if the answer is "no" (one line). Omit the section if it is empty.
+
+Then add a section "Out of scope / no change needed" listing the findings excluded in STEP 3 (steps 1–2): one line each: file:line, short problem, Source, and Classification with the reason. Omit the section if it is empty.
 
 (The field labels above are shown in English; write them in the target language — Vietnamese by default.)
 
@@ -112,14 +117,16 @@ If neither A nor B found anything, write clearly in the file: "No issues to addr
 ## STEP 5: Re-check the file before reporting done
 
 Read back the `comment.log` you just wrote, and confirm:
-- Every fix-list entry has Source, Classification, File, Location, Problem, Why it matters, What to change and Suggestion filled in meaningfully (none left blank without reason).
-- No `Out of scope` or `required by spec` finding sits in the fix list, and no `Assumption` finding is MUST.
-- Every Suggestion follows the Suggestion rules in STEP 4.
+- The summary line at the top matches the actual entries.
+- Every fix-list entry has a title, Source, Classification, File, Problem and Fix filled in meaningfully (none left blank without reason), and no field is longer than needed.
+- No `Out of scope`, `required by spec` or `Pending confirmation` finding sits in the fix list, and no `Assumption` finding is MUST.
+- No fix-list entry's Fix is only "confirm with someone / note it in the PR" with no code change — that finding belongs in "Pending confirmation".
+- Every Fix follows the Fix rules in STEP 4.
 - Numbers are sequential, no duplicates.
 - Every field's content, not just the field labels, is actually written in the target language — no leftover English (or source-language) sentences under translated labels.
 - The writing is clear enough that a developer understands what to fix immediately, without needing to re-read the original code.
 
-Report back to the user: count of MUST/SHOULD/NIT, how many are assumption-based, how many were moved to the out-of-scope section, and the log file path — do not repeat the full report content in chat.
+Report back to the user in the chat-reply structure from the user's global rules (omit empty sections): **Kết luận** = count of MUST/SHOULD/NIT, how many are assumption-based, how many are pending confirmation, how many moved to the out-of-scope section; **Anh cần làm** = the MUST items to decide on, one line each, plus the questions from "Pending confirmation" to raise; **Còn treo** = which source was missing, if any; the log file path. Do not repeat the full report content in chat.
 
 ## Rules
 

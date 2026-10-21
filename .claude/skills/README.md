@@ -10,6 +10,17 @@
 | **[commit-push-by-category](./commit-push-by-category/SKILL.md)** | `/commit-push-by-category` | Groups changed files by logical category (directory/file type), commits each group separately via `commit`, pushing with the last commit (`push=true`). Manual-only (`disable-model-invocation`). |
 | **[pr-desc](./pr-desc/SKILL.md)** | `/pr-desc` or `/pr-desc lang: en` | Summarizes the diff/commit log between the current branch and base into a PR description (prints only, **does not create/update the PR on GitHub**). Defaults to Vietnamese. |
 
+### 🧭 Project Planning
+
+Flow: `plan-idea → plan-prd → plan-stack → plan-story → generate-issues`. Each step reads the previous step's file and ends with a `Next:` line.
+
+| Skill | Usage | Description |
+| :--- | :--- | :--- |
+| **[plan-idea](./plan-idea/SKILL.md)** | `/plan-idea` | Q&A that turns a rough project idea into problem/users/core job/constraints/non-goals; saves `specs/idea.md` after approval. |
+| **[plan-prd](./plan-prd/SKILL.md)** | `/plan-prd` | Reads `specs/idea.md`, writes `specs/prd.md`: MVP scope, features with stable IDs (`F1`...) and testable acceptance criteria. No tech decisions. |
+| **[plan-stack](./plan-stack/SKILL.md)** | `/plan-stack` | Reads `specs/prd.md`, compares options per area with trade-offs, writes `specs/techstack.md` (optionally `ERD.md`/`architecture.md`). Verifies library/version claims from docs. |
+| **[plan-story](./plan-story/SKILL.md)** | `/plan-story` | Breaks MVP features into numbered tasks, writes `specs/story.md` in the `- [ ] [number]. [title]` format `generate-issues` reads, plus a mechanical feature→task coverage check. |
+
 ### 📝 Issue & Spec Management
 
 | Skill | Usage | Description |
@@ -20,6 +31,7 @@
 | **[issue-docs](./issue-docs/SKILL.md)** | `/issue-docs` or "lưu vào specs/issues"; also called by `fix-issue` | Creates/updates linked docs under `specs/issues/<n>-<slug>/` for any task type, picking only the files the current stage needs (`issue.md`, `investigate.md`, `implement.md`, `testcases.md`, `report.md`) and reusing existing ones. |
 | **[report](./report/SKILL.md)** | `/report` or ask to report/estimate for a leader | Writes/refines any leader-facing message (bug report, estimate/proposal, status, decision ask) in plain language; structure scales with task scope. |
 | **[md-to-github-issues](./md-to-github-issues/SKILL.md)** | `/md-to-github-issues` (no args) | Syncs files under `specs/issues/*.md` that are `Review: Approved` and have no `GitHub Issue: #` yet up to GitHub Issues, writes the issue number back into the file. Manual-only (`disable-model-invocation`). |
+| **[issues-to-obsidian](./issues-to-obsidian/SKILL.md)** | `/issues-to-obsidian` or "sync tasks" | One-way sync of the current repo's open issues (spec `## **Status:**` + GitHub issue/PR state) into a `<!-- sync:<repo> -->` block of Obsidian `My Tasks.md`. Only rewrites its own block, shows the diff and asks before writing. |
 | **[generate-issues](./generate-issues/SKILL.md)** | `/generate-issues` or `/generate-issues 1.1` | Reads `specs/story.md`, parses `- [ ] [number]. [title]` tasks, creates individual issue files in `specs/issues/` (can target a specific number). |
 
 ### 🔍 Review & Quality
@@ -53,6 +65,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 
 | I want to... | Use |
 | :--- | :--- |
+| Start a new project from a rough idea (idea → PRD → techstack → story) | `plan-idea` → `plan-prd` → `plan-stack` → `plan-story` |
 | Turn a rough idea into a design decision before an issue exists | `feature-discuss` |
 | Investigate a reported bug and find the root cause | `fix-issue` |
 | Save a discussion/investigation into `specs/issues/` to continue later | `issue-docs` |
@@ -71,6 +84,15 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | Write a plain-language PR description from the diff | `pr-desc` |
 
 ## Common Workflows
+
+**New project, from idea to issues:**
+```
+plan-idea                        # idea → specs/idea.md
+  → plan-prd                     # → specs/prd.md (MVP features F1..)
+  → plan-stack                   # → specs/techstack.md
+  → plan-story                   # → specs/story.md (+ coverage check)
+  → generate-issues              # → specs/issues/*.md
+```
 
 **New feature, from idea to PR:**
 ```
