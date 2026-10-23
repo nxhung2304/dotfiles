@@ -10,13 +10,20 @@ Turn technical work into a message the reader understands on the first read, can
 
 **Language:** match the user's language (default: the draft's or the conversation's language). `lang: en` / `lang: vi` in ARGUMENTS overrides it.
 
+## Step 0 — Find the one point (before writing anything)
+
+Write for yourself, in one sentence, the single thing the reader must answer, decide, or know (e.g. "Leader: should the leftover Push code be removed in a separate issue?"). Every line of the report must serve that sentence.
+- Drop facts about other work, side effects, or decisions already made unless the reader needs them to answer.
+- Drop background, estimates, options tables and recommendations unless the user asked for them or the reader cannot answer without them.
+- Reaching for a table or a second paragraph on a small ask means the focus is off — go back to the one sentence.
+
 ## Core rules (every report type)
 
 1. **Plain language.** Describe what happens in everyday words ("the screen only says 'failed', not what actually went wrong"), not code terms. Any unavoidable technical term gets a few-word explanation the first time. Short sentences, natural tone, like a person talking to a colleague.
 2. **Name things by feature, not by code.** Say "login", "payment", "data upload" — not file, class, or function names. Drop counts and ratios unless they change the reader's decision.
 3. **Concrete over abstract.** "Most cases aren't handled yet" is vague; "handled: A, B, C — not handled: X, Y, Z" is clear. When the reader can't picture what a phrase refers to, replace it with a short have/lack list in feature terms.
 4. **Short but complete.** Every line must answer a question the reader would ask; cut everything else. Prefer labelled one-liners (`Vấn đề:` / `Giải pháp:` / `Rủi ro:`) over paragraphs. Shortening means compressing wording, never dropping an idea the reader needs.
-5. **Verified or labelled.** Before writing a claim (feasible / not feasible, root cause, "SDK doesn't support X"), check the code, SDK, or docs. If it can't be checked, write it as a guess. An estimate is always an estimate.
+5. **Verified or labelled.** Before writing a claim (feasible / not feasible, root cause, "SDK doesn't support X", "X is used / can't be removed"), check the code, SDK, or docs, then double-check by searching for counter-evidence (other callers, other entry points, config, server side). If it can't be checked, write it as a guess inside the paste-ready block, not only in the notes. An estimate is always an estimate.
 6. **Paste-ready output.** Give the report as one block the user can paste as-is. Notes meant only for the user (sources, file references, which numbers are guesses) go after a `---` separator, in one or two lines. Keep hedging and code references out of the paste-ready block.
 7. **Default to the shortest form.** Write only the conclusion and the point the reader must act on. No background, old-logic recap, recommendation or extra questions unless the user asks for them or the reader cannot answer without them.
 8. **Never ask what is already decided.** Before including a question, check the spec/decision notes and the conversation; drop any point already confirmed.
@@ -90,7 +97,8 @@ Conclusion first → done → in progress → blocked (and what unblocks it) →
 
 ### Decision / trade-off ask
 
-Context in one line → options (a table when there are two or more) with the cost of each → your recommendation and why → exactly what you need from the reader.
+Default (yes/no or obvious options): 2–4 lines — the fact the reader needs in one line, then the question. No table, cost, or recommendation.
+Full form, only when options have non-obvious costs or the user asks: context in one line → options (a table when there are three or more) with the cost of each → your recommendation and why → exactly what you need from the reader.
 
 ### Confirmation ask
 
@@ -107,6 +115,8 @@ Wording rules:
 - No recommendation, no file/code names, no technical reason unless the user asks.
 
 ## Step 3 — Self-check before delivering
+
+First, the deletion test: remove each line in turn; if the reader can still answer or act without it, delete it for good. Then check every remaining line serves the Step 0 sentence.
 
 Read it as the recipient and fix whatever triggers one of these questions:
 - "Cái này là gì?" — a vague phrase → make it concrete (have/lack, feature names).
@@ -131,7 +141,12 @@ Read it as the recipient and fix whatever triggers one of these questions:
 >
 > Khi quyền vị trí chuyển sang Always, app tự bật On (em đã implement). Sau đó nếu người dùng chọn Off trong app (chọn 設定せず使う rồi nhấn 設定する) thì giữ Off (オフ) như hiện tại, hay app tự bật lại On?
 
-**Medium decision ask:**
+**Small decision ask (default):**
+> @[leader]
+> Issue #535 chỉ đề cập đến việc bỏ dialog xin quyền thông báo, phần này em đã triển khai ở local.
+> Tuy nhiên, phần code Push còn lại và thư viện AWS Pinpoint thì em chưa xoá. Em nghĩ nên tạo issue riêng để xử lý phần này sau, anh thấy có ổn không ạ?
+
+**Medium decision ask (only when costs are non-obvious):**
 > We need to pick how to handle [X]. A: keep the current approach — no extra work, but it breaks down at [limit]. B: [change] — 1 day, removes the limit. I recommend B, because [next step] will push past that limit. Need your OK to go with B.
 
 **Large estimate (shape only):**

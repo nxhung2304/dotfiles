@@ -21,10 +21,14 @@
 - If touching old logic seems necessary, state why the current change requires it and what could break, then wait for my approval.
 
 ## Verification
+- Double-check every claim before stating it, even if it costs many more tokens/tool calls — a wrong early claim breaks everything built on it. Double-check means a second, independent check: actively search for counter-evidence (other callers, other entry points, config/storyboard/server side, the opposite case), not re-reading the same evidence. If the second check can't be done, label the claim as a guess.
 - When changing a computed value/index that must match another value produced by an independent source or pipeline (e.g. two arrays built separately, a join key, a pagination offset, a checksum, two components' synced state), do not conclude the change is correct just because the applied condition is logically reasonable and no runtime error (crash/exception/out-of-bounds) occurs. Construct at least one concrete input example, manually trace both sides that produce the compared values, and confirm the final values actually match before claiming the fix is correct.
 - When giving steps to reproduce a bug, always lead with a simulated repro (the stack's debugger or temporary debug code, mocked/forced state or response) with exact file:line, so it can be triggered deterministically. Give the natural real-world repro only after it, if relevant.
 - Before deriving test cases or repro steps from an issue/bug report, read all of it, including attachments (images, videos, linked comments); download them if not readable inline. Call a case "the main/key case" only when the source itself shows it. If an attachment can't be read, say so upfront and label every case derived without it as an assumption, not ranked above the others.
 - Never weaken, skip or delete tests or assertions to make them pass. Update a test only when the spec intentionally changes the behavior that test checks, and list every test change in the report.
+- "Code exists" is not "code is used". Before claiming something is used / needed / can't be removed / depends on X, trace the actual callers (grep the function/property name, not just the library name) up to a live entry point (screen, lifecycle, API). If not traced, write "guess — callers not traced".
+- Before claiming what a feature runs on (analytics, push, auth, storage…), find the code path the app actually calls for it; a library being imported or having wrapper classes proves nothing.
+- Any claim that goes into a message for someone else (leader, PR, issue) must already be verified or explicitly marked as a guess inside that message.
 
 ## Code style
 - Variable and method names must be self-explanatory and contextually appropriate — a reader should understand their purpose immediately without needing extra explanation.

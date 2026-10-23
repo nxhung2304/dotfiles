@@ -29,15 +29,17 @@ Read the diff + commit log between the current branch and the base branch → su
 
 ```
 ## Tóm tắt
-- [1-3 bullets, one idea per bullet, each on its own line: WHAT changed and WHY — written so someone who doesn't read code can understand, avoid detailed code jargon]
+- [1 bullet (max 2): WHAT changed and WHY in one sentence — written so someone who doesn't read code can understand, avoid detailed code jargon]
 
 ## Đã thực hiện
-- **[Short group label]**: [one change/feature at a user/business-understandable level]
-- [Don't list individual files, group by feature/purpose instead]
-- [Use Markdown formatting to aid scanning: **bold** for the group label / key point, `code` for paths, commands, config keys, endpoints, [links](url) for related issues/PRs/docs]
+- **[Short group label]**: [one change/feature at a user/business-understandable level, one line]
+- [Max 3-4 bullets. Group by feature/purpose; merge related removals/changes into one bullet]
+- [Don't list individual files, pods/packages, config keys or class names — describe the kind of thing ("gỡ pod AWS, file cấu hình, entitlement Push"), the reviewer reads names in the diff]
 
 ## Ảnh hưởng / Lưu ý
-- [Only include if relevant: breaking change, new config/env needed, migration required, etc. Drop this section if there's nothing worth noting]
+- [Max 3 bullets, one line each. Only: breaking change, migration/schema change and how it was tested, new config/env or setup step (e.g. `pod install`), changes outside the issue's scope. Drop this section if there's nothing worth noting]
+
+closes #[issue number]
 ```
 
 (The template above is the Vietnamese default — translate the headers and content to the requested language when one is given.)
@@ -50,3 +52,6 @@ Read the diff + commit log between the current branch and the base branch → su
 - Avoid detailed implementation jargon (function/variable names) unless truly necessary for context
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
 - If there are multiple unrelated groups of changes, list them as separate bullets in "Đã thực hiện" instead of blending them together
+- Leave out minor cleanups (deleted comments, unused variables/imports) and things that were kept unchanged — they don't help the reviewer decide
+- Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one
+- `closes #N`: take N from the branch name (`#(\d+)`) or a commit's `closes #N`; if none is found, drop the line instead of leaving `closes #`
