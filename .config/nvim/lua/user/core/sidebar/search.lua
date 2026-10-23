@@ -37,6 +37,7 @@ local state = vim.tbl_extend("force", base.new_state("SearchSidebar"), {
 	hidden          = true,
 	case_sensitive  = false,
 	whole_word      = false,
+	regex           = false,
 	show_filters    = false,
 	results      = {},   -- { path, lnum, col, text }
 	collapsed    = {},   -- path -> true when folded
@@ -109,6 +110,7 @@ local function run_search(cb)
 		"--no-heading", "--color=never",
 		"--max-count=200",
 	}
+	if not state.regex then table.insert(args, "--fixed-strings") end
 	if state.hidden         then table.insert(args, "--hidden") end
 	if state.case_sensitive then table.insert(args, "--case-sensitive")
 	else                         table.insert(args, "--smart-case") end
@@ -309,6 +311,10 @@ local render
 local scroll_to_results
 
 local function do_replace()
+	if state.regex then
+		vim.notify("SearchSidebar: replace is not supported in regex mode", vim.log.levels.WARN)
+		return
+	end
 	if state.query == "" or state.replace == "" then
 		vim.notify("SearchSidebar: set both Search and Replace first", vim.log.levels.WARN)
 		return
@@ -381,7 +387,7 @@ render = function()
 
 	-- Collapsible filter section
 	local filters_active = state.include ~= "" or state.exclude ~= "" or state.folder ~= ""
-		or not state.hidden or state.case_sensitive or state.whole_word
+		or not state.hidden or state.case_sensitive or state.whole_word or state.regex
 	local ficon = state.show_filters and "▾" or "▸"
 	local fmark = filters_active and " ●" or ""
 	table.insert(lines,   "  " .. ficon .. " Filters" .. fmark)
@@ -405,6 +411,9 @@ render = function()
 
 		table.insert(lines,   pair_line("Case   ", state.case_sensitive and "on" or "off", "Word   ", state.whole_word and "on" or "off"))
 		table.insert(entries, { type = "filter_pair", left_key = "case_sensitive", right_key = "whole_word", col2 = col2, llw = 7, rlw = 7 })
+
+		table.insert(lines,   "Regex  : " .. (state.regex and "on" or "off"))
+		table.insert(entries, { type = "filter_pair", left_key = "regex", right_key = "regex", col2 = col2, llw = 7, rlw = 7 })
 	end
 
 	-- Separator
@@ -609,6 +618,7 @@ local function open_help()
 		{ "h",    "toggle hidden files (dotfiles)" },
 		{ "c",    "toggle case sensitive" },
 		{ "w",    "toggle whole word" },
+		{ "R",    "toggle regex (replace disabled)" },
 		{ "", "" },
 		{ "Navigation", "" },
 		{ "<CR>", "jump to result / edit field" },
@@ -724,6 +734,11 @@ local function setup_keymaps()
 		run_search(function() render(); scroll_to_results() end)
 	end, opts)
 
+	vim.keymap.set("n", "R", function()
+		state.regex = not state.regex
+		run_search(function() render(); scroll_to_results() end)
+	end, opts)
+
 	vim.keymap.set("n", "t", function()
 		state.show_filters = not state.show_filters
 		render()
@@ -739,6 +754,7 @@ local function setup_keymaps()
 		state.hidden        = true
 		state.case_sensitive = false
 		state.whole_word    = false
+		state.regex         = false
 		state.show_filters  = false
 		state.results       = {}
 		state.collapsed     = {}
@@ -761,7 +777,7 @@ local function setup_keymaps()
 		elseif entry.type == "filter_pair" then
 			local cur_col = vim.api.nvim_win_get_cursor(state.sidebar_win)[2]
 			local key = cur_col < entry.col2 and entry.left_key or entry.right_key
-			local km  = ({ include = "i", exclude = "e", folder = "f", hidden = "h", case_sensitive = "c", whole_word = "w" })[key]
+			local km  = ({ include = "i", exclude = "e", folder = "f", hidden = "h", case_sensitive = "c", whole_word = "w", regex = "R" })[key]
 			if km then vim.api.nvim_feedkeys(km, "n", true) end
 		elseif entry.type == "history" then
 			state.query = entry.query

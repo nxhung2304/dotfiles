@@ -89,12 +89,6 @@ return {
 				local api = require("nvim-tree.api")
 				api.config.mappings.default_on_attach(bufnr)
 				local o = { buffer = bufnr, nowait = true }
-				vim.keymap.set("n", "<Tab>", function()
-					require("user.core.sidebar").next()
-				end, o)
-				vim.keymap.set("n", "<S-Tab>", function()
-					require("user.core.sidebar").prev()
-				end, o)
 				vim.keymap.set("n", ">", function()
 					require("user.core.sidebar").resize(4)
 				end, o)

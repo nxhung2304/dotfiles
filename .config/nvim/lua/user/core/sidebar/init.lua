@@ -167,8 +167,6 @@ function M.setup_keymaps()
   map("<leader>2",  function() M.switch("search") end, "Sidebar: Search")
   map("<leader>sg", function() M.switch("search") end, "Sidebar: Search")
   map("<leader>ut", function() M.toggle()         end, "Toggle sidebar")
-  map("[s",         function() M.prev()           end, "Sidebar: prev panel")
-  map("]s",         function() M.next()           end, "Sidebar: next panel")
 end
 
 return M
