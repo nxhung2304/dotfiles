@@ -1,6 +1,39 @@
 personality = "pragmatic"
 model = "gpt-5.4"
 model_reasoning_effort = "medium"
+default_permissions = "secure-workspace"
+
+[shell_environment_policy]
+inherit = "core"
+ignore_default_excludes = false
+
+[permissions.secure-workspace.filesystem]
+":minimal" = "read"
+"/" = "read"
+"~/.ssh" = "deny"
+"~/.aws" = "deny"
+"~/.gnupg" = "deny"
+"~/.config/gcloud" = "deny"
+"~/.config/gh" = "deny"
+"~/.docker/config.json" = "deny"
+"~/.netrc" = "deny"
+"~/.npmrc" = "deny"
+"~/.env" = "deny"
+
+[permissions.secure-workspace.filesystem.":workspace_roots"]
+"." = "write"
+"**/.env" = "deny"
+"**/.env.local" = "deny"
+"**/.env.development" = "deny"
+"**/.env.staging" = "deny"
+"**/.env.production" = "deny"
+"**/.env.test" = "deny"
+"**/*.pem" = "deny"
+"**/*.key" = "deny"
+"**/*.p12" = "deny"
+"**/*.secret" = "deny"
+"**/secrets/**" = "deny"
+"**/credentials*.json" = "deny"
 [projects."/Users/rightsvn-hung/Dev/rights/rights_vn_office_management_mobile"]
 trust_level = "trusted"
 
