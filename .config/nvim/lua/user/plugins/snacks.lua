@@ -34,6 +34,7 @@ return {
 			sources = {
 				files = {
 					hidden = true,
+					follow = true,
 				},
 			},
 		},
