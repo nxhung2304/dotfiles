@@ -58,5 +58,34 @@ install_ai() {
     mkdir -p "$HOME/.claude/hooks"
     ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
 
+    echo "⏰ Scheduling weekly AI review (Monday 10:00)..."
+    local review_plist="$HOME/Library/LaunchAgents/local.ai-metrics.review.plist"
+    mkdir -p "$HOME/Library/LaunchAgents"
+    cat > "$review_plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>local.ai-metrics.review</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$DOTFILES_DIR/scripts/ai-metrics/ai-review-weekly.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key><integer>1</integer>
+        <key>Hour</key><integer>10</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+</dict>
+</plist>
+EOF
+    launchctl bootout "gui/$(id -u)" "$review_plist" 2>/dev/null
+    launchctl bootstrap "gui/$(id -u)" "$review_plist"
+
+    echo "📂 Registering ai-reveal:// links (open in Finder)..."
+    bash "$DOTFILES_DIR/scripts/ai-metrics/install-reveal-handler.sh"
+
     log_success "AI tools setup complete"
 }
