@@ -12,7 +12,7 @@ name = "gruvbox"
 auto_switch = false
 
 [ui]
-sidebar_width = 35
+sidebar_width = 27
 sidebar_max_width = 45
 mouse_capture = true
 confirm_close = true
@@ -79,8 +79,8 @@ cycle_pane_next = "prefix+ctrl+tab"
 cycle_pane_previous = "prefix+shift+tab"
 reload_config = "prefix+alt+r"
 
-navigate_workspace_up = ["up", "k"]
-navigate_workspace_down = ["down", "j"]
+# navigate_workspace_up = ["up", "k"]
+# navigate_workspace_down = ["down", "j"]
 navigate_pane_left = "h"
 navigate_pane_down = "j"
 navigate_pane_up = "k"

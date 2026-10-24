@@ -5,7 +5,7 @@ project_roots=("$HOME/Dev/personal" "$HOME/Dev/rights")
 recent_repo_limit=30
 
 workspace_name_for() {
-    echo "$(basename "$(dirname "$1")")/$(basename "$1")"
+    basename "$1"
 }
 
 open_workspace_rows() {
