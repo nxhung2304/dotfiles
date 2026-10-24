@@ -55,5 +55,8 @@ install_ai() {
         ln -sf "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
     done
 
+    mkdir -p "$HOME/.claude/hooks"
+    ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
+
     log_success "AI tools setup complete"
 }
