@@ -1,66 +1,114 @@
 #!/usr/bin/env python3
 """Báo cáo hiệu quả theo task (GitHub issue) và theo skill.
-Dùng: python3 ai_report.py [--days 30] [--project tên] [--gh] [--csv out.csv] [--html out.html]"""
-import argparse, csv, html, json, os, sqlite3, subprocess, time
+Dùng: python3 ai_report.py [--days 30] [--project tên] [--gh] [--csv out.csv] [--html out.html] [--json out.json]"""
+import argparse, csv, glob, html, json, os, re, sqlite3, subprocess, time, urllib.parse
 from collections import defaultdict
 
 DB = os.path.expanduser(os.environ.get("AI_METRICS_DB", "~/.ai-metrics/metrics.db"))
+REVIEW_DIR = os.path.expanduser(os.environ.get("AI_METRICS_REVIEW_DIR", "~/.ai-metrics/reviews"))
+TRANSCRIPT_GLOB = os.path.expanduser("~/.claude/projects/*/{session_id}.jsonl")
 IDLE_CAP = 600  # giây: khoảng nghỉ dài hơn coi là idle (tmux treo), không tính
 MIN_TASKS_PER_SKILL = 5
+TREND_WEEKS = 8
+WEEK_SECONDS = 7 * 86400
+COSTLY_TASK_COUNT = 3
 UNASSIGNED_TASK = "(chưa gắn)"
+INLINE_MARKUP_RE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`")
+TREND_METRICS = [
+    ("first_pass_pct", "Xong ngay lần đầu", lambda v: f"{v:.0f}%", True),
+    ("correction_pct", "Phải sửa lại", lambda v: f"{v:.0f}%", False),
+    ("interrupt_pct", "Bị ngắt giữa chừng", lambda v: f"{v:.0f}%", False),
+    ("tokens_k_per_task", "Token mỗi task", lambda v: format_tokens(round(v)), False),
+]
 HTML_STYLE = """
-:root{--page:#f9f9f7;--card:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--ring:rgba(11,11,11,.10);--s1:#2a78d6;--s2:#eb6834;--good:#0ca30c;--warning:#fab219;--serious:#ec835a}
-@media (prefers-color-scheme:dark){:root{--page:#0d0d0d;--card:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--ring:rgba(255,255,255,.10);--s1:#3987e5;--s2:#d95926}}
+:root{--bg:#f6f5f1;--surface:#ffffff;--ink:#141413;--ink2:#5c5b57;--muted:#6f6d67;--line:#e7e5df;--track:#eeece6;--primary:#2a78d6;
+--good:#0ca30c;--good-text:#006300;--warn:#fab219;--bad:#d03b3b;--neutral:#8d8b85;
+--r-lg:16px;--r-md:10px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px}
+@media (prefers-color-scheme:dark){:root{--bg:#0f0f0e;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#8d8b85;--line:#2c2c2a;--track:#2c2c2a;--primary:#3987e5;--good-text:#0ca30c}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--page);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:960px;margin:0 auto;padding:28px 16px 56px}
-h1{font-size:26px;margin:0 0 4px}
-h2{font-size:18px;margin:0 0 2px}
-.sub{color:var(--ink2);margin:0}
-.card{background:var(--card);border:1px solid var(--ring);border-radius:14px;padding:20px;margin-top:20px}
-.summary{font-size:17px;line-height:1.65}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px}
-.tile{background:var(--card);border:1px solid var(--ring);border-radius:14px;padding:16px}
-.tile-value{font-size:34px;font-weight:700;line-height:1.1}
-.tile-label{font-weight:600;margin-top:6px}
-.tile-hint{color:var(--ink2);font-size:13px}
-.how{color:var(--ink2);font-size:13px;margin:0 0 14px}
-.row{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;padding:5px 6px;border-radius:8px}
-.row:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
-.row-label{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.track{display:flex;height:22px;border-left:1px solid var(--grid)}
-.bar{height:100%;min-width:2px;border-radius:0 4px 4px 0;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*70ms)}
-.bar+.bar{margin-left:2px}
-.bar.s1{background:var(--s1)}
-.bar.s2{background:var(--s2)}
-.bar:hover,.bar:focus-visible{filter:brightness(1.15);outline:2px solid var(--ink2);outline-offset:1px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:var(--s5) var(--s4) 64px}
+header{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+select{font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:6px 30px 6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+h1{font-size:28px;line-height:1.2;margin:var(--s5) 0 var(--s1)}
+.facts{color:var(--ink2);font-size:14px;margin:0}
+.hero{display:flex;gap:var(--s5);align-items:center;margin-top:var(--s5);padding:var(--s5);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
+.ring{flex:none;width:128px;height:128px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--primary) calc(var(--p)*1%),var(--track) 0);animation:fill 1.1s cubic-bezier(.2,.8,.2,1) both}
+.ring span{width:104px;height:104px;border-radius:50%;background:var(--surface);display:grid;place-content:center;text-align:center}
+.ring b{font-size:40px;line-height:1;font-weight:700}
+.ring small{font-size:12px;color:var(--muted)}
+@property --p{syntax:'<number>';inherits:false;initial-value:0}
+@keyframes fill{from{--p:0}}
+.hero-state{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s3)}
+.state-word{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.state-word.good{color:var(--good-text)}.state-word.bad{color:var(--bad)}.state-word.warn,.state-word.neutral{color:var(--ink)}
+.hero-delta{font-size:14px;color:var(--ink2)}
+.up{color:var(--good-text);font-weight:700}.down{color:var(--bad);font-weight:700}
+.summary{margin:var(--s3) 0 0;padding:0;list-style:none;font-size:15px;display:grid;gap:var(--s2)}
+.summary li{display:flex;gap:var(--s3);align-items:baseline}
+.list{margin-top:var(--s4);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.row{border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row>summary,.row-static{list-style:none;cursor:pointer;padding:var(--s4) var(--s5);display:block}
+.row-static{cursor:default}
+.row>summary::-webkit-details-marker{display:none}
+.row>summary:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.lead{flex:none;display:inline-block;min-width:64px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--track);color:var(--ink2);margin-right:var(--s2);vertical-align:1px}
+.summary .lead{margin-right:0}
+.lead.good{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good-text)}
+.lead.bad{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
+a.file{color:var(--primary);font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;text-decoration:underline dotted;text-underline-offset:3px}
+code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--track);padding:1px 5px;border-radius:4px}
+.clip{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row>summary:hover{background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.row-head{display:flex;align-items:center;gap:var(--s3)}
+.row-title{font-size:16px;font-weight:700;flex:1}
+.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;margin-left:var(--s1)}
+.row[open] .chev{transform:rotate(45deg)}
+.row-insight{display:flex;align-items:center;gap:var(--s3);margin-top:6px;color:var(--ink2);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--track);color:var(--ink)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--neutral)}
+.pill.good i{background:var(--good)}.pill.warn i{background:var(--warn)}.pill.bad i{background:var(--bad)}
+.segments{display:inline-flex;gap:3px;flex:none}
+.segments span{width:14px;height:8px;border-radius:2px;background:var(--track)}
+.segments span.on{background:var(--primary)}
+.mini-spark{width:72px;height:22px;flex:none;overflow:visible}
+.mini-spark polyline{fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mini-spark circle{fill:var(--primary)}
+.row-detail{padding:0 var(--s5) var(--s5)}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
+.metric{padding:var(--s3);border-radius:var(--r-md);background:var(--bg)}
+.metric-label{font-size:13px;color:var(--ink2)}
+.metric-value{font-size:24px;font-weight:700;line-height:1.25}
+.delta{font-size:12px;color:var(--ink2)}
+.good{color:var(--good-text);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.spark{display:block;width:100%;height:34px;margin-top:6px;overflow:visible}
+.spark polyline{fill:none;stroke:var(--primary);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark circle{fill:var(--primary);stroke:var(--bg);stroke-width:2}
+.spark circle.selected{r:6;stroke:var(--ink)}
+.bar-row{display:grid;grid-template-columns:minmax(0,1fr) 1.4fr auto;gap:var(--s3);align-items:center;padding:6px 0}
+.bar-name{font-size:14px;font-weight:600}
+.bar-track{position:relative;height:10px;background:var(--track);border-radius:0 4px 4px 0}
+.bar{height:100%;background:var(--primary);border-radius:0 4px 4px 0;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*80ms)}
+.bar-prev{position:absolute;top:-4px;width:2px;height:18px;background:var(--ink2)}
+.bar-value{min-width:40px;white-space:nowrap;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.weak .bar-name{color:var(--bad)}
 @keyframes grow{from{width:0}}
-.row-value{font-variant-numeric:tabular-nums;font-weight:600;min-width:64px;text-align:right}
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 10px;font-size:13px;color:var(--ink2)}
-.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
-.swatch.s1{background:var(--s1)}
-.swatch.s2{background:var(--s2)}
-.quality-row{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--grid)}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{display:inline-flex;gap:6px;align-items:center;padding:3px 10px 3px 4px;border-radius:999px;border:1px solid var(--ring);font-size:13px}
-.chip i{font-style:normal;font-weight:700;width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;color:#0b0b0b}
-.chip.good i{background:var(--good);color:#fff}
-.chip.warning i{background:var(--warning)}
-.chip.serious i{background:var(--serious)}
-.faded{opacity:.55}
-.note{color:var(--ink2);font-size:13px;margin:10px 0 0}
-details{margin-top:20px}
-summary{cursor:pointer;font-weight:600}
-dl{margin:12px 0 0}
-dt{font-weight:600;margin-top:10px}
-dd{margin:2px 0 0;color:var(--ink2)}
-.wrap{overflow-x:auto}
-table{border-collapse:collapse;min-width:100%;font-size:13px}
-th,td{padding:6px 10px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
-th{color:var(--muted)}
-#tip{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--card);padding:6px 10px;border-radius:8px;font-size:13px;max-width:260px;opacity:0;transition:opacity .12s;z-index:9}
-@media (max-width:560px){.row{grid-template-columns:1fr auto}.row-label{grid-column:1/-1}.quality-row{grid-template-columns:1fr}}
-@media (prefers-reduced-motion:reduce){.bar{animation:none}}
+.quote{margin:var(--s3) 0 0;padding:var(--s2) var(--s3);border-left:3px solid var(--bad);background:var(--bg);border-radius:0 8px 8px 0;font-size:13px}
+.note{color:var(--muted);font-size:12px;margin:var(--s2) 0 0}
+.task{padding-top:var(--s3)}
+.task+.task{margin-top:var(--s3);border-top:1px solid var(--line)}
+.bullets{margin:2px 0 0;padding-left:18px;font-size:14px}
+.bullets li{margin:2px 0}
+.actions{margin:var(--s3) 0 0;padding:0;list-style:none;counter-reset:a;display:grid;gap:var(--s3)}
+.actions li{counter-increment:a;display:flex;gap:var(--s3);align-items:flex-start;font-size:15px}
+.actions li::before{content:counter(a);flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.empty{color:var(--ink2);font-size:14px;margin:0}
+.empty code{background:var(--track);padding:1px 6px;border-radius:4px}
+#tip{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--surface);padding:6px 10px;border-radius:8px;font-size:13px;max-width:300px;opacity:0;transition:opacity .12s;z-index:9}
+@media (max-width:520px){.hero{flex-direction:column;align-items:flex-start}.metrics{grid-template-columns:1fr}.row>summary,.row-static,.row-detail{padding-left:var(--s4);padding-right:var(--s4)}}
+@media (prefers-reduced-motion:reduce){.bar,.ring{animation:none}.chev{transition:none}}
 """
 HTML_SCRIPT = """
 const tip=document.getElementById('tip');
@@ -73,17 +121,11 @@ document.querySelectorAll('[data-tip]').forEach(el=>{
   el.addEventListener('focus',()=>{const r=el.getBoundingClientRect();showTip(el,r.left,r.bottom)});
   el.addEventListener('blur',()=>{tip.style.opacity=0});
 });
+const picker=document.getElementById('week-picker');
+function showWeek(){document.querySelectorAll('.week').forEach(w=>{w.hidden=w.dataset.week!==picker.value})}
+picker.addEventListener('change',showWeek);
+showWeek();
 """
-GLOSSARY = [
-    ("Task", "Một nhóm việc, thường là một GitHub issue (ví dụ #42). \"Chưa gắn task\" nghĩa là không nhận ra được issue nào."),
-    ("Lượt nhắn", "Mỗi lần bạn gửi một yêu cầu cho Claude. Làm xong một việc mà phải nhắn nhiều lượt nghĩa là AI chưa hiểu ngay."),
-    ("Xong ngay lần đầu", "Task không có lượt nào bạn phải sửa lại và không lần nào bạn bấm Esc để dừng Claude."),
-    ("Phải sửa", "Lượt nhắn có từ như \"sai\", \"làm lại\", \"wrong\", \"revert\". Đây chỉ là cách đoán qua từ khoá, có thể nhầm."),
-    ("Bị ngắt", "Bạn bấm Esc giữa chừng, rồi nhắn tiếp trước khi Claude làm xong."),
-    ("Claude chạy / Bạn kiểm tra", "Thời gian Claude làm việc, so với thời gian bạn đọc và kiểm tra kết quả. Mỗi khoảng nghỉ chỉ tính tối đa 10 phút."),
-    ("Token", "Đơn vị tính khối lượng chữ AI đọc và viết, cũng là đơn vị tính chi phí. Số liệu gồm cả bộ nhớ đệm (cache)."),
-    ("Skill", "Bộ hướng dẫn có sẵn Claude dùng cho một loại việc (ví dụ commit, review). Cần ít nhất 5 task mỗi skill mới so sánh được."),
-]
 
 def sh(args, cwd=None):
     try:
@@ -94,7 +136,7 @@ def sh(args, cwd=None):
 def task_label(task):
     if task == UNASSIGNED_TASK:
         return "Chưa gắn task"
-    return f"Task #{task}" if task.isdigit() else task
+    return f"Task #{task}" if str(task).isdigit() else str(task)
 
 def percent(rate):
     return f"{round(rate * 100)}%"
@@ -102,125 +144,315 @@ def percent(rate):
 def format_tokens(thousands):
     return f"{thousands / 1000:.1f}M" if thousands >= 1000 else f"{thousands}k"
 
+def empty_stats():
+    return dict(turns=0, corrections=0, interrupts=0, human_s=0.0, tokens=0)
+
+def summarize_week(week):
+    if not week["turns"]:
+        return None
+    tasks = week["tasks"]
+    task_count = len(tasks)
+    return dict(
+        task_count=task_count, turns=week["turns"],
+        first_pass_pct=100 * sum(1 for t in tasks.values() if t["corrections"] + t["interrupts"] == 0) / task_count,
+        correction_pct=100 * week["corrections"] / week["turns"],
+        interrupt_pct=100 * week["interrupts"] / week["turns"],
+        tokens_k_per_task=week["tokens"] / 1000 / task_count,
+        review_min_per_task=week["human_s"] / 60 / task_count,
+        tasks=[dict(project=proj, task=task, **stats) for (proj, task), stats in tasks.items()])
+
+def weekly_stats(db, project, now):
+    q = ("SELECT session_id, project, task, prompt_ts, stop_ts, is_correction, tok_in+tok_cache_read+tok_cache_write+tok_out"
+         " FROM turns WHERE prompt_ts>=?")
+    params = [now - (TREND_WEEKS + 1) * WEEK_SECONDS]
+    if project:
+        q += " AND project=?"; params.append(project)
+    rows = db.execute(q + " ORDER BY session_id, id", params).fetchall()
+    weeks = [dict(empty_stats(), tasks=defaultdict(empty_stats)) for _ in range(TREND_WEEKS + 1)]
+    for i, (sid, proj, task, p_ts, s_ts, corr, tokens) in enumerate(rows):
+        weeks_ago = int((now - p_ts) // WEEK_SECONDS)
+        if weeks_ago > TREND_WEEKS:
+            continue
+        week = weeks[weeks_ago]
+        nxt = rows[i + 1] if i + 1 < len(rows) and rows[i + 1][0] == sid else None
+        interrupted = 1 if not s_ts and nxt else 0
+        human_s = min(max(0, nxt[3] - s_ts), IDLE_CAP) if s_ts and nxt else 0
+        for target in (week, week["tasks"][(proj, task or UNASSIGNED_TASK)]):
+            target["turns"] += 1; target["corrections"] += corr; target["interrupts"] += interrupted
+            target["tokens"] += tokens; target["human_s"] += human_s
+    return [summarize_week(week) for week in weeks]
+
+def week_windows(now):
+    windows = []
+    for weeks_ago in range(TREND_WEEKS):
+        start, end = now - (weeks_ago + 1) * WEEK_SECONDS, now - weeks_ago * WEEK_SECONDS
+        name = "Tuần này" if weeks_ago == 0 else "Tuần trước" if weeks_ago == 1 else f"{weeks_ago} tuần trước"
+        span = f'{time.strftime("%d/%m", time.localtime(start))}–{time.strftime("%d/%m", time.localtime(end))}'
+        windows.append(dict(weeks_ago=weeks_ago, start=start, end=end, name=name, span=span))
+    return windows
+
+def task_context(db, project, task, since):
+    condition, params = ("task IS NULL", [project, since]) if task == UNASSIGNED_TASK else ("task=?", [project, since, task])
+    found = db.execute(f"SELECT session_id, cwd FROM turns WHERE project=? AND prompt_ts>=? AND {condition} GROUP BY session_id", params).fetchall()
+    sessions = [dict(session_id=sid, transcript=next(iter(glob.glob(TRANSCRIPT_GLOB.format(session_id=sid))), None)) for sid, _ in found]
+    return dict(cwd=found[0][1] if found else "", sessions=sessions)
+
+def costly_tasks(task_rows):
+    assigned = [r for r in task_rows if r["task"] != UNASSIGNED_TASK]
+    return sorted(assigned, key=lambda r: (-r["turns"], -r["you_min"]))[:COSTLY_TASK_COUNT]
+
+def load_reviews():
+    reviews = []
+    for path in sorted(glob.glob(os.path.join(REVIEW_DIR, "*.json"))):
+        try:
+            with open(path, encoding="utf-8") as f:
+                review = json.load(f)
+            reviewed_at = time.mktime(time.strptime(review["date"], "%Y-%m-%d")) + 12 * 3600
+        except Exception:
+            continue
+        reviews.append((reviewed_at, review))
+    return reviews
+
+def review_for_window(reviews, window):
+    matched = [review for reviewed_at, review in reviews
+               if reviewed_at > window["start"] and (window["weeks_ago"] == 0 or reviewed_at <= window["end"])]
+    return matched[-1] if matched else None
+
+def export_json(path, db, days, since, task_rows, skill_rows, weeks, windows):
+    costly_keys = {(r["project"], r["task"]) for r in costly_tasks(task_rows)}
+    tasks = [dict(r, costly=(r["project"], r["task"]) in costly_keys, **task_context(db, r["project"], r["task"], since)) for r in task_rows]
+    trend = [dict(week=w["span"], metrics={k: v for k, v in m.items() if k != "tasks"} if m else None)
+             for w, m in reversed(list(zip(windows, weeks)))]
+    data = dict(generated_at=time.strftime("%Y-%m-%d %H:%M"), days=days, rubric=os.path.join(os.path.dirname(os.path.abspath(__file__)), "rubric.md"),
+                review_dir=REVIEW_DIR, trend=trend, tasks=tasks, skills=[dict(skill=name, stats=stats) for name, stats in skill_rows])
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def file_link(token):
+    expanded = os.path.expanduser(token)
+    if os.path.isabs(expanded) and os.path.exists(expanded):
+        return (f'<a class="file" href="ai-reveal://{urllib.parse.quote(expanded)}" title="Mở trong Finder: {html.escape(expanded, quote=True)}">'
+                f'{html.escape(token)}</a>')
+    return f"<code>{html.escape(token)}</code>"
+
+def rich_text(text):
+    text = str(text)
+    parts, position = [], 0
+    lead = re.match(r"^([^:*`\"]{1,14}):\s+", text)
+    if lead:
+        tone = {"mạnh": "good", "yếu": "bad"}.get(lead.group(1).strip().lower(), "")
+        parts.append(f'<span class="lead {tone}">{html.escape(lead.group(1))}</span><span>')
+        position = lead.end()
+        text = text[:position] + text[position:position + 1].upper() + text[position + 1:]
+    for match in INLINE_MARKUP_RE.finditer(text, position):
+        parts.append(html.escape(text[position:match.start()]))
+        parts.append(html.escape(match.group(1)) if match.group(1) else file_link(match.group(2)))
+        position = match.end()
+    parts.append(html.escape(text[position:]))
+    if lead:
+        parts.append("</span>")
+    return "".join(parts)
+
+def bullet_list(value, css_class):
+    items = value if isinstance(value, list) else re.split(r"(?<=[.;])\s+", str(value).strip())
+    items = [str(item).strip().rstrip(";") for item in items if str(item).strip()]
+    return f'<ul class="{css_class}">' + "".join(f"<li>{rich_text(item)}</li>" for item in items) + "</ul>"
+
 def tooltip_attrs(text):
     return f'tabindex="0" data-tip="{html.escape(text, quote=True)}"'
 
-def bar_row_label(label):
-    return f'<div class="row-label" title="{html.escape(label, quote=True)}">{html.escape(label)}</div>'
+def empty(text):
+    return f'<p class="empty">{text}</p>'
 
-def single_bar_row(index, label, value, max_value, value_text, tip, extra_class=""):
-    width = 100 * value / max_value if max_value else 0
-    return (f'<div class="row {extra_class}">{bar_row_label(label)}'
-            f'<div class="track"><div class="bar s1" style="width:{width:.1f}%;--i:{index}" {tooltip_attrs(tip)}></div></div>'
-            f'<div class="row-value">{html.escape(value_text)}</div></div>')
+def pill(kind, text):
+    return f'<span class="pill {kind}"><i></i>{html.escape(text)}</span>'
 
-def stacked_bar_row(index, label, parts, max_total, total_text):
-    segments = ""
-    for series_class, value, tip in parts:
-        if value > 0:
-            segments += f'<div class="bar {series_class}" style="width:{100 * value / max_total:.1f}%;--i:{index}" {tooltip_attrs(tip)}></div>'
-    return (f'<div class="row">{bar_row_label(label)}<div class="track">{segments}</div>'
-            f'<div class="row-value">{html.escape(total_text)}</div></div>')
+def bar_row(index, name, value, max_value, value_text, tip, previous_value=None, extra_class=""):
+    previous_mark = ""
+    if previous_value is not None:
+        previous_mark = f'<span class="bar-prev" style="left:calc({100 * previous_value / max_value:.0f}% - 1px)"></span>'
+    return (f'<div class="bar-row {extra_class}"><div class="bar-name">{html.escape(name)}</div>'
+            f'<div class="bar-track"><div class="bar" style="width:{100 * value / max_value:.0f}%;--i:{index}" {tooltip_attrs(tip)}></div>{previous_mark}</div>'
+            f'<div class="bar-value">{html.escape(value_text)}</div></div>')
 
-def quality_chips(row):
-    if row["first_pass"]:
-        return [("good", "✓", "Xong ngay lần đầu")]
-    chips = []
-    if row["correction_rate"]:
-        chips.append(("warning", "✎", f"Phải sửa {percent(row['correction_rate'])} số lượt"))
-    if row["interrupt_rate"]:
-        chips.append(("serious", "✕", f"Bị ngắt {percent(row['interrupt_rate'])} số lượt"))
-    return chips
+def spark_points(values, width, height, pad):
+    points = [(i, v) for i, v in enumerate(values) if v is not None]
+    if len(points) < 2:
+        return []
+    low, high = min(v for _, v in points), max(v for _, v in points)
+    span = (high - low) or 1
+    return [(i, v, pad + i * (width - 2 * pad) / (len(values) - 1), height - pad - (v - low) * (height - 2 * pad) / span) for i, v in points]
 
-def quality_row(row):
-    chips = "".join(f'<span class="chip {kind}"><i>{icon}</i>{html.escape(text)}</span>' for kind, icon, text in quality_chips(row))
-    return f'<div class="quality-row">{bar_row_label(task_label(row["task"]))}<div class="chips">{chips}</div></div>'
+def sparkline(values, labels, selected, formatter):
+    coords = spark_points(values, 200, 34, 6)
+    if not coords:
+        return ""
+    line = " ".join(f"{x:.1f},{y:.1f}" for _, _, x, y in coords)
+    dots = "".join(f'<circle class="{"selected" if i == selected else ""}" cx="{x:.1f}" cy="{y:.1f}" r="4" {tooltip_attrs(f"{labels[i]}: {formatter(v)}")}/>'
+                   for i, v, x, y in coords)
+    return f'<svg class="spark" viewBox="0 0 200 34" role="img" aria-label="Xu hướng"><polyline points="{line}"/>{dots}</svg>'
 
-def tile(value, label, hint):
-    return (f'<div class="tile"><div class="tile-value">{html.escape(value)}</div>'
-            f'<div class="tile-label">{html.escape(label)}</div><div class="tile-hint">{html.escape(hint)}</div></div>')
+def mini_sparkline(values):
+    coords = spark_points(values, 72, 22, 3)
+    if not coords:
+        return ""
+    line = " ".join(f"{x:.1f},{y:.1f}" for _, _, x, y in coords)
+    _, _, last_x, last_y = coords[-1]
+    return f'<svg class="mini-spark" viewBox="0 0 72 22" aria-hidden="true"><polyline points="{line}"/><circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="3"/></svg>'
 
-def chart_card(title, how_to_read, body, legend=""):
-    return f'<section class="card"><h2>{title}</h2><p class="how">{how_to_read}</p>{legend}{body}</section>'
+def segments(score):
+    return '<span class="segments" aria-hidden="true">' + "".join(f'<span class="{"on" if i < round(score) else ""}"></span>' for i in range(5)) + "</span>"
 
-def skill_card(skill_rows):
-    rows = ""
-    for index, (name, stats) in enumerate(skill_rows):
-        if not stats:
-            continue
-        task_count, avg_turns, correction_rate, interrupt_rate, first_pass_text = stats
-        first_pass_percent = int(first_pass_text.rstrip("%"))
-        enough_data = task_count >= MIN_TASKS_PER_SKILL
-        label = "Không dùng skill" if name == "(không skill)" else name
-        value_text = f"{first_pass_percent}%" if enough_data else f"{first_pass_percent}% (ít dữ liệu)"
-        tip = f"{label}: {task_count} task, trung bình {avg_turns} lượt, phải sửa {percent(correction_rate)}, bị ngắt {percent(interrupt_rate)}"
-        rows += single_bar_row(index, label, first_pass_percent, 100, value_text, tip, "" if enough_data else "faded")
-    note = f'<p class="note">Mờ = chưa đủ dữ liệu (cần ít nhất {MIN_TASKS_PER_SKILL} task mỗi skill) nên chưa kết luận được.</p>'
-    return chart_card("Skill có giúp ích không?",
-                      "Thanh dài = tỉ lệ task xong ngay lần đầu khi dùng skill đó. Dòng \"Không dùng skill\" (nếu có) là mốc so sánh.",
-                      rows + note)
+def delta_html(current, previous, formatter, higher_is_better):
+    if previous is None:
+        return '<div class="delta">Chưa có tuần trước để so</div>'
+    if abs(current - previous) < 1e-9:
+        return f'<div class="delta">= Không đổi ({formatter(previous)})</div>'
+    improved = (current > previous) == higher_is_better
+    arrow = "▲" if current > previous else "▼"
+    return (f'<div class="delta"><span class="{"good" if improved else "bad"}">{arrow} {"Tốt hơn" if improved else "Kém hơn"}</span>'
+            f' · trước đó {html.escape(formatter(previous))}</div>')
 
-def data_table(task_cols, task_rows):
-    head = "".join(f"<th>{html.escape(c)}</th>" for c in task_cols)
-    body = "".join("<tr>" + "".join(f"<td>{html.escape(str(r[c]))}</td>" for c in task_cols) + "</tr>" for r in task_rows)
-    return f'<div class="wrap"><table><tr>{head}</tr>{body}</table></div>'
+def scored(review):
+    return [s for s in (review or {}).get("scores", []) if isinstance(s.get("score"), (int, float))]
 
-def write_html(path, task_cols, task_rows, skill_rows, days):
-    if not task_rows:
-        body = '<section class="card"><p class="summary">Chưa có dữ liệu trong khoảng thời gian này.</p></section>'
+def average_score(review):
+    scores = scored(review)
+    return sum(s["score"] for s in scores) / len(scores) if scores else None
+
+def score_state(score):
+    if score is None:
+        return "neutral", "Chưa chấm"
+    if score >= 4:
+        return "good", "Tốt"
+    if score >= 3:
+        return "neutral", "Ổn"
+    return "bad", "Cần chú ý"
+
+def metric_changes(week, previous_week):
+    return [(label, (week[key] - previous_week[key]) * (1 if higher_is_better else -1))
+            for key, label, _, higher_is_better in TREND_METRICS]
+
+def row(title, status, insight, detail):
+    return (f'<details class="row"><summary><div class="row-head"><span class="row-title">{title}</span>{status}<span class="chev"></span></div>'
+            f'<div class="row-insight">{insight}</div></summary><div class="row-detail">{detail}</div></details>')
+
+def progress_row(weeks, windows, weeks_ago):
+    week, previous_week = weeks[weeks_ago], weeks[weeks_ago + 1]
+    if not week:
+        return row("Có tiến bộ không?", pill("neutral", "Chưa có dữ liệu"), "Tuần này chưa có lượt nhắn nào.", "")
+    oldest_first = list(reversed(range(TREND_WEEKS)))
+    labels = [windows[k]["span"] for k in oldest_first]
+    first_pass = [weeks[k]["first_pass_pct"] if weeks[k] else None for k in oldest_first]
+    if previous_week:
+        changes = metric_changes(week, previous_week)
+        better = sum(1 for _, change in changes if change > 1e-9)
+        worse = sum(1 for _, change in changes if change < -1e-9)
+        status = pill("good", "Tiến bộ") if better > worse else pill("bad", "Đi xuống") if worse > better else pill("warn", "Đi ngang")
+        insight = f"{better}/{len(changes)} chỉ số tốt hơn tuần trước"
     else:
-        task_count = len(task_rows)
-        total_turns = sum(r["turns"] for r in task_rows)
-        first_pass_tasks = sum(1 for r in task_rows if r["first_pass"])
-        claude_total = round(sum(r["claude_min"] for r in task_rows), 1)
-        you_total = round(sum(r["you_min"] for r in task_rows), 1)
-        token_total_k = sum(r["tok_in_k"] + r["tok_out_k"] for r in task_rows)
-        busiest = max(task_rows, key=lambda r: r["turns"])
-        summary = (f"Trong {days} ngày qua bạn làm <b>{task_count}</b> nhóm việc với Claude, tổng cộng <b>{total_turns}</b> lượt nhắn. "
-                   f"<b>{first_pass_tasks}/{task_count}</b> nhóm việc xong ngay lần đầu, không cần sửa. "
-                   f"Claude chạy {claude_total:g} phút, bạn dành {you_total:g} phút để kiểm tra. "
-                   f"Tốn công nhất: {html.escape(task_label(busiest['task']))} ({busiest['turns']} lượt nhắn).")
-        tiles = "".join([
-            tile(f"{round(100 * first_pass_tasks / task_count)}%", "Task xong ngay lần đầu", "AI làm đúng, bạn không phải sửa hay ngắt"),
-            tile(f"{total_turns / task_count:.1f}", "Lượt nhắn trung bình mỗi task", "Càng ít càng tốt: AI hiểu ý nhanh"),
-            tile(f"{you_total:g} phút", "Thời gian bạn kiểm tra", f"So với Claude chạy {claude_total:g} phút"),
-            tile(format_tokens(token_total_k), "Token đã dùng", "Khối lượng chữ AI đọc và viết, gồm cả cache"),
-        ])
-        max_turns = max(r["turns"] for r in task_rows)
-        turns_rows = "".join(
-            single_bar_row(i, task_label(r["task"]), r["turns"], max_turns, f"{r['turns']} lượt",
-                           f"{task_label(r['task'])}: {r['turns']} lượt nhắn")
-            for i, r in enumerate(task_rows))
-        max_minutes = max(r["claude_min"] + r["you_min"] for r in task_rows) or 1
-        time_rows = "".join(
-            stacked_bar_row(i, task_label(r["task"]), [
-                ("s1", r["claude_min"], f"{task_label(r['task'])}: Claude chạy {r['claude_min']:g} phút"),
-                ("s2", r["you_min"], f"{task_label(r['task'])}: bạn kiểm tra {r['you_min']:g} phút"),
-            ], max_minutes, f"{r['claude_min'] + r['you_min']:.1f} phút")
-            for i, r in enumerate(task_rows))
-        time_legend = ('<div class="legend"><span><span class="swatch s1"></span>Claude chạy</span>'
-                       '<span><span class="swatch s2"></span>Bạn đọc và kiểm tra</span></div>')
-        max_tokens = max(r["tok_in_k"] + r["tok_out_k"] for r in task_rows) or 1
-        token_rows = "".join(
-            single_bar_row(i, task_label(r["task"]), r["tok_in_k"] + r["tok_out_k"], max_tokens,
-                           format_tokens(r["tok_in_k"] + r["tok_out_k"]),
-                           f"{task_label(r['task'])}: AI đọc {format_tokens(r['tok_in_k'])}, viết {format_tokens(r['tok_out_k'])}")
-            for i, r in enumerate(task_rows))
-        glossary = "".join(f"<dt>{html.escape(term)}</dt><dd>{html.escape(meaning)}</dd>" for term, meaning in GLOSSARY)
-        body = (f'<section class="card summary">{summary}</section><div class="tiles">{tiles}</div>'
-                + chart_card("Mỗi task tốn bao nhiêu lượt nhắn?", "Thanh càng dài = bạn phải nhắn càng nhiều lần mới xong việc.", turns_rows)
-                + chart_card("Thời gian: Claude làm và bạn kiểm tra", "Phần cam dài = bạn mất nhiều thời gian đọc và kiểm tra kết quả.", time_rows, time_legend)
-                + chart_card("Chất lượng từng task", "Xanh = trơn tru. Vàng, cam = có lúc phải sửa hoặc dừng Claude giữa chừng.",
-                             "".join(quality_row(r) for r in task_rows))
-                + chart_card("Token: task nào tốn nhất?", "Thanh càng dài = AI đọc và viết càng nhiều chữ, tốn chi phí hơn.", token_rows)
-                + skill_card(skill_rows)
-                + f'<details class="card"><summary>Cách đọc các thuật ngữ</summary><dl>{glossary}</dl></details>'
-                + f'<details class="card"><summary>Bảng số liệu chi tiết</summary>{data_table(task_cols, task_rows)}</details>')
+        status = pill("neutral", "Chưa đủ dữ liệu")
+        insight = f"Xong ngay lần đầu {week['first_pass_pct']:.0f}% · cần thêm 1 tuần để so"
+    metrics = ""
+    for key, label, formatter, higher_is_better in TREND_METRICS:
+        previous = previous_week[key] if previous_week else None
+        values = [weeks[k][key] if weeks[k] else None for k in oldest_first]
+        metrics += (f'<div class="metric"><div class="metric-label">{html.escape(label)}</div>'
+                    f'<div class="metric-value">{html.escape(formatter(week[key]))}</div>'
+                    f'{delta_html(week[key], previous, formatter, higher_is_better)}'
+                    f'{sparkline(values, labels, oldest_first.index(weeks_ago), formatter)}</div>')
+    return row("Có tiến bộ không?", status, mini_sparkline(first_pass) + f'<span class="clip">{html.escape(insight)}</span>', f'<div class="metrics">{metrics}</div>')
+
+def skills_row(review, previous_review):
+    ordered = sorted(scored(review), key=lambda s: s["score"])
+    if not ordered:
+        return row("Kỹ năng nào yếu?", pill("neutral", "Chưa chấm"), "Chạy /ai-review để AI chấm điểm.", "")
+    weakest = ordered[0]
+    kind, word = score_state(weakest["score"])
+    previous_scores = {s["criterion"]: s["score"] for s in scored(previous_review)}
+    bars = ""
+    for index, s in enumerate(ordered):
+        previous_score = previous_scores.get(s["criterion"])
+        tip = f'“{s.get("evidence", "")}”' + (f" · tuần trước {previous_score:g}/5" if previous_score is not None else "")
+        bars += bar_row(index, str(s.get("name", "")), s["score"], 5, f'{s["score"]:g}/5', tip, previous_score, "weak" if s is weakest else "")
+    quote = f'<p class="quote">“{html.escape(str(weakest.get("evidence", "")))}”</p>'
+    unscored = [str(s.get("name", "")) for s in review["scores"] if s not in ordered]
+    notes = ""
+    if previous_scores:
+        notes += '<p class="note">Vạch đứng = tuần trước. Di chuột vào thanh để xem bằng chứng.</p>'
+    if unscored:
+        notes += f'<p class="note">Chưa chấm được: {html.escape(", ".join(unscored))}.</p>'
+    insight = segments(weakest["score"]) + f'<span class="clip">{html.escape(str(weakest.get("name", "")))} · {weakest["score"]:g}/5</span>'
+    return row("Kỹ năng nào yếu?", pill(kind, word), insight, bars + quote + notes)
+
+def costly_row(week, review):
+    assigned = [t for t in (week or {}).get("tasks", []) if t["task"] != UNASSIGNED_TASK]
+    top = sorted(assigned, key=lambda t: (-t["turns"], -t["human_s"]))[:COSTLY_TASK_COUNT]
+    if not top:
+        return row("Vì sao task tốn công?", pill("neutral", "Chưa gắn issue"), "Nhắc #số-issue trong prompt để theo dõi theo task.", "")
+    causes = {(str(c.get("project")), str(c.get("task"))): c for c in (review or {}).get("costly_tasks", [])}
+    max_turns = max(t["turns"] for t in top)
+    detail = ""
+    for index, t in enumerate(top):
+        tip = f'Phải sửa {percent(t["corrections"] / t["turns"])} · bị ngắt {percent(t["interrupts"] / t["turns"])} · token {format_tokens(round(t["tokens"] / 1000))}'
+        found = causes.get((str(t["project"]), str(t["task"])))
+        cause = bullet_list(found.get("cause", ""), "bullets") if found else '<p class="note">Chưa phân tích nguyên nhân.</p>'
+        turns_text = f'{t["turns"]} lượt'
+        detail += f'<div class="task">{bar_row(index, task_label(t["task"]), t["turns"], max_turns, turns_text, tip)}{cause}</div>'
+    first = top[0]
+    first_cause = causes.get((str(first["project"]), str(first["task"])), {}).get("cause")
+    first_line = (first_cause[0] if isinstance(first_cause, list) and first_cause else first_cause) or "chưa phân tích nguyên nhân"
+    insight = f'<span class="clip">{html.escape(task_label(first["task"]))} · {first["turns"]} lượt · {rich_text(first_line)}</span>'
+    return row("Vì sao task tốn công?", pill("neutral", f"{len(top)} task"), insight, detail)
+
+def actions_row(review):
+    actions = (review or {}).get("actions") or []
+    body = ('<ol class="actions">' + "".join(f"<li><span>{rich_text(a)}</span></li>" for a in actions) + "</ol>") if actions \
+        else '<div class="row-insight">Chạy /ai-review để có gợi ý.</div>'
+    return f'<div class="row row-static"><div class="row-head"><span class="row-title">Tuần tới làm gì?</span></div>{body}</div>'
+
+def hero(review, previous_review):
+    average, previous_average = average_score(review), average_score(previous_review)
+    kind, word = score_state(average)
+    ring_value = f"{average:.1f}" if average is not None else "—"
+    ring = f'<div class="ring" style="--p:{100 * (average or 0) / 5:.0f}"><span><b>{ring_value}</b><small>điểm / 5</small></span></div>'
+    if average is None:
+        delta = "Chạy /ai-review để có điểm tuần này."
+    elif previous_average is None:
+        delta = "Chưa có điểm tuần trước để so."
+    else:
+        change = average - previous_average
+        arrow = f'<span class="{"up" if change > 0 else "down"}">{"▲" if change > 0 else "▼"} {abs(change):.1f}</span>' if abs(change) >= 0.05 else "= Không đổi"
+        delta = f"{arrow} so với tuần trước ({previous_average:.1f})"
+    summary = (review or {}).get("summary")
+    summary_html = bullet_list(summary, "summary") if summary else ""
+    return (f'<section class="hero">{ring}<div><div class="hero-state"><span class="state-word {kind}">{html.escape(word)}</span>'
+            f'<span class="hero-delta">{delta}</span></div>{summary_html}</div></section>')
+
+def write_html(path, weeks, windows):
+    reviews = load_reviews()
+    options, blocks = "", ""
+    for window in windows:
+        k = window["weeks_ago"]
+        review = review_for_window(reviews, window)
+        previous_review = review_for_window(reviews, windows[k + 1]) if k + 1 < TREND_WEEKS else None
+        if not weeks[k] and not review:
+            continue
+        week = weeks[k]
+        facts = f'{week["task_count"]} task · {week["turns"]} lượt nhắn' if week else "Không có lượt nhắn nào"
+        options += f'<option value="{k}">{html.escape(window["name"])} · {window["span"]}</option>'
+        blocks += (f'<div class="week" data-week="{k}"><h1>{html.escape(window["span"])}</h1><p class="facts">{html.escape(window["name"])} · {html.escape(facts)}</p>'
+                   + hero(review, previous_review)
+                   + '<div class="list">' + progress_row(weeks, windows, k) + skills_row(review, previous_review)
+                   + costly_row(week, review) + actions_row(review) + "</div></div>")
+    if not options:
+        options = '<option value="0">Tuần này</option>'
+        blocks = f'<div class="week" data-week="0"><h1>Chưa có dữ liệu</h1>{empty("Hook chưa ghi được lượt nhắn nào.")}</div>'
     page = (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>Báo cáo dùng AI</title><style>{HTML_STYLE}</style></head><body><main>'
-            f'<h1>Bạn dùng AI hiệu quả đến đâu?</h1><p class="sub">Dữ liệu {days} ngày gần nhất. Di chuột vào thanh màu để xem chi tiết.</p>'
-            f'{body}</main><div id="tip" role="tooltip"></div><script>{HTML_SCRIPT}</script></body></html>')
+            f'<header><span class="eyebrow">Báo cáo dùng AI</span><select id="week-picker" aria-label="Chọn tuần">{options}</select></header>'
+            f'{blocks}</main><div id="tip" role="tooltip"></div><script>{HTML_SCRIPT}</script></body></html>')
     with open(path, "w", encoding="utf-8") as f:
         f.write(page)
 
@@ -231,11 +463,14 @@ def main():
     ap.add_argument("--gh", action="store_true", help="hỏi trạng thái issue qua gh CLI")
     ap.add_argument("--csv")
     ap.add_argument("--html")
+    ap.add_argument("--json", help="xuất dữ liệu cho skill ai-review")
     a = ap.parse_args()
 
     db = sqlite3.connect(DB)
+    now = time.time()
+    since = now - a.days * 86400
     q = "SELECT id, session_id, project, cwd, task, prompt_ts, stop_ts, is_correction, tool_calls, tool_failures, tok_in+tok_cache_read+tok_cache_write, tok_out FROM turns WHERE prompt_ts>=?"
-    params = [time.time() - a.days * 86400]
+    params = [since]
     if a.project:
         q += " AND project=?"; params.append(a.project)
     rows = db.execute(q + " ORDER BY session_id, id", params).fetchall()
@@ -307,9 +542,15 @@ def main():
         print(f"{s:28} {stats}")
         skill_rows.append((s, stats))
 
-    if a.html:
-        write_html(a.html, cols, out, skill_rows, a.days)
-        print(f"Đã ghi {a.html}")
+    if a.html or a.json:
+        weeks = weekly_stats(db, a.project, now)
+        windows = week_windows(now)
+        if a.json:
+            export_json(a.json, db, a.days, since, out, skill_rows, weeks, windows)
+            print(f"Đã ghi {a.json}")
+        if a.html:
+            write_html(a.html, weeks, windows)
+            print(f"Đã ghi {a.html}")
 
 if __name__ == "__main__":
     main()
