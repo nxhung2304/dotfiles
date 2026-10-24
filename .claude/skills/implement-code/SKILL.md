@@ -7,6 +7,7 @@ description: Execute the Implementation Checklist.
 - Read the spec → extract all keywords from the Checklist
 - **Call rule-lookup ONCE** at the start with the full set of keywords — cache the result, reuse it for the whole session (do not call it again per item)
 - Work through the Checklist items in order, sequentially
+- If the project already has a test setup and the item adds or changes logic: write the test for that item first (normal, error and empty cases from the spec), run it and confirm it FAILS, then write the code until it passes. Skip for items with no testable logic (config, docs, pure UI) and for projects with no test setup
 - If the project stack is Flutter (`pubspec.yaml` present) and it's UI/color related: call the **design-checker** subagent
 - After each major item: call the **code-reviewer** subagent to verify
 - Do not over-engineer, do not write code outside the spec
