@@ -71,6 +71,19 @@ Apply rules loaded in step 1 across these areas:
 - **Test coverage**: new logic with no accompanying test, a test modified to fake-pass (skip/disable instead of fixing it)
 - **Breaking changes / migration safety**: an API contract change affecting other callers, a non-reversible migration, a new `NOT NULL` column missing a default, locking a large table during migration
 
+**Smell baseline** (always applies, even when the project documents nothing). Each smell reads *what it is* → *how to fix*; match it against the diff:
+- **Feature Envy**: a method that reaches into another object's data more than its own. → move the method onto the data it envies.
+- **Data Clumps**: the same few fields or params keep travelling together. → bundle them into one type, pass that.
+- **Primitive Obsession**: a primitive or string standing in for a domain concept. → give the concept its own small type.
+- **Repeated Switches**: the same `switch`/`if`-cascade on the same type recurs across the change. → polymorphism, or one map both sites share.
+- **Shotgun Surgery**: one logical change forces scattered edits across many files in the diff. → gather what changes together into one module.
+- **Speculative Generality**: abstraction, parameters or hooks added for needs nothing in the change has. → delete it; inline back until a real need shows.
+- **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method on the first object.
+- **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target directly.
+- **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
+
+(Mysterious Name, Duplicated Code and Divergent Change are already covered by the Clean code bullet: naming, DRY, single responsibility.) Smells are heuristics, never hard violations: report them only under **Suggestion**, labelled "possible <Smell>", quoting the hunk. A documented project rule that endorses what a smell would flag wins; skip anything a linter/analyzer already enforces. A smell needs no failure scenario, so step 3.5 does not apply to it, but never promote it to Critical/Warning.
+
 ### 3.5 Verify before asserting (MANDATORY)
 
 **No speculation. Every finding must be confirmed against the real code/data before it goes in the report.** A review that reports a hypothetical as a bug is worse than missing it.

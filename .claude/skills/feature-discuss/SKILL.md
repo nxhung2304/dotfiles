@@ -14,7 +14,17 @@ Three modes: **discuss** (default, read-only), **save** (persist the discussion,
 Triggered by `/feature-discuss <feature-name>`, or whenever the user wants to think through a feature, improvement, or design decision that isn't ready to implement yet.
 
 1. Explore the codebase read-only for context relevant to the feature: `CLAUDE.md`, existing models/controllers/views for similar features, and project docs such as `specs/ERD.md`, `specs/story.md`, `specs/architecture*.md` — only those that exist.
-2. Ask what's unclear about requirements — one question at a time, always propose a recommended answer, let the user confirm/override.
+2. Grill the user in **rounds** over a **design tree**: every decision branches into the decisions that hang off it. The **frontier** is every decision whose prerequisites are already settled, i.e. the questions you can ask now without guessing at answers you haven't heard. Ask the whole frontier in one round, then wait for the answers before the next round.
+   - Number each question, give it a short title, and put your recommended answer under it. Word each question so "yes" accepts the recommendation:
+     ```
+     ❓ **Q1** - **<title>**: <question, with options if any>
+
+     ➡️ <recommended answer>
+     ```
+   - A question whose answer depends on another question still open in this round belongs to a later round.
+   - Each answered round reshapes the tree: recompute the frontier and ask the next round.
+   - Finding facts is your job, never the user's: answer from the codebase whatever it can answer. Decisions are the user's: put each to them and wait.
+   - The discussion is done when the frontier is empty (every branch visited, nothing silently assumed). Don't move to save or finalize until the user confirms you share the same understanding.
 3. When multiple viable approaches exist, lay out 2-3 options with trade-offs and give a clear recommendation. This is open-ended architectural judgment; the structured completeness checklist runs later, before finalize.
 4. Push back when an assumption looks wrong instead of just agreeing. Iterate conversationally as long as needed.
 
@@ -44,7 +54,7 @@ A soft "ok sounds good" / "được đó" mid-discussion is NOT a finalize signa
 
 Explore the codebase first and answer from code whatever it can answer (models/schemas, test data such as fixtures/factories/seeds/mocks, related tests, project conventions file, dependency manifest) — only ask about what code can't determine. Skip any question the discussion already decided.
 
-Ask one question at a time, always with a recommended answer. For each element the feature contains, cover:
+Ask in rounds (same format as discuss mode step 2): put every checklist question whose prerequisites are settled into one round, each with a recommended answer. For each element the feature contains, cover:
 
 - **State / status field (enum, finite set)**: valid values and their integer/string representation; default value and whether it matches the happy-path creation flow; which transitions are automatic (system) vs manual (user/admin); which states are terminal; test data — one variant per non-default state (fixtures/factories/mocks/seeds per stack).
 - **Authentication / session**: should non-active statuses block access *(recommend: yes)*; what message/response blocked actors see; overlap with an existing auth mechanism.

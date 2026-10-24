@@ -39,6 +39,11 @@
 
 ---
 
+## Out of Scope
+- [Not done here — max 3 bullets, drop this section if empty]
+
+---
+
 ## Key Decisions
 - **[Decision topic]** — [Why this approach, what was ruled out]
 

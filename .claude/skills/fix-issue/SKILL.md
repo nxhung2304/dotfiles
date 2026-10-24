@@ -33,14 +33,31 @@ Before asking the user anything that code can answer — read the code:
 
 Only ask the user about things the codebase cannot answer.
 
-### 3. Reproduce the bug (in your head)
+### 3. Build a feedback loop, reproduce, minimise
 
-Walk through the code path step by step as if executing the bug scenario:
-- Identify the exact line or condition where behaviour diverges from expectation
-- Note any state, timing, or data dependency that could cause intermittent failure
-- Distinguish between **always-fails** vs **sometimes-fails** bugs early — they have different root causes
+**Redact first:** every command, output or captured artifact you show has secrets replaced by `<REDACTED>`; build loops against env vars so credentials stay in the environment, and quote only the lines that carry the signal. If the redacted output is not enough to diagnose, say so and ask the user.
 
-If you cannot trace the failure: ask one targeted question about the missing context (data shape, device state, network condition, etc.).
+**The loop is the core of this phase.** A tight pass/fail signal that goes red on *this* bug turns every later step into mechanics; without one, reading code is guesswork. Spend disproportionate effort here before forming any theory.
+
+Ways to build one, roughly in this order: failing test at the seam that reaches the bug → curl/HTTP script against a running server → CLI run with a fixture diffed against a known-good output → headless browser script → replay of a captured payload/log → throwaway harness (minimal subset, mocked deps) → property/fuzz loop → bisection harness (`git bisect run`) → differential run (old vs new version/config) → last resort: a human-in-the-loop script where the user clicks and the output feeds back to you.
+
+Tighten the loop once you have one: faster (cache setup, narrow scope), sharper (assert the specific symptom, not "didn't crash"), more deterministic (pin time, seed RNG, isolate filesystem/network).
+
+**Done when** you can name **one command that you already ran at least once** (show the invocation and its redacted output) and that is:
+- **Red-capable** — drives the real bug path and asserts the reporter's exact symptom; "runs without erroring" does not count
+- **Deterministic** — same verdict every run
+- **Fast** — seconds, not minutes
+- **Agent-runnable** — unattended, except a human-in-the-loop script when nothing else is possible
+
+For **intermittent** bugs the goal is a higher reproduction rate, not a clean repro: loop the trigger many times, add stress, narrow timing windows. A 50% flake is debuggable; 1% is not, so keep raising the rate. Tell **always-fails** from **sometimes-fails** early: they have different root causes.
+
+If you cannot build a loop (needs a production-only environment, a device, data you don't have): stop, say so explicitly, list what you tried, and ask for (a) access to an environment that reproduces it, (b) a redacted captured artifact (HAR, log dump, crash report, screen recording with timestamps), or (c) permission to add temporary instrumentation. Do not go on to hypotheses without a loop. Where only code-reading is possible, everything after this step is **Unconfirmed**.
+
+Then confirm and **minimise**:
+- The loop shows the failure the **reporter** described, not a different failure nearby (wrong bug = wrong fix); capture the exact symptom (message, wrong output, timing) so the fix can be checked against it.
+- Shrink the repro to the smallest scenario that still goes red: cut inputs, callers, config, data and steps one at a time, re-running the loop after each cut. Done when every remaining element is load-bearing (removing any one turns the loop green).
+
+If you cannot trace the failure at all: ask one targeted question about the missing context (data shape, device state, network condition, etc.).
 
 ### 3.5 Evaluating an existing list of suspicions
 
@@ -53,7 +70,15 @@ If the user hands you a file/note that already lists multiple suspected causes (
    - **Cannot confirm with what's available** — say what extra info/repro would be needed to decide.
 3. Never upgrade an "unconfirmed" to a stated fact by proximity to a confirmed one in the same paragraph — a wrong confirmation here sends the whole investigation in the wrong direction, so keep each verdict visually and textually separate.
 
-### 4. Root cause analysis
+### 4. Hypothesise, instrument, root cause
+
+Write **3–5 ranked hypotheses** before testing any of them (a single hypothesis anchors on the first plausible idea). Each must be falsifiable and state its prediction: *"If X is the cause, changing Y makes the bug disappear / changing Z makes it worse."* No prediction means it is a vibe: sharpen or discard it. Show the ranked list to the user before testing; they often know a recent deploy or a ruled-out cause that re-ranks it instantly. Don't block on it if they are away.
+
+Probe one variable at a time, each probe tied to a prediction:
+1. Debugger/REPL inspection if the environment supports it; one breakpoint beats ten logs.
+2. Targeted logs at the boundaries that tell hypotheses apart; never "log everything and grep".
+3. Tag every debug log with a unique prefix such as `[DEBUG-a4f2]` so cleanup is one grep.
+4. Performance regressions: measure first (timing harness, profiler, query plan) to get a baseline, then bisect; logs are usually the wrong tool.
 
 Once the failure point is located, determine the root cause category:
 
@@ -80,7 +105,7 @@ Before proposing a fix, answer:
 
 ### 6. Propose a fix plan
 
-Only produce a fix plan (including any "fix this first" ordering/priority) once the root cause has actually been confirmed to explain the reported symptom — via reproduction, a log that directly shows the failure, or code that unambiguously proves the mechanism. Reading code and finding a *plausible* bug is not the same as confirming it caused *this* report.
+Only produce a fix plan (including any "fix this first" ordering/priority) once the root cause has actually been confirmed to explain the reported symptom — via the red loop from step 3 (a probe flips it), a log that directly shows the failure, or code that unambiguously proves the mechanism. Reading code and finding a *plausible* bug is not the same as confirming it caused *this* report.
 
 If reproduction/confirmation hasn't happened yet, stop here instead of proposing a fix plan. State clearly: what's confirmed so far, what's still an unconfirmed hypothesis, and the next concrete step needed to confirm it (repro steps, a log to capture, an experiment to run). Ask the user whether they want to attempt reproduction before you propose fixes.
 
@@ -98,8 +123,14 @@ Once confirmed, output a structured fix plan:
 2. [Concrete step]
 ...
 
+## Regression Test
+[The minimised repro as a failing test at a seam that exercises the real bug pattern as it occurs at the call site, written before the fix. If the only available seam is too shallow to reproduce the real chain (e.g. single-caller test for a multi-caller bug), write "No correct seam" — that is itself a finding: the architecture prevents locking the bug down.]
+
 ## Verification
-- [ ] How to confirm the fix works (manual test / unit test / log)
+- [ ] Re-run the step 3 loop command against the original (un-minimised) scenario: no longer red
+- [ ] Regression test passes (or absence of seam is documented)
+- [ ] No `[DEBUG-...]` instrumentation left (`grep` the prefix); throwaway harnesses deleted or clearly marked
+- [ ] Other manual / log checks
 
 ## Risk
 - [What could break, and how to guard against it]
@@ -115,8 +146,8 @@ Once a fix plan exists (Phase 1 step 6), **do not scaffold files on your own**. 
 ## Phase 3 — Scaffold the file set
 
 Invoke the `issue-docs` skill; it picks which files to create and reuses existing ones. Hand it what Phase 1 produced:
-- **investigate.md** ← symptom, repro, root cause labeled Confirmed/Unconfirmed/Cannot confirm (per section 3.5), open questions.
-- **implement.md** ← the Fix Plan from Phase 1 step 6 (Affected Files, Fix Plan, Risk), without the Verification section.
+- **investigate.md** ← symptom, the feedback-loop command and its redacted output, minimised repro, ranked hypotheses with which were confirmed/ruled out, root cause labeled Confirmed/Unconfirmed/Cannot confirm (per section 3.5), open questions.
+- **implement.md** ← the Fix Plan from Phase 1 step 6 (Affected Files, Fix Plan, Regression Test, Risk), without the Verification section.
 - **testcases.md** ← the Verification items, split into auto-generatable vs real-device; empty lists if none.
 
 ## Rules
@@ -124,6 +155,9 @@ Invoke the `issue-docs` skill; it picks which files to create and reuses existin
 - Ask one question at a time — never a list
 - Always recommend an answer / hypothesis — never ask cold
 - Explore code before asking — don't ask what the code already answers
+- Build a red-capable feedback loop before forming any theory; no loop means every conclusion stays Unconfirmed
+- Rank 3–5 falsifiable hypotheses before testing; change one variable per probe; tag debug logs `[DEBUG-xxxx]`
+- Redact secrets in everything you show
 - State the root cause as a clear hypothesis, not a vague guess
 - End every investigation with an explicit fix plan **only if** the root cause is confirmed — otherwise end with what's confirmed, what's not, and how to confirm it next
 - When multiple suspicions exist, verify and label each independently (confirmed / unconfirmed / cannot confirm) — never blend them into one conclusion

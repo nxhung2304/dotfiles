@@ -10,7 +10,7 @@ Read the diff + commit log between the current branch and the base branch → su
 **Language:**
 - Default output language: Vietnamese
 - If ARGUMENTS specifies a language (e.g. `lang: en`, `lang: english`, `en`, `tiếng anh`), write the output in that language instead
-- Keep the section headers translated to match the chosen language (e.g. `## Summary` / `## What was done` / `## Impact & Notes` for English)
+- Keep the section headers translated to match the chosen language (e.g. `## Summary` / `## What was done` / `## Evidence` / `## Merge Danger` for English)
 - Bilingual: if ARGUMENTS asks for two languages (e.g. `lang: vi+en`, `bilingual`, `song ngữ`; defaults to Vietnamese + English when no pair is named), write the full description in the first language, then a `---` line, then the same content in the second language — both inside the same code block, same bullets in the same order, shared trailing parts (e.g. `closes #N`, attribution) written once at the end
 
 **Steps:**
@@ -36,8 +36,14 @@ Read the diff + commit log between the current branch and the base branch → su
 - [Max 3-4 bullets. Group by feature/purpose; merge related removals/changes into one bullet]
 - [Don't list individual files, pods/packages, config keys or class names — describe the kind of thing ("gỡ pod AWS, file cấu hình, entitlement Push"), the reviewer reads names in the diff]
 
-## Ảnh hưởng / Lưu ý
-- [Max 3 bullets, one line each. Only: breaking change, migration/schema change and how it was tested, new config/env or setup step (e.g. `pod install`), changes outside the issue's scope. Drop this section if there's nothing worth noting]
+## Bằng chứng
+- **Trước:** [kết quả/hành vi trước khi sửa]
+  **Sau:** [kết quả/hành vi sau khi sửa]
+
+## Rủi ro merge
+- **Cửa:** [một chiều / hai chiều] — [one short reason if one-way, e.g. migration xoá cột, gỡ dữ liệu]
+- **Phạm vi ảnh hưởng:** [one short phrase: who/what can break]
+- [Max 2 optional bullets, one line each: breaking change, migration/schema change and how it was tested, new config/env or setup step (e.g. `pod install`), changes outside the issue's scope]
 
 closes #[issue number]
 ```
@@ -53,5 +59,7 @@ closes #[issue number]
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
 - If there are multiple unrelated groups of changes, list them as separate bullets in "Đã thực hiện" instead of blending them together
 - Leave out minor cleanups (deleted comments, unused variables/imports) and things that were kept unchanged — they don't help the reviewer decide
+- "Bằng chứng": only from what is stated in the conversation, commits or the issue's spec files (test run, output, screenshot the user mentioned); never invent a before/after. If there is none, drop the whole section
+- "Rủi ro merge": judge the door from the diff: one-way = destructive or hard-to-reverse (data/schema migration, deletion, published API/contract change, anything that can't be undone by reverting the PR); two-way = a plain revert restores the old behaviour. If the diff doesn't settle it, write "chưa rõ" and why, don't guess
 - Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one
 - `closes #N`: take N from the branch name (`#(\d+)`) or a commit's `closes #N`; if none is found, drop the line instead of leaving `closes #`

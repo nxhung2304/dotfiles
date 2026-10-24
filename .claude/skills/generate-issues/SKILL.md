@@ -19,10 +19,17 @@ Read `story.md` → Parse tasks → Create individual issue files in `specs/issu
 ### 1. Parse tasks
 Read story.md, parse: `- [ ] [number]. [title]`
 
+If story.md has a `## Dependencies` table (`Task | Blocked by`), read each task's blockers from it; they become the issue's `Depends on`. A task absent from the table has no blockers (`—`).
+
 ### 2. Filter by arguments (if provided)
 - Specific number (e.g. `1`, `1.1`) → generate only that issue
 - Extra spec details → treat as additional context/overrides for that issue only
 - Do NOT generate all issues when args are scoped to a specific task
+
+### 2.5. Confirm before writing
+Before creating any file, present the issues about to be created (skip those whose file already exists) as a numbered list. For each: number + title, **Depends on** (blockers, or "none — can start immediately"), and one line on what it delivers end to end.
+
+Ask: is the granularity right (too coarse / too fine)? Does each issue depend only on issues that genuinely gate it? Should any be merged or split? Iterate until the user approves; write nothing before that. If the user asks to merge or split, apply it to the issue list only and tell them `story.md` is unchanged (the change belongs in `plan-story`).
 
 ### 3. Create files
 - `mkdir -p <issues-folder>`
@@ -42,6 +49,7 @@ Follow `template.md` (next to this file) for format. Every issue contains these 
 | User Flow | Only if navigating across 2+ screens | navigation tree, stack-agnostic |
 | Wireframe | Only if no design file exists | ASCII mockup of the main screens |
 | Flow Diagram | Only for non-trivial non-UI logic | request/response, state machine, data flow |
+| Out of Scope | Only if there is one | max 3 bullets, things a reader might expect in this issue but that are deliberately not part of it |
 | Key Decisions | Only if there is one | bullet list, only what's non-obvious |
 | Notes | Only if there is one | max 4 bullets |
 

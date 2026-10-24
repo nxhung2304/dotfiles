@@ -2,12 +2,12 @@
 name: review-issue
 model: claude-opus-5-5
 allowed-tools: Read, Write, Grep, Glob, Bash(git:*), Bash(mkdir:*), Skill
-description: Orchestrator that runs review-branch + code-review in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<n>-<slug>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
+description: Orchestrator that runs review-branch + code-review + a spec check in parallel, merges the results, classifies scope/basis, translates them into MUST/SHOULD/NIT format with low-risk solutions, and writes them to specs/issues/<n>-<slug>/comment.log. Defaults to Vietnamese output, accepts a `lang` override via ARGUMENTS. Use when the user says "review-issue", "review toàn diện", "review xong feature", or wants a branch reviewed before opening a PR.
 ---
 
 # Review Issue
 
-Purpose: coordinate two different review sources (internal rules + Anthropic's bug-hunt review) and merge them into a single report for the developer to read, instead of running each by hand and merging manually.
+Purpose: coordinate three different review sources (internal rules + Anthropic's bug-hunt review + a check of the diff against the issue spec) and merge them into a single report for the developer to read, instead of running each by hand and merging manually.
 
 `/review-issue [<feature-branch>] [<base-branch>]`
 
@@ -30,31 +30,34 @@ Does not write code, does not fix anything (never uses `--fix`), does not post t
    - If not found, fall back to: `specs/comments/<feature-branch>.log` (keep `review-branch`'s existing fallback convention — do not ask the user).
 3. Compute the diff boundary: `git merge-base <base-branch> <feature-branch>`. The review scope is only the changes reachable from `<feature-branch>` but not from that merge-base (i.e. `git diff <merge-base>...<feature-branch>`), plus any staged changes on top. Do not let this boundary silently widen — if `<feature-branch>` contains a merge from `<base-branch>` or another branch, changes that arrived only through that merge (not authored on `<feature-branch>` itself) are out of scope.
 4. Resolve the issue folder (only when an issue number was found): an existing `specs/issues/<n>-*/` folder if there is one; otherwise the stem of the spec file whose `GitHub Issue: #<n>` line matches (`grep -l "GitHub Issue.*#<n>" specs/issues/*.md`), created if missing. If neither exists, treat the issue number as not found for the write path in STEP 4.
+5. Validate before spawning anything: confirm `<feature-branch>` and `<base-branch>` both resolve (`git rev-parse --verify <ref>`) and the diff `<merge-base>...<feature-branch>` (plus staged changes) is non-empty. On a bad ref or empty diff, stop and tell the user; do not launch agents.
 
-## STEP 1: Run both review sources as background agents
+## STEP 1: Run the review sources as background agents
 
-Scope of review: only the diff computed in STEP 0.3 (`<merge-base>...<feature-branch>` plus staged changes) — not the full history of `<feature-branch>`, not files merged in from `<base-branch>` or elsewhere, and not unstaged/untracked changes. Pass the merge-base explicitly to both agents so neither one falls back to comparing against the tip of `<base-branch>` (which would pull in unrelated changes if the branches have diverged further since the feature branch was cut).
+Scope of review: only the diff computed in STEP 0.3 (`<merge-base>...<feature-branch>` plus staged changes) — not the full history of `<feature-branch>`, not files merged in from `<base-branch>` or elsewhere, and not unstaged/untracked changes. Pass the merge-base explicitly to every agent so none of them falls back to comparing against the tip of `<base-branch>` (which would pull in unrelated changes if the branches have diverged further since the feature branch was cut).
 
-Launch both agents in a single message with two parallel `Agent` tool calls (independent, no dependency between them). Parallel tool calls in one message run concurrently and their results come back as tool results in the same turn — do not fabricate or guess either result before both tool calls have returned.
+Launch all agents in a single message with parallel `Agent` tool calls (independent, no dependency between them; two calls when no spec is found for Agent C). Parallel tool calls in one message run concurrently and their results come back as tool results in the same turn — do not fabricate or guess any result before all tool calls have returned.
 
 1. **Agent A** — the `review-branch` agent (`subagent_type: review-branch`); prompt it to review with the resolved `<feature-branch>` `<base-branch>`, `include-staged: true`, and the merge-base from STEP 0.3 as the diff boundary (so committed + staged changes on `<feature-branch>` since it diverged are covered, unstaged working-tree changes and anything merged in from `<base-branch>`/elsewhere stay excluded), and to report back only the structured list of Critical/Warning/Suggestion findings (file, location, problem, why it matters, what to change) — no prose, no fix, no comment.
 2. **Agent B** — prompt it to invoke the built-in `code-review` skill targeting `<merge-base>...<feature-branch>` (plus staged changes), explicitly instructing it to review only that range, not unstaged/untracked files and not anything merged in from `<base-branch>`/elsewhere, **WITHOUT** `--comment` or `--fix`, and to report back the structured list of confirmed findings (confidence ≥80) — both bug/correctness findings and any reuse/simplification/efficiency cleanup findings, since STEP 3 maps each to a different severity.
 
-Once both tool calls have returned, list A and list B are each agent's reported findings.
+3. **Agent C (spec check)** — only when a spec exists: the spec file found in STEP 0.4, or `<issue folder>/issue.md` (also `implement.md` if present). Prompt it with the diff boundary from STEP 0.3 and the spec path, and to report back only: (a) requirements the spec asks for that are missing or partial in the diff; (b) behaviour in the diff that the spec did not ask for; (c) requirements that look implemented but whose implementation looks wrong. Each finding quotes the spec line and cites file:line (or "not in diff" for a missing requirement). No prose, no fix, no comment. If no spec exists, skip C and write at the top of the log file that the spec source is missing.
 
-Do not add any additional review beyond these two skills — every finding must come from A or B.
+Once all tool calls have returned, list A, list B and list C are each agent's reported findings.
+
+Do not add any additional review beyond these sources — every finding must come from A, B or C.
 
 ## STEP 2: Merge the results (merge only, no re-verification)
 
-Both A and B already self-verify internally (A: concrete failure scenario; B: confidence score ≥80), so there's no need to cross-verify again — just merge and dedupe:
+A, B and C already self-verify internally (A: concrete failure scenario; B: confidence score ≥80; C: quoted spec line plus code location), so there's no need to cross-verify again — just merge and dedupe:
 
-1. Walk each finding in A and B, grouped by `file`.
-2. If two findings are in the same file, within ≤5 lines of each other, and describe the same issue → treat as a duplicate, merge into one entry, note "found by both review-branch and code-review" (higher confidence).
-3. A finding that appears in only A or only B → keep as-is and record its source (`review-branch` or `code-review`); the source is written in the final output (STEP 4).
+1. Walk each finding in A, B and C, grouped by `file` (C's "not in diff" findings stay as their own entries, grouped under the spec line).
+2. If two findings are in the same file, within ≤5 lines of each other, and describe the same issue → treat as a duplicate, merge into one entry, note every source that found it (e.g. "found by both review-branch and code-review") (higher confidence).
+3. A finding that appears in only one source → keep as-is and record its source (`review-branch`, `code-review` or `spec-review`); the source is written in the final output (STEP 4).
 
 ## STEP 2.5: Classify each finding
 
-Classifying is not originating a finding — it only labels findings A/B already reported. For each merged finding, set two labels:
+Classifying is not originating a finding — it only labels findings A/B/C already reported. A `spec-review` finding about a missing requirement has no flagged lines in the diff: label it `In scope` (it is the issue's own goal), and in Diff fact say "diff touches: no — requirement not implemented". For each merged finding, set two labels:
 
 1. **Scope** — one of:
    - `In scope`: the flagged code was added or changed on `<feature-branch>` (appears in the STEP 0.3 diff) and relates to the issue's goal.
@@ -63,13 +66,15 @@ Classifying is not originating a finding — it only labels findings A/B already
    - `No change needed — required by spec`: the finding questions a change that the issue spec (the spec file found in STEP 0.4, or `<issue folder>/issue.md`, if present) explicitly requires.
    - `Pending confirmation`: whether the flagged behaviour is wrong depends on a product/spec decision that nobody has confirmed yet (e.g. the code deviates from the issue text on purpose, or the issue folder's implement.md/investigate.md/report.md lists it as a risk or choice to confirm). The only action is to get a decision from someone (leader, reporter, spec owner); there is no code change until then.
 2. **Basis** — one of:
-   - `Verified`: the source gave a concrete failure scenario grounded in the code, or a confidence score ≥80.
+   - `Verified`: the source gave a concrete failure scenario grounded in the code, or a confidence score ≥80, or (spec-review) quoted a spec line and the matching code location.
    - `Assumption`: the source itself says the finding relies on unverified SDK/library/device behaviour, or code-review returned no confidence score for it and the scenario depends on behaviour outside this repo.
+3. **Diff fact** — state separately, regardless of what the spec says: whether the STEP 0.3 diff touches the flagged lines (yes/no), and whether the flagged code relates to the issue's goal (yes/no). When this disagrees with the spec (e.g. the spec asks for it but the branch never touched those lines), say both so the user can compare and decide.
 
 ## STEP 3: Map severity → MUST / SHOULD / NIT
 
 Classification from STEP 2.5 gates severity first; the source severity only applies to findings that pass the gate.
 
+0. A purely cosmetic finding that no lint/analyzer rule enforces (e.g. import order) → drop it; do not list it anywhere in the report.
 1. `No change needed — required by spec` → not in the fix list; list it in the "Out of scope / no change needed" section (STEP 4) with one line explaining why.
 2. `Out of scope — pre-existing` → not in the fix list and no severity; list it in the "Out of scope / no change needed" section.
 3. `Pending confirmation` → not in the fix list and no severity; list it in the "Pending confirmation" section (STEP 4).
@@ -77,21 +82,23 @@ Classification from STEP 2.5 gates severity first; the source severity only appl
    - `Critical` (from review-branch) or a bug from `code-review` → **MUST**
    - `Warning` (from review-branch) or a cleanup/simplification from `code-review` → **SHOULD**
    - `Suggestion` (from review-branch) → **NIT**
-   - A finding confirmed by both sources → **MUST** (regardless of original severity), since it's double-confirmed
+   - `spec-review` (a) missing/partial requirement or (c) wrongly implemented requirement → **MUST**
+   - `spec-review` (b) behaviour the spec did not ask for → **SHOULD**
+   - A finding confirmed by two or more sources → **MUST** (regardless of original severity), since it's multiply confirmed
 5. Cap: a finding with Basis `Assumption` is at most **SHOULD**, even if step 4 gave MUST, and its entry must say what to verify before fixing.
 
 ## STEP 4: Translate + write the file
 
 Keep the report short: state the point directly, no restating the same idea across fields, no background the developer can read from the code. Each field is at most 2 sentences (Fix may add one code sketch).
 
-Start the file with a summary line: count of MUST / SHOULD / NIT, how many are `Assumption`, how many are in "Pending confirmation", how many moved to "Out of scope / no change needed".
+Start the file with a summary line: count of MUST / SHOULD / NIT, how many are `Assumption`, how many are in "Pending confirmation", how many moved to "Out of scope / no change needed", and the number of findings per source (`review-branch` / `code-review` / `spec-review`).
 
 For each merged finding, write it in this format (clear, natural language — not a mechanical word-for-word translation):
 
 ```markdown
 ### [No.]. [MUST / SHOULD / NIT] — [one-line title of the issue]
-- **Source:** `review-branch`, `code-review`, or both
-- **Classification:** Scope + Basis from STEP 2.5 (e.g. "In scope · Verified")
+- **Source:** `review-branch`, `code-review`, `spec-review`, or every source that found it
+- **Classification:** Scope + Basis + Diff fact from STEP 2.5 (e.g. "In scope · Verified · Diff touches: yes · Related: yes")
 - **File:** file path:line (or the code block to fix)
 - **Problem:** what is wrong and the impact if left unfixed
 - **Fix:** the change to make, following the rules below; for an `Assumption` finding, start with what to verify first (test, device, SDK doc) and when the fix can be skipped
@@ -112,7 +119,7 @@ Then add a section "Out of scope / no change needed" listing the findings exclud
 
 Write to `<issue folder>/comment.log` (the folder from STEP 0.4, `specs/issues/<n>-<slug>/`). If no issue number or issue folder was found in STEP 0, write to `specs/comments/<feature-branch>.log`. This report reflects the current state of the branch, so if the file already exists, overwrite it — do not append to a previous run's content.
 
-If neither A nor B found anything, write clearly in the file: "No issues to address on this branch (reviewed via review-branch + code-review)." (translated to the target language).
+If no source found anything, write clearly in the file: "No issues to address on this branch (reviewed via review-branch + code-review + spec-review)." (drop `spec-review` when Agent C was skipped) (translated to the target language).
 
 ## STEP 5: Re-check the file before reporting done
 
@@ -131,5 +138,5 @@ Report back to the user in the chat-reply structure from the user's global rules
 ## Rules
 
 - Never fix code yourself, never use `--fix`, never post a PR comment.
-- Never review beyond the scope of the two skills above — this orchestrator only coordinates + merges + classifies + translates + writes solutions for the reported findings, it never originates new findings.
-- If one of the two skills errors or can't run (e.g. missing `gh` auth for code-review), continue with the other's results, and note clearly at the top of the log file which source is missing.
+- Never review beyond the scope of the sources above — this orchestrator only coordinates + merges + classifies + translates + writes solutions for the reported findings, it never originates new findings.
+- If one source errors or can't run (e.g. missing `gh` auth for code-review), continue with the other sources' results, and note clearly at the top of the log file which source is missing.
