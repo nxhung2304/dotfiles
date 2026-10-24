@@ -70,7 +70,7 @@ Kết luận từ thảo luận: mức độ cần hiểu code phụ thuộc dom
 
 - **Hooks** (đã có): thu số liệu.
 - **Skill `/ai-quiz`** (tương tác, chạy tay trước khi bàn giao): chọn ngẫu nhiên đoạn code trong diff + câu hỏi kiểu tech lead (bản chất, vì sao chọn, rủi ro). Độ sâu theo tier. Điểm ghi vào DB.
-- **Skill `ai-review`** + **cron hàng tuần** chạy Claude Code headless:
+- **Skill `ai-score`** + **cron hàng tuần** chạy Claude Code headless:
   1. Script tính số liệu, xuất JSON.
   2. Claude chấm 6 tiêu chí cho các issue đóng trong tuần theo rubric, có thể mở `specs/<issue>/` và transcript của task tệ nhất để tìm nguyên nhân. Ghi điểm ra JSON.
   3. Script render **HTML mở trên trình duyệt** có chart.
@@ -89,4 +89,4 @@ Kết luận từ thảo luận: mức độ cần hiểu code phụ thuộc dom
 2. Xác minh các điểm ở mục 3 "Cần kiểm tra lại".
 3. Đề xuất **rubric chấm 6 tiêu chí** để tôi duyệt trước.
 4. Đề xuất cách đánh dấu tier (mục 6).
-5. Sau khi tôi duyệt mới triển khai: `/ai-quiz`, `ai-review`, HTML report, cron.
+5. Sau khi tôi duyệt mới triển khai: `/ai-quiz`, `ai-score`, HTML report, cron.

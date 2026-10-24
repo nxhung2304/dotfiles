@@ -27,7 +27,7 @@ HTML_STYLE = """
 @media (prefers-color-scheme:dark){:root{--bg:#0f0f0e;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#8d8b85;--line:#2c2c2a;--track:#2c2c2a;--primary:#3987e5;--good-text:#0ca30c}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:720px;margin:0 auto;padding:var(--s5) var(--s4) 64px}
+main{max-width:960px;margin:0 auto;padding:var(--s5) var(--s4) 64px}
 header{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 select{font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:6px 30px 6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
@@ -99,6 +99,30 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--trac
 .note{color:var(--muted);font-size:12px;margin:var(--s2) 0 0}
 .task{padding-top:var(--s3)}
 .task+.task{margin-top:var(--s3);border-top:1px solid var(--line)}
+.tag{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.tag.ai{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,transparent)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s3);margin-top:var(--s3)}
+.stat{padding:var(--s3) var(--s4);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);display:grid;gap:2px}
+.stat b{font-size:24px;line-height:1.25}
+.stat span{font-size:12px;color:var(--ink2)}
+.notice{margin:var(--s3) 0 0;font-size:13px;color:var(--ink2)}
+.actions label{display:flex;gap:var(--s3);align-items:flex-start;cursor:pointer}
+.actions input{margin-top:5px;width:16px;height:16px;flex:none;accent-color:var(--primary)}
+.actions input:checked+span{color:var(--muted);text-decoration:line-through}
+.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:var(--s5);margin-top:var(--s5);align-items:start}
+.layout:not(:has(.side)){grid-template-columns:minmax(0,1fr)}
+.pane>:first-child{margin-top:0}
+.pane-title{font-size:22px;line-height:1.2;margin:0}
+.side{display:flex;flex-direction:column;gap:var(--s1);position:sticky;top:var(--s4)}
+.side button{font:inherit;font-size:14px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:8px 12px;border:1px solid transparent;border-radius:var(--r-md);background:none;color:var(--ink2);cursor:pointer}
+.side button:hover{background:var(--track)}
+.side button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.side button[aria-current="true"]{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:600}
+.side small{color:var(--muted);font-size:12px}
+@media (max-width:720px){.layout{grid-template-columns:minmax(0,1fr);gap:var(--s3)}.side{flex-direction:row;overflow-x:auto;position:static}.side button{flex:none}}
+.finding{margin:var(--s2) 0 0;font-size:14px;color:var(--ink2)}
+.more{margin-top:var(--s2)}
+.more>summary{cursor:pointer;color:var(--muted);font-size:12px}
 .bullets{margin:2px 0 0;padding-left:18px;font-size:14px}
 .bullets li{margin:2px 0}
 .actions{margin:var(--s3) 0 0;padding:0;list-style:none;counter-reset:a;display:grid;gap:var(--s3)}
@@ -107,7 +131,7 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--trac
 .empty{color:var(--ink2);font-size:14px;margin:0}
 .empty code{background:var(--track);padding:1px 6px;border-radius:4px}
 #tip{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--surface);padding:6px 10px;border-radius:8px;font-size:13px;max-width:300px;opacity:0;transition:opacity .12s;z-index:9}
-@media (max-width:520px){.hero{flex-direction:column;align-items:flex-start}.metrics{grid-template-columns:1fr}.row>summary,.row-static,.row-detail{padding-left:var(--s4);padding-right:var(--s4)}}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{flex-direction:column;align-items:flex-start}.metrics{grid-template-columns:1fr}.row>summary,.row-static,.row-detail{padding-left:var(--s4);padding-right:var(--s4)}}
 @media (prefers-reduced-motion:reduce){.bar,.ring{animation:none}.chev{transition:none}}
 """
 HTML_SCRIPT = """
@@ -125,6 +149,23 @@ const picker=document.getElementById('week-picker');
 function showWeek(){document.querySelectorAll('.week').forEach(w=>{w.hidden=w.dataset.week!==picker.value})}
 picker.addEventListener('change',showWeek);
 showWeek();
+document.querySelectorAll('.week').forEach(week=>{
+  const buttons=week.querySelectorAll('.side button'),panes=week.querySelectorAll('.pane');
+  buttons.forEach(button=>button.addEventListener('click',()=>{
+    buttons.forEach(b=>b.setAttribute('aria-current',String(b===button)));
+    panes.forEach(pane=>{pane.hidden=pane.dataset.pane!==button.dataset.target});
+  }));
+});
+function store(fn){try{return fn(localStorage)}catch(e){return null}}
+document.querySelectorAll('.actions').forEach(list=>{
+  const boxes=[...list.querySelectorAll('input')],note=list.parentElement.querySelector('[data-progress]');
+  const update=()=>{note.textContent=boxes.filter(b=>b.checked).length+'/'+boxes.length+' việc đã xong'};
+  boxes.forEach(b=>{
+    b.checked=store(ls=>ls.getItem('done:'+b.dataset.key))==='1';
+    b.addEventListener('change',()=>{store(ls=>ls.setItem('done:'+b.dataset.key,b.checked?'1':'0'));update()});
+  });
+  update();
+});
 """
 
 def sh(args, cwd=None):
@@ -240,7 +281,7 @@ def rich_text(text):
     parts, position = [], 0
     lead = re.match(r"^([^:*`\"]{1,14}):\s+", text)
     if lead:
-        tone = {"mạnh": "good", "yếu": "bad"}.get(lead.group(1).strip().lower(), "")
+        tone = {"mạnh": "good", "yếu": "bad", "làm gì": "good", "vì sao": "bad"}.get(lead.group(1).strip().lower(), "")
         parts.append(f'<span class="lead {tone}">{html.escape(lead.group(1))}</span><span>')
         position = lead.end()
         text = text[:position] + text[position:position + 1].upper() + text[position + 1:]
@@ -305,7 +346,7 @@ def segments(score):
 
 def delta_html(current, previous, formatter, higher_is_better):
     if previous is None:
-        return '<div class="delta">Chưa có tuần trước để so</div>'
+        return ""
     if abs(current - previous) < 1e-9:
         return f'<div class="delta">= Không đổi ({formatter(previous)})</div>'
     improved = (current > previous) == higher_is_better
@@ -333,8 +374,12 @@ def metric_changes(week, previous_week):
     return [(label, (week[key] - previous_week[key]) * (1 if higher_is_better else -1))
             for key, label, _, higher_is_better in TREND_METRICS]
 
-def row(title, status, insight, detail):
-    return (f'<details class="row"><summary><div class="row-head"><span class="row-title">{title}</span>{status}<span class="chev"></span></div>'
+def tag(kind):
+    text = "Số liệu" if kind == "data" else "AI nhận định"
+    return f'<span class="tag {kind}">{text}</span>'
+
+def row(title, status, insight, detail, kind=""):
+    return (f'<details class="row"><summary><div class="row-head"><span class="row-title">{title}</span>{tag(kind) if kind else ""}{status}<span class="chev"></span></div>'
             f'<div class="row-insight">{insight}</div></summary><div class="row-detail">{detail}</div></details>')
 
 def progress_row(weeks, windows, weeks_ago):
@@ -352,7 +397,7 @@ def progress_row(weeks, windows, weeks_ago):
         insight = f"{better}/{len(changes)} chỉ số tốt hơn tuần trước"
     else:
         status = pill("neutral", "Chưa đủ dữ liệu")
-        insight = f"Xong ngay lần đầu {week['first_pass_pct']:.0f}% · cần thêm 1 tuần để so"
+        insight = f"Xong ngay lần đầu {week['first_pass_pct']:.0f}%"
     metrics = ""
     for key, label, formatter, higher_is_better in TREND_METRICS:
         previous = previous_week[key] if previous_week else None
@@ -360,13 +405,13 @@ def progress_row(weeks, windows, weeks_ago):
         metrics += (f'<div class="metric"><div class="metric-label">{html.escape(label)}</div>'
                     f'<div class="metric-value">{html.escape(formatter(week[key]))}</div>'
                     f'{delta_html(week[key], previous, formatter, higher_is_better)}'
-                    f'{sparkline(values, labels, oldest_first.index(weeks_ago), formatter)}</div>')
-    return row("Có tiến bộ không?", status, mini_sparkline(first_pass) + f'<span class="clip">{html.escape(insight)}</span>', f'<div class="metrics">{metrics}</div>')
+                    f'{sparkline(values, labels, oldest_first.index(weeks_ago), formatter) if previous_week else ""}</div>')
+    return row("Có tiến bộ không?", status, mini_sparkline(first_pass) + f'<span class="clip">{html.escape(insight)}</span>', f'<div class="metrics">{metrics}</div>', "data")
 
 def skills_row(review, previous_review):
     ordered = sorted(scored(review), key=lambda s: s["score"])
     if not ordered:
-        return row("Kỹ năng nào yếu?", pill("neutral", "Chưa chấm"), "Chạy /ai-review để AI chấm điểm.", "")
+        return row("Kỹ năng nào yếu?", pill("neutral", "Chưa chấm"), "Chạy /ai-score để AI chấm điểm.", "")
     weakest = ordered[0]
     kind, word = score_state(weakest["score"])
     previous_scores = {s["criterion"]: s["score"] for s in scored(previous_review)}
@@ -383,33 +428,95 @@ def skills_row(review, previous_review):
     if unscored:
         notes += f'<p class="note">Chưa chấm được: {html.escape(", ".join(unscored))}.</p>'
     insight = segments(weakest["score"]) + f'<span class="clip">{html.escape(str(weakest.get("name", "")))} · {weakest["score"]:g}/5</span>'
-    return row("Kỹ năng nào yếu?", pill(kind, word), insight, bars + quote + notes)
+    return row("Kỹ năng nào yếu?", pill(kind, word), insight, bars + quote + notes, "ai")
+
+def as_list(value):
+    items = value if isinstance(value, list) else [value]
+    return [str(item).strip() for item in items if str(item).strip()]
+
+def task_findings(found):
+    if not found:
+        return '<p class="note">Chưa phân tích nguyên nhân.</p>'
+    causes, solutions = as_list(found.get("cause")), as_list(found.get("solution"))
+    html_out = ""
+    if causes:
+        html_out += f'<p class="finding">{rich_text("Vì sao: " + causes[0])}</p>'
+    if solutions:
+        html_out += f'<p class="finding">{rich_text("Làm gì: " + solutions[0])}</p>'
+    extras = ""
+    if causes[1:]:
+        extras += bullet_list(causes[1:], "bullets")
+    if solutions[1:]:
+        extras += bullet_list(solutions[1:], "bullets")
+    quotes = ([found["evidence"]] if found.get("evidence") else []) + as_list(found.get("excerpts"))
+    for quote in quotes:
+        extras += f'<p class="quote">“{html.escape(str(quote))}”</p>'
+    if extras:
+        html_out += f'<details class="more"><summary>Chi tiết</summary>{extras}</details>'
+    return html_out
 
 def costly_row(week, review):
     assigned = [t for t in (week or {}).get("tasks", []) if t["task"] != UNASSIGNED_TASK]
     top = sorted(assigned, key=lambda t: (-t["turns"], -t["human_s"]))[:COSTLY_TASK_COUNT]
     if not top:
-        return row("Vì sao task tốn công?", pill("neutral", "Chưa gắn issue"), "Nhắc #số-issue trong prompt để theo dõi theo task.", "")
+        return row("Các task tốn công", pill("neutral", "Chưa gắn issue"), "Nhắc #số-issue trong prompt để theo dõi theo task.", "")
     causes = {(str(c.get("project")), str(c.get("task"))): c for c in (review or {}).get("costly_tasks", [])}
     max_turns = max(t["turns"] for t in top)
     detail = ""
     for index, t in enumerate(top):
         tip = f'Phải sửa {percent(t["corrections"] / t["turns"])} · bị ngắt {percent(t["interrupts"] / t["turns"])} · token {format_tokens(round(t["tokens"] / 1000))}'
         found = causes.get((str(t["project"]), str(t["task"])))
-        cause = bullet_list(found.get("cause", ""), "bullets") if found else '<p class="note">Chưa phân tích nguyên nhân.</p>'
+        label = str(found.get("title") or "").strip() if found else ""
+        label = label or task_label(t["task"])
         turns_text = f'{t["turns"]} lượt'
-        detail += f'<div class="task">{bar_row(index, task_label(t["task"]), t["turns"], max_turns, turns_text, tip)}{cause}</div>'
+        detail += f'<div class="task">{bar_row(index, label, t["turns"], max_turns, turns_text, tip)}{task_findings(found)}</div>'
     first = top[0]
     first_cause = causes.get((str(first["project"]), str(first["task"])), {}).get("cause")
     first_line = (first_cause[0] if isinstance(first_cause, list) and first_cause else first_cause) or "chưa phân tích nguyên nhân"
-    insight = f'<span class="clip">{html.escape(task_label(first["task"]))} · {first["turns"]} lượt · {rich_text(first_line)}</span>'
-    return row("Vì sao task tốn công?", pill("neutral", f"{len(top)} task"), insight, detail)
+    first_label = str(causes.get((str(first["project"]), str(first["task"])), {}).get("title") or "").strip() or task_label(first["task"])
+    insight = f'<span class="clip">{html.escape(first_label)} · {first["turns"]} lượt · {rich_text(first_line)}</span>'
+    return row("Các task tốn công", pill("neutral", f"{len(top)} task"), insight, detail, "ai")
 
 def actions_row(review):
     actions = (review or {}).get("actions") or []
-    body = ('<ol class="actions">' + "".join(f"<li><span>{rich_text(a)}</span></li>" for a in actions) + "</ol>") if actions \
-        else '<div class="row-insight">Chạy /ai-review để có gợi ý.</div>'
-    return f'<div class="row row-static"><div class="row-head"><span class="row-title">Tuần tới làm gì?</span></div>{body}</div>'
+    date = html.escape(str((review or {}).get("date", "")), quote=True)
+    if actions:
+        items = "".join(f'<li><label><input type="checkbox" data-key="{date}-{i}"><span>{rich_text(a)}</span></label></li>' for i, a in enumerate(actions))
+        body = f'<ol class="actions">{items}</ol><p class="note" data-progress data-total="{len(actions)}"></p>'
+    else:
+        body = '<div class="row-insight">Chạy /ai-score để có gợi ý.</div>'
+    return f'<div class="row row-static"><div class="row-head"><span class="row-title">Tuần tới làm gì?</span>{tag("ai")}</div>{body}</div>'
+
+def stats_strip(week):
+    if not week:
+        return ""
+    cards = [("Task", str(week["task_count"])), ("Lượt nhắn", str(week["turns"])),
+             ("Xong ngay lần đầu", f'{week["first_pass_pct"]:.0f}%'), ("Token mỗi task", format_tokens(round(week["tokens_k_per_task"])))]
+    return '<div class="stats">' + "".join(f'<div class="stat"><b>{html.escape(v)}</b><span>{html.escape(l)}</span></div>' for l, v in cards) + "</div>"
+
+def project_summary(tasks):
+    count = len(tasks)
+    return dict(task_count=count, turns=sum(t["turns"] for t in tasks),
+                first_pass_pct=100 * sum(1 for t in tasks if t["corrections"] + t["interrupts"] == 0) / count,
+                tokens_k_per_task=sum(t["tokens"] for t in tasks) / 1000 / count)
+
+def project_pane(index, project, tasks, titles):
+    ordered = sorted(tasks, key=lambda t: (-t["turns"], -t["human_s"]))
+    max_turns = max(t["turns"] for t in ordered)
+    bars = ""
+    for i, t in enumerate(ordered):
+        label = titles.get((project, str(t["task"]))) or task_label(t["task"])
+        tip = f'Phải sửa {percent(t["corrections"] / t["turns"])} · bị ngắt {percent(t["interrupts"] / t["turns"])} · token {format_tokens(round(t["tokens"] / 1000))}'
+        bars += bar_row(i, label, t["turns"], max_turns, f'{t["turns"]} lượt', tip)
+    body = f'<div class="list"><div class="row row-static"><div class="row-head"><span class="row-title">Task của dự án</span>{tag("data")}</div>{bars}</div></div>'
+    note = '<p class="note">Điểm kỹ năng và nhận định AI chỉ tính chung, chưa tách theo dự án.</p>'
+    return f'<div class="pane" data-pane="p{index}" hidden><h2 class="pane-title">{html.escape(project)}</h2>{stats_strip(project_summary(tasks))}{note}{body}</div>'
+
+def project_sidebar(projects):
+    buttons = '<button type="button" data-target="overview" aria-current="true">Tổng quan</button>'
+    for i, (project, tasks) in enumerate(projects):
+        buttons += f'<button type="button" data-target="p{i}" aria-current="false"><span class="clip">{html.escape(project)}</span><small>{sum(t["turns"] for t in tasks)}</small></button>'
+    return f'<nav class="side" aria-label="Dự án">{buttons}</nav>'
 
 def hero(review, previous_review):
     average, previous_average = average_score(review), average_score(previous_review)
@@ -417,9 +524,9 @@ def hero(review, previous_review):
     ring_value = f"{average:.1f}" if average is not None else "—"
     ring = f'<div class="ring" style="--p:{100 * (average or 0) / 5:.0f}"><span><b>{ring_value}</b><small>điểm / 5</small></span></div>'
     if average is None:
-        delta = "Chạy /ai-review để có điểm tuần này."
+        delta = "Chạy /ai-score để có điểm tuần này."
     elif previous_average is None:
-        delta = "Chưa có điểm tuần trước để so."
+        delta = ""
     else:
         change = average - previous_average
         arrow = f'<span class="{"up" if change > 0 else "down"}">{"▲" if change > 0 else "▼"} {abs(change):.1f}</span>' if abs(change) >= 0.05 else "= Không đổi"
@@ -439,12 +546,22 @@ def write_html(path, weeks, windows):
         if not weeks[k] and not review:
             continue
         week = weeks[k]
-        facts = f'{week["task_count"]} task · {week["turns"]} lượt nhắn' if week else "Không có lượt nhắn nào"
+        has_previous = (k + 1 < TREND_WEEKS and weeks[k + 1]) or previous_review
+        notice = "" if has_previous else '<p class="notice">Chưa có tuần trước để so sánh. Xu hướng sẽ hiện từ tuần sau.</p>'
+        facts = "" if week else " · Không có lượt nhắn nào"
         options += f'<option value="{k}">{html.escape(window["name"])} · {window["span"]}</option>'
-        blocks += (f'<div class="week" data-week="{k}"><h1>{html.escape(window["span"])}</h1><p class="facts">{html.escape(window["name"])} · {html.escape(facts)}</p>'
-                   + hero(review, previous_review)
-                   + '<div class="list">' + progress_row(weeks, windows, k) + skills_row(review, previous_review)
-                   + costly_row(week, review) + actions_row(review) + "</div></div>")
+        by_project = {}
+        for t in (week or {}).get("tasks", []):
+            by_project.setdefault(str(t["project"]), []).append(t)
+        projects = sorted(by_project.items(), key=lambda kv: -sum(t["turns"] for t in kv[1]))
+        titles = {(str(c.get("project")), str(c.get("task"))): str(c["title"]).strip()
+                  for c in (review or {}).get("costly_tasks", []) if c.get("title")}
+        overview = (hero(review, previous_review) + stats_strip(week) + notice
+                    + '<div class="list">' + progress_row(weeks, windows, k) + skills_row(review, previous_review)
+                    + costly_row(week, review) + actions_row(review) + "</div>")
+        panes = "".join(project_pane(i, project, tasks, titles) for i, (project, tasks) in enumerate(projects))
+        blocks += (f'<div class="week" data-week="{k}"><h1>{html.escape(window["span"])}</h1><p class="facts">{html.escape(window["name"])}{html.escape(facts)}</p>'
+                   f'<div class="layout">{project_sidebar(projects) if projects else ""}<div class="panes"><div class="pane" data-pane="overview">{overview}</div>{panes}</div></div></div>')
     if not options:
         options = '<option value="0">Tuần này</option>'
         blocks = f'<div class="week" data-week="0"><h1>Chưa có dữ liệu</h1>{empty("Hook chưa ghi được lượt nhắn nào.")}</div>'
@@ -463,7 +580,7 @@ def main():
     ap.add_argument("--gh", action="store_true", help="hỏi trạng thái issue qua gh CLI")
     ap.add_argument("--csv")
     ap.add_argument("--html")
-    ap.add_argument("--json", help="xuất dữ liệu cho skill ai-review")
+    ap.add_argument("--json", help="xuất dữ liệu cho skill ai-score")
     a = ap.parse_args()
 
     db = sqlite3.connect(DB)

@@ -7,7 +7,7 @@ LOG_FILE="$METRICS_DIR/logs/review-$(date +%F).log"
 mkdir -p "$METRICS_DIR/logs"
 cd "$METRICS_DIR" || exit 1
 
-claude -p "/ai-review" \
+claude -p "/ai-score" \
     --permission-mode dontAsk \
     --settings '{"disableAllHooks": true}' \
     --no-session-persistence \

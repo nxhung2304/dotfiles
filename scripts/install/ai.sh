@@ -70,7 +70,7 @@ install_ai() {
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>$DOTFILES_DIR/scripts/ai-metrics/ai-review-weekly.sh</string>
+        <string>$DOTFILES_DIR/scripts/ai-metrics/ai-score-weekly.sh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>

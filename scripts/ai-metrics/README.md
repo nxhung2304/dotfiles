@@ -17,15 +17,15 @@ python3 ~/dotfiles/scripts/ai-metrics/ai_report.py --csv report.csv   # xuất C
 python3 ~/dotfiles/scripts/ai-metrics/ai_report.py --html ~/.ai-metrics/report.html && open ~/.ai-metrics/report.html
 ```
 
-Báo cáo HTML trả lời 4 câu: tiến bộ không, kỹ năng nào yếu, vì sao task tốn công, tuần tới làm gì. Phần 1 do script tính; phần 2–4 cần chạy `/ai-review` trong Claude Code (AI chấm theo `rubric.md`, ghi `~/.ai-metrics/reviews/<ngày>.json`, rồi render lại HTML).
+Báo cáo HTML trả lời 4 câu: tiến bộ không, kỹ năng nào yếu, vì sao task tốn công, tuần tới làm gì. Phần 1 do script tính; phần 2–4 cần chạy `/ai-score` trong Claude Code (AI chấm theo `rubric.md`, ghi `~/.ai-metrics/reviews/<ngày>.json`, rồi render lại HTML).
 
-- `--json out.json`: xuất dữ liệu cho skill `ai-review`
+- `--json out.json`: xuất dữ liệu cho skill `ai-score`
 - `ai_transcript.py <transcript.jsonl>`: rút gọn transcript để AI đọc
 
 Link file trong report dùng `ai-reveal://`: bấm vào thì Finder mở thư mục và chọn sẵn file. `install-reveal-handler.sh` tạo app `~/Applications/AIRevealInFinder.app` để nhận link này; app chỉ làm `open -R`, không mở hay chạy file, và bỏ qua đường dẫn ngoài thư mục home.
 
 ## Chạy tự động
-`scripts/install/ai.sh` cài launchd job `local.ai-metrics.review`: 10:00 thứ 2 hàng tuần chạy `ai-review-weekly.sh` (Claude Code headless gọi `/ai-review`, tắt hooks để không ghi chính lần chạy này vào số liệu). Log ở `~/.ai-metrics/logs/`. Chạy thử ngay: `launchctl kickstart gui/$(id -u)/local.ai-metrics.review`.
+`scripts/install/ai.sh` cài launchd job `local.ai-metrics.review`: 10:00 thứ 2 hàng tuần chạy `ai-score-weekly.sh` (Claude Code headless gọi `/ai-score`, tắt hooks để không ghi chính lần chạy này vào số liệu). Log ở `~/.ai-metrics/logs/`. Chạy thử ngay: `launchctl kickstart gui/$(id -u)/local.ai-metrics.review`.
 
 ## Ý nghĩa cột
 - `turns`: số lượt prompt để làm task
