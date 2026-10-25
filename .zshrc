@@ -162,8 +162,6 @@ claude() {
   tmux rename-window "claude" 2>/dev/null
   command claude "$@"
 }
-alias cc="claude"
-
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
 alias ffd="fvm flutter devices"
@@ -217,3 +215,18 @@ add-zsh-hook preexec herdr_auto_rename_tab
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
 export PATH=/opt/homebrew/opt/ffmpeg-full/bin:$PATH
+
+claude() {
+  case "$PWD/" in
+    "$HOME/Dev/rights/"*)
+      env -u CLAUDE_CONFIG_DIR claude "$@" ;;                      # công ty
+    *)
+      CLAUDE_CONFIG_DIR="$HOME/.claude-personal" command claude "$@" ;;  # cá nhân
+  esac
+}
+
+alias claude-cty='env -u CLAUDE_CONFIG_DIR claude'
+
+alias claude-personal='CLAUDE_CONFIG_DIR=$HOME/.claude-personal command claude'
+
+alias cc="claude"
