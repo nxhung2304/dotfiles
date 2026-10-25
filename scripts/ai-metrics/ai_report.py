@@ -2,7 +2,7 @@
 """Báo cáo hiệu quả theo task (GitHub issue) và theo skill.
 Dùng: python3 ai_report.py [--days 30] [--project tên] [--gh] [--csv out.csv] [--html out.html] [--json out.json]"""
 import argparse, csv, glob, html, json, os, re, sqlite3, subprocess, time, urllib.parse
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 DB = os.path.expanduser(os.environ.get("AI_METRICS_DB", "~/.ai-metrics/metrics.db"))
 REVIEW_DIR = os.path.expanduser(os.environ.get("AI_METRICS_REVIEW_DIR", "~/.ai-metrics/reviews"))
@@ -12,6 +12,7 @@ MIN_TASKS_PER_SKILL = 5
 TREND_WEEKS = 8
 WEEK_SECONDS = 7 * 86400
 COSTLY_TASK_COUNT = 3
+PROJECT_MIN_TASKS = 2
 UNASSIGNED_TASK = "(chưa gắn)"
 INLINE_MARKUP_RE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`")
 TREND_METRICS = [
@@ -20,153 +21,12 @@ TREND_METRICS = [
     ("interrupt_pct", "Bị ngắt giữa chừng", lambda v: f"{v:.0f}%", False),
     ("tokens_k_per_task", "Token mỗi task", lambda v: format_tokens(round(v)), False),
 ]
-HTML_STYLE = """
-:root{--bg:#f6f5f1;--surface:#ffffff;--ink:#141413;--ink2:#5c5b57;--muted:#6f6d67;--line:#e7e5df;--track:#eeece6;--primary:#2a78d6;
---good:#0ca30c;--good-text:#006300;--warn:#fab219;--bad:#d03b3b;--neutral:#8d8b85;
---r-lg:16px;--r-md:10px;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px}
-@media (prefers-color-scheme:dark){:root{--bg:#0f0f0e;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#8d8b85;--line:#2c2c2a;--track:#2c2c2a;--primary:#3987e5;--good-text:#0ca30c}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:960px;margin:0 auto;padding:var(--s5) var(--s4) 64px}
-header{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
-.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-select{font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:6px 30px 6px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
-h1{font-size:28px;line-height:1.2;margin:var(--s5) 0 var(--s1)}
-.facts{color:var(--ink2);font-size:14px;margin:0}
-.hero{display:flex;gap:var(--s5);align-items:center;margin-top:var(--s5);padding:var(--s5);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg)}
-.ring{flex:none;width:128px;height:128px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--primary) calc(var(--p)*1%),var(--track) 0);animation:fill 1.1s cubic-bezier(.2,.8,.2,1) both}
-.ring span{width:104px;height:104px;border-radius:50%;background:var(--surface);display:grid;place-content:center;text-align:center}
-.ring b{font-size:40px;line-height:1;font-weight:700}
-.ring small{font-size:12px;color:var(--muted)}
-@property --p{syntax:'<number>';inherits:false;initial-value:0}
-@keyframes fill{from{--p:0}}
-.hero-state{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s3)}
-.state-word{font-size:26px;font-weight:800;letter-spacing:-.01em}
-.state-word.good{color:var(--good-text)}.state-word.bad{color:var(--bad)}.state-word.warn,.state-word.neutral{color:var(--ink)}
-.hero-delta{font-size:14px;color:var(--ink2)}
-.up{color:var(--good-text);font-weight:700}.down{color:var(--bad);font-weight:700}
-.summary{margin:var(--s3) 0 0;padding:0;list-style:none;font-size:15px;display:grid;gap:var(--s2)}
-.summary li{display:flex;gap:var(--s3);align-items:baseline}
-.list{margin-top:var(--s4);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
-.row{border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.row>summary,.row-static{list-style:none;cursor:pointer;padding:var(--s4) var(--s5);display:block}
-.row-static{cursor:default}
-.row>summary::-webkit-details-marker{display:none}
-.row>summary:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
-.lead{flex:none;display:inline-block;min-width:64px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--track);color:var(--ink2);margin-right:var(--s2);vertical-align:1px}
-.summary .lead{margin-right:0}
-.lead.good{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good-text)}
-.lead.bad{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
-a.file{color:var(--primary);font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;text-decoration:underline dotted;text-underline-offset:3px}
-code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--track);padding:1px 5px;border-radius:4px}
-.clip{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.row>summary:hover{background:color-mix(in srgb,var(--ink) 3%,transparent)}
-.row-head{display:flex;align-items:center;gap:var(--s3)}
-.row-title{font-size:16px;font-weight:700;flex:1}
-.chev{width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;margin-left:var(--s1)}
-.row[open] .chev{transform:rotate(45deg)}
-.row-insight{display:flex;align-items:center;gap:var(--s3);margin-top:6px;color:var(--ink2);font-size:14px}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--track);color:var(--ink)}
-.pill i{width:8px;height:8px;border-radius:50%;background:var(--neutral)}
-.pill.good i{background:var(--good)}.pill.warn i{background:var(--warn)}.pill.bad i{background:var(--bad)}
-.segments{display:inline-flex;gap:3px;flex:none}
-.segments span{width:14px;height:8px;border-radius:2px;background:var(--track)}
-.segments span.on{background:var(--primary)}
-.mini-spark{width:72px;height:22px;flex:none;overflow:visible}
-.mini-spark polyline{fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.mini-spark circle{fill:var(--primary)}
-.row-detail{padding:0 var(--s5) var(--s5)}
-.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
-.metric{padding:var(--s3);border-radius:var(--r-md);background:var(--bg)}
-.metric-label{font-size:13px;color:var(--ink2)}
-.metric-value{font-size:24px;font-weight:700;line-height:1.25}
-.delta{font-size:12px;color:var(--ink2)}
-.good{color:var(--good-text);font-weight:700}.bad{color:var(--bad);font-weight:700}
-.spark{display:block;width:100%;height:34px;margin-top:6px;overflow:visible}
-.spark polyline{fill:none;stroke:var(--primary);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.spark circle{fill:var(--primary);stroke:var(--bg);stroke-width:2}
-.spark circle.selected{r:6;stroke:var(--ink)}
-.bar-row{display:grid;grid-template-columns:minmax(0,1fr) 1.4fr auto;gap:var(--s3);align-items:center;padding:6px 0}
-.bar-name{font-size:14px;font-weight:600}
-.bar-track{position:relative;height:10px;background:var(--track);border-radius:0 4px 4px 0}
-.bar{height:100%;background:var(--primary);border-radius:0 4px 4px 0;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*80ms)}
-.bar-prev{position:absolute;top:-4px;width:2px;height:18px;background:var(--ink2)}
-.bar-value{min-width:40px;white-space:nowrap;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
-.weak .bar-name{color:var(--bad)}
-@keyframes grow{from{width:0}}
-.quote{margin:var(--s3) 0 0;padding:var(--s2) var(--s3);border-left:3px solid var(--bad);background:var(--bg);border-radius:0 8px 8px 0;font-size:13px}
-.note{color:var(--muted);font-size:12px;margin:var(--s2) 0 0}
-.task{padding-top:var(--s3)}
-.task+.task{margin-top:var(--s3);border-top:1px solid var(--line)}
-.tag{font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
-.tag.ai{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,transparent)}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s3);margin-top:var(--s3)}
-.stat{padding:var(--s3) var(--s4);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);display:grid;gap:2px}
-.stat b{font-size:24px;line-height:1.25}
-.stat span{font-size:12px;color:var(--ink2)}
-.notice{margin:var(--s3) 0 0;font-size:13px;color:var(--ink2)}
-.actions label{display:flex;gap:var(--s3);align-items:flex-start;cursor:pointer}
-.actions input{margin-top:5px;width:16px;height:16px;flex:none;accent-color:var(--primary)}
-.actions input:checked+span{color:var(--muted);text-decoration:line-through}
-.layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:var(--s5);margin-top:var(--s5);align-items:start}
-.layout:not(:has(.side)){grid-template-columns:minmax(0,1fr)}
-.pane>:first-child{margin-top:0}
-.pane-title{font-size:22px;line-height:1.2;margin:0}
-.side{display:flex;flex-direction:column;gap:var(--s1);position:sticky;top:var(--s4)}
-.side button{font:inherit;font-size:14px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:8px 12px;border:1px solid transparent;border-radius:var(--r-md);background:none;color:var(--ink2);cursor:pointer}
-.side button:hover{background:var(--track)}
-.side button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.side button[aria-current="true"]{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:600}
-.side small{color:var(--muted);font-size:12px}
-@media (max-width:720px){.layout{grid-template-columns:minmax(0,1fr);gap:var(--s3)}.side{flex-direction:row;overflow-x:auto;position:static}.side button{flex:none}}
-.finding{margin:var(--s2) 0 0;font-size:14px;color:var(--ink2)}
-.more{margin-top:var(--s2)}
-.more>summary{cursor:pointer;color:var(--muted);font-size:12px}
-.bullets{margin:2px 0 0;padding-left:18px;font-size:14px}
-.bullets li{margin:2px 0}
-.actions{margin:var(--s3) 0 0;padding:0;list-style:none;counter-reset:a;display:grid;gap:var(--s3)}
-.actions li{counter-increment:a;display:flex;gap:var(--s3);align-items:flex-start;font-size:15px}
-.actions li::before{content:counter(a);flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
-.empty{color:var(--ink2);font-size:14px;margin:0}
-.empty code{background:var(--track);padding:1px 6px;border-radius:4px}
-#tip{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--surface);padding:6px 10px;border-radius:8px;font-size:13px;max-width:300px;opacity:0;transition:opacity .12s;z-index:9}
-@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{flex-direction:column;align-items:flex-start}.metrics{grid-template-columns:1fr}.row>summary,.row-static,.row-detail{padding-left:var(--s4);padding-right:var(--s4)}}
-@media (prefers-reduced-motion:reduce){.bar,.ring{animation:none}.chev{transition:none}}
-"""
-HTML_SCRIPT = """
-const tip=document.getElementById('tip');
-function moveTip(x,y){tip.style.left=Math.max(8,Math.min(x+14,innerWidth-tip.offsetWidth-8))+'px';tip.style.top=(y+14)+'px'}
-function showTip(el,x,y){tip.textContent=el.dataset.tip;tip.style.opacity=1;moveTip(x,y)}
-document.querySelectorAll('[data-tip]').forEach(el=>{
-  el.addEventListener('mouseenter',e=>showTip(el,e.clientX,e.clientY));
-  el.addEventListener('mousemove',e=>moveTip(e.clientX,e.clientY));
-  el.addEventListener('mouseleave',()=>{tip.style.opacity=0});
-  el.addEventListener('focus',()=>{const r=el.getBoundingClientRect();showTip(el,r.left,r.bottom)});
-  el.addEventListener('blur',()=>{tip.style.opacity=0});
-});
-const picker=document.getElementById('week-picker');
-function showWeek(){document.querySelectorAll('.week').forEach(w=>{w.hidden=w.dataset.week!==picker.value})}
-picker.addEventListener('change',showWeek);
-showWeek();
-document.querySelectorAll('.week').forEach(week=>{
-  const buttons=week.querySelectorAll('.side button'),panes=week.querySelectorAll('.pane');
-  buttons.forEach(button=>button.addEventListener('click',()=>{
-    buttons.forEach(b=>b.setAttribute('aria-current',String(b===button)));
-    panes.forEach(pane=>{pane.hidden=pane.dataset.pane!==button.dataset.target});
-  }));
-});
-function store(fn){try{return fn(localStorage)}catch(e){return null}}
-document.querySelectorAll('.actions').forEach(list=>{
-  const boxes=[...list.querySelectorAll('input')],note=list.parentElement.querySelector('[data-progress]');
-  const update=()=>{note.textContent=boxes.filter(b=>b.checked).length+'/'+boxes.length+' việc đã xong'};
-  boxes.forEach(b=>{
-    b.checked=store(ls=>ls.getItem('done:'+b.dataset.key))==='1';
-    b.addEventListener('change',()=>{store(ls=>ls.setItem('done:'+b.dataset.key,b.checked?'1':'0'));update()});
-  });
-  update();
-});
-"""
+TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template")
+def read_template(name):
+    with open(os.path.join(TEMPLATE_DIR, name), encoding="utf-8") as f:
+        return f.read()
+HTML_STYLE = read_template("report.css")
+HTML_SCRIPT = read_template("report.js")
 
 def sh(args, cwd=None):
     try:
@@ -188,6 +48,9 @@ def format_tokens(thousands):
 def empty_stats():
     return dict(turns=0, corrections=0, interrupts=0, human_s=0.0, tokens=0)
 
+def task_stats():
+    return dict(empty_stats(), skills=set())
+
 def summarize_week(week):
     if not week["turns"]:
         return None
@@ -203,22 +66,27 @@ def summarize_week(week):
         tasks=[dict(project=proj, task=task, **stats) for (proj, task), stats in tasks.items()])
 
 def weekly_stats(db, project, now):
-    q = ("SELECT session_id, project, task, prompt_ts, stop_ts, is_correction, tok_in+tok_cache_read+tok_cache_write+tok_out"
+    q = ("SELECT id, session_id, project, task, prompt_ts, stop_ts, is_correction, tok_in+tok_cache_read+tok_cache_write+tok_out"
          " FROM turns WHERE prompt_ts>=?")
     params = [now - (TREND_WEEKS + 1) * WEEK_SECONDS]
     if project:
         q += " AND project=?"; params.append(project)
     rows = db.execute(q + " ORDER BY session_id, id", params).fetchall()
-    weeks = [dict(empty_stats(), tasks=defaultdict(empty_stats)) for _ in range(TREND_WEEKS + 1)]
-    for i, (sid, proj, task, p_ts, s_ts, corr, tokens) in enumerate(rows):
+    weeks = [dict(empty_stats(), tasks=defaultdict(task_stats)) for _ in range(TREND_WEEKS + 1)]
+    skills_by_turn = defaultdict(set)
+    for turn_id, skill in db.execute("SELECT turn_id, skill FROM skills"):
+        skills_by_turn[turn_id].add(skill)
+    for i, (turn_id, sid, proj, task, p_ts, s_ts, corr, tokens) in enumerate(rows):
         weeks_ago = int((now - p_ts) // WEEK_SECONDS)
         if weeks_ago > TREND_WEEKS:
             continue
         week = weeks[weeks_ago]
-        nxt = rows[i + 1] if i + 1 < len(rows) and rows[i + 1][0] == sid else None
+        nxt = rows[i + 1] if i + 1 < len(rows) and rows[i + 1][1] == sid else None
         interrupted = 1 if not s_ts and nxt else 0
-        human_s = min(max(0, nxt[3] - s_ts), IDLE_CAP) if s_ts and nxt else 0
-        for target in (week, week["tasks"][(proj, task or UNASSIGNED_TASK)]):
+        human_s = min(max(0, nxt[4] - s_ts), IDLE_CAP) if s_ts and nxt else 0
+        task_target = week["tasks"][(proj, task or UNASSIGNED_TASK)]
+        task_target["skills"] |= skills_by_turn[turn_id]
+        for target in (week, task_target):
             target["turns"] += 1; target["corrections"] += corr; target["interrupts"] += interrupted
             target["tokens"] += tokens; target["human_s"] += human_s
     return [summarize_week(week) for week in weeks]
@@ -239,8 +107,15 @@ def task_context(db, project, task, since):
     return dict(cwd=found[0][1] if found else "", sessions=sessions)
 
 def costly_tasks(task_rows):
-    assigned = [r for r in task_rows if r["task"] != UNASSIGNED_TASK]
-    return sorted(assigned, key=lambda r: (-r["turns"], -r["you_min"]))[:COSTLY_TASK_COUNT]
+    by_project = defaultdict(list)
+    for r in task_rows:
+        if r["task"] != UNASSIGNED_TASK:
+            by_project[r["project"]].append(r)
+    costly = []
+    for project_tasks in by_project.values():
+        if len(project_tasks) >= PROJECT_MIN_TASKS:
+            costly += sorted(project_tasks, key=lambda r: (-r["turns"], -r["you_min"]))[:COSTLY_TASK_COUNT]
+    return costly
 
 def load_reviews():
     reviews = []
@@ -434,15 +309,15 @@ def as_list(value):
     items = value if isinstance(value, list) else [value]
     return [str(item).strip() for item in items if str(item).strip()]
 
-def task_findings(found):
+def task_findings(found, show_first_solution=True):
     if not found:
         return '<p class="note">Chưa phân tích nguyên nhân.</p>'
     causes, solutions = as_list(found.get("cause")), as_list(found.get("solution"))
     html_out = ""
     if causes:
         html_out += f'<p class="finding">{rich_text("Vì sao: " + causes[0])}</p>'
-    if solutions:
-        html_out += f'<p class="finding">{rich_text("Làm gì: " + solutions[0])}</p>'
+    if solutions and show_first_solution:
+        html_out += f'<p class="finding fix">{rich_text("Làm gì: " + solutions[0])}</p>'
     extras = ""
     if causes[1:]:
         extras += bullet_list(causes[1:], "bullets")
@@ -500,17 +375,54 @@ def project_summary(tasks):
                 first_pass_pct=100 * sum(1 for t in tasks if t["corrections"] + t["interrupts"] == 0) / count,
                 tokens_k_per_task=sum(t["tokens"] for t in tasks) / 1000 / count)
 
-def project_pane(index, project, tasks, titles):
+def project_weakness_row(review, project, task_count):
+    if task_count < PROJECT_MIN_TASKS:
+        return row("Điểm yếu lặp lại", pill("neutral", "Chưa đủ dữ liệu"), f"Dưới {PROJECT_MIN_TASKS} task, chưa đủ để rút điểm yếu.", "", "ai")
+    found = next((p for p in (review or {}).get("projects", []) if str(p.get("project")) == project), None)
+    weaknesses = as_list(found.get("weaknesses")) if found else []
+    if not weaknesses:
+        return row("Điểm yếu lặp lại", pill("neutral", "Chưa phân tích"), "Chạy /ai-score để có nhận định cho dự án này.", "", "ai")
+    return row("Điểm yếu lặp lại", pill("warn", f"{len(weaknesses)} điểm"), f'<span class="clip">{rich_text(weaknesses[0])}</span>', bullet_list(weaknesses, "bullets"), "ai")
+
+def project_skills_row(tasks):
+    counts = Counter(skill for t in tasks for skill in t["skills"])
+    if not counts:
+        return row("Skill đã dùng", pill("neutral", "Chưa dùng"), "Chưa task nào trong dự án dùng skill.", "", "data")
+    max_count = max(counts.values())
+    bars = "".join(bar_row(i, skill, count, max_count, f"{count} task", f"{count}/{len(tasks)} task trong dự án")
+                   for i, (skill, count) in enumerate(counts.most_common()))
+    used_tasks = sum(1 for t in tasks if t["skills"])
+    return row("Skill đã dùng", pill("neutral", f"{len(counts)} skill"), f"{used_tasks}/{len(tasks)} task có dùng skill", bars, "data")
+
+def project_task_row(task, found, project_tokens):
+    label = str(found.get("title") or "").strip() if found else ""
+    label = label or task_label(task["task"])
+    causes = as_list(found.get("cause")) if found else []
+    solutions = as_list(found.get("solution")) if found else []
+    token_share = f'chiếm {percent(task["tokens"] / project_tokens)} token dự án' if project_tokens else ""
+    cause_line = rich_text(causes[0]) if causes else "chưa phân tích nguyên nhân"
+    cause_text = f'{html.escape(token_share)} · {cause_line}' if token_share else cause_line
+    insight = f'<span class="stack"><span class="clip">{cause_text}</span>'
+    if solutions:
+        insight += f'<span class="clip">{rich_text("Làm gì: " + solutions[0])}</span>'
+    insight += '</span>'
+    skills_used = ", ".join(sorted(task["skills"])) or "không dùng skill nào"
+    facts = f'<p class="note">Skill đã dùng: {html.escape(skills_used)}.</p>'
+    if found and found.get("suggested_skill"):
+        facts += f'<p class="note">Skill nên dùng: {html.escape(str(found["suggested_skill"]))}.</p>'
+    if found and "specs" in found:
+        specs = as_list(found.get("specs"))
+        facts += f'<p class="note">Spec: {html.escape(", ".join(specs)) if specs else "chưa có file spec"}.</p>'
+    return row(html.escape(label), pill("neutral", f'{task["turns"]} lượt'), insight, task_findings(found, show_first_solution=False) + facts)
+
+def project_pane(index, project, tasks, causes, review):
     ordered = sorted(tasks, key=lambda t: (-t["turns"], -t["human_s"]))
-    max_turns = max(t["turns"] for t in ordered)
-    bars = ""
-    for i, t in enumerate(ordered):
-        label = titles.get((project, str(t["task"]))) or task_label(t["task"])
-        tip = f'Phải sửa {percent(t["corrections"] / t["turns"])} · bị ngắt {percent(t["interrupts"] / t["turns"])} · token {format_tokens(round(t["tokens"] / 1000))}'
-        bars += bar_row(i, label, t["turns"], max_turns, f'{t["turns"]} lượt', tip)
-    body = f'<div class="list"><div class="row row-static"><div class="row-head"><span class="row-title">Task của dự án</span>{tag("data")}</div>{bars}</div></div>'
-    note = '<p class="note">Điểm kỹ năng và nhận định AI chỉ tính chung, chưa tách theo dự án.</p>'
-    return f'<div class="pane" data-pane="p{index}" hidden><h2 class="pane-title">{html.escape(project)}</h2>{stats_strip(project_summary(tasks))}{note}{body}</div>'
+    project_tokens = sum(t["tokens"] for t in tasks)
+    task_rows = "".join(project_task_row(t, causes.get((project, str(t["task"]))), project_tokens) for t in ordered)
+    overview_rows = project_weakness_row(review, project, len(tasks)) + project_skills_row(tasks)
+    note = '<p class="note">Điểm kỹ năng chỉ tính chung, chưa tách theo dự án.</p>'
+    return (f'<div class="pane" data-pane="p{index}" hidden><h2 class="pane-title">{html.escape(project)}</h2>{stats_strip(project_summary(tasks))}{note}'
+            f'<div class="list">{overview_rows}</div><h3 class="section-title">Task của dự án</h3><div class="list">{task_rows}</div></div>')
 
 def project_sidebar(projects):
     buttons = '<button type="button" data-target="overview" aria-current="true">Tổng quan</button>'
@@ -554,12 +466,11 @@ def write_html(path, weeks, windows):
         for t in (week or {}).get("tasks", []):
             by_project.setdefault(str(t["project"]), []).append(t)
         projects = sorted(by_project.items(), key=lambda kv: -sum(t["turns"] for t in kv[1]))
-        titles = {(str(c.get("project")), str(c.get("task"))): str(c["title"]).strip()
-                  for c in (review or {}).get("costly_tasks", []) if c.get("title")}
+        causes = {(str(c.get("project")), str(c.get("task"))): c for c in (review or {}).get("costly_tasks", [])}
         overview = (hero(review, previous_review) + stats_strip(week) + notice
                     + '<div class="list">' + progress_row(weeks, windows, k) + skills_row(review, previous_review)
                     + costly_row(week, review) + actions_row(review) + "</div>")
-        panes = "".join(project_pane(i, project, tasks, titles) for i, (project, tasks) in enumerate(projects))
+        panes = "".join(project_pane(i, project, tasks, causes, review) for i, (project, tasks) in enumerate(projects))
         blocks += (f'<div class="week" data-week="{k}"><h1>{html.escape(window["span"])}</h1><p class="facts">{html.escape(window["name"])}{html.escape(facts)}</p>'
                    f'<div class="layout">{project_sidebar(projects) if projects else ""}<div class="panes"><div class="pane" data-pane="overview">{overview}</div>{panes}</div></div></div>')
     if not options:
