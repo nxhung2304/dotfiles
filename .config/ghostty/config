@@ -41,8 +41,8 @@ cursor-invert-fg-bg = true
 adjust-cursor-thickness = 2
 
 # Window và UI enhancements
-window-padding-x = 0
-window-padding-y = 0
+window-padding-x = 10
+window-padding-y = 8
 window-padding-balance = true
 window-decoration = true
 window-title-font-family = JetBrains Mono

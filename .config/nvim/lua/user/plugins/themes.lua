@@ -9,7 +9,7 @@ local function read_saved()
 			return name
 		end
 	end
-	return "github_dark_dimmed"
+	return "gruvbox"
 end
 
 local function save_colorscheme(name)
@@ -22,8 +22,8 @@ end
 
 local function apply_statusline()
 	local bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
-	vim.api.nvim_set_hl(0, "StatusLine", { fg = 0x6cb6ff, bg = bg, bold = true })
-	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = 0x768390, bg = bg })
+	vim.api.nvim_set_hl(0, "StatusLine", { fg = 0x83a598, bg = bg, bold = true })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = 0x928374, bg = bg })
 end
 
 return {
@@ -74,4 +74,10 @@ return {
 		opts = {},
 	},
 	{ "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+	{
+		"ellisonleao/gruvbox.nvim",
+		lazy = false,
+		priority = 1000,
+		opts = {},
+	},
 }

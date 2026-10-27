@@ -85,7 +85,7 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
-  "theme": "dark",
+  "theme": "dark-ansi",
   "agentPushNotifEnabled": true,
   "hasCompletedOnboarding": true,
   "sandboxing": {
