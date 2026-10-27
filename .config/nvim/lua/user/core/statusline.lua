@@ -99,13 +99,7 @@ function components.lsp_clients()
 		return ""
 	end
 
-	local short_names = {}
-	for _, client in ipairs(buf_clients) do
-		local short_name = client.name:gsub("[-_]?language[-_]server$", ""):gsub("[-_]?lsp$", ""):gsub("[-_]?ls$", "")
-		table.insert(short_names, short_name)
-	end
-
-	return hi_pattern:format("Function", "   " .. table.concat(short_names, " ") .. "  ")
+	return hi_pattern:format("Function", "   ")
 end
 
 -- Filename với icon
