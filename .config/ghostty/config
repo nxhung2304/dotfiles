@@ -45,6 +45,7 @@ window-padding-x = 10
 window-padding-y = 8
 window-padding-balance = true
 window-decoration = true
+macos-titlebar-style = transparent
 window-title-font-family = JetBrains Mono
 window-save-state = always
 window-step-resize = true

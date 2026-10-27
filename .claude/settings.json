@@ -86,6 +86,7 @@
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "theme": "dark-ansi",
+  "spinnerTipsEnabled": false,
   "agentPushNotifEnabled": true,
   "hasCompletedOnboarding": true,
   "sandboxing": {

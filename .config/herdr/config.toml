@@ -14,6 +14,7 @@ auto_switch = false
 [ui]
 sidebar_width = 27
 sidebar_max_width = 45
+sidebar_start_collapsed = true
 mouse_capture = true
 confirm_close = true
 prompt_new_tab_name = false
