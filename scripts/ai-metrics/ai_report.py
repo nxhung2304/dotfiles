@@ -14,13 +14,9 @@ WEEK_SECONDS = 7 * 86400
 COSTLY_TASK_COUNT = 3
 PROJECT_MIN_TASKS = 2
 UNASSIGNED_TASK = "(chưa gắn)"
+IGNORED_SKILLS = ("ai-score", "ai-improve")
+NOT_IGNORED_TURN = " AND id NOT IN (SELECT turn_id FROM skills WHERE skill IN (?, ?))"
 INLINE_MARKUP_RE = re.compile(r"\*\*(.+?)\*\*|`([^`]+)`")
-TREND_METRICS = [
-    ("first_pass_pct", "Xong ngay lần đầu", lambda v: f"{v:.0f}%", True),
-    ("correction_pct", "Phải sửa lại", lambda v: f"{v:.0f}%", False),
-    ("interrupt_pct", "Bị ngắt giữa chừng", lambda v: f"{v:.0f}%", False),
-    ("tokens_k_per_task", "Token mỗi task", lambda v: format_tokens(round(v)), False),
-]
 TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template")
 def read_template(name):
     with open(os.path.join(TEMPLATE_DIR, name), encoding="utf-8") as f:
@@ -65,10 +61,15 @@ def summarize_week(week):
         review_min_per_task=week["human_s"] / 60 / task_count,
         tasks=[dict(project=proj, task=task, **stats) for (proj, task), stats in tasks.items()])
 
+def current_week_start(now):
+    local = time.localtime(now)
+    return time.mktime((local.tm_year, local.tm_mon, local.tm_mday - local.tm_wday, 0, 0, 0, 0, 0, -1))
+
 def weekly_stats(db, project, now):
     q = ("SELECT id, session_id, project, task, prompt_ts, stop_ts, is_correction, tok_in+tok_cache_read+tok_cache_write+tok_out"
-         " FROM turns WHERE prompt_ts>=?")
-    params = [now - (TREND_WEEKS + 1) * WEEK_SECONDS]
+         " FROM turns WHERE prompt_ts>=?" + NOT_IGNORED_TURN)
+    this_week_start = current_week_start(now)
+    params = [this_week_start - TREND_WEEKS * WEEK_SECONDS, *IGNORED_SKILLS]
     if project:
         q += " AND project=?"; params.append(project)
     rows = db.execute(q + " ORDER BY session_id, id", params).fetchall()
@@ -77,7 +78,7 @@ def weekly_stats(db, project, now):
     for turn_id, skill in db.execute("SELECT turn_id, skill FROM skills"):
         skills_by_turn[turn_id].add(skill)
     for i, (turn_id, sid, proj, task, p_ts, s_ts, corr, tokens) in enumerate(rows):
-        weeks_ago = int((now - p_ts) // WEEK_SECONDS)
+        weeks_ago = max(0, -int((p_ts - this_week_start) // WEEK_SECONDS))
         if weeks_ago > TREND_WEEKS:
             continue
         week = weeks[weeks_ago]
@@ -94,15 +95,18 @@ def weekly_stats(db, project, now):
 def week_windows(now):
     windows = []
     for weeks_ago in range(TREND_WEEKS):
-        start, end = now - (weeks_ago + 1) * WEEK_SECONDS, now - weeks_ago * WEEK_SECONDS
+        start = current_week_start(now) - weeks_ago * WEEK_SECONDS
+        end = start + WEEK_SECONDS
+        sunday = start + 6 * 86400 + 12 * 3600
         name = "Tuần này" if weeks_ago == 0 else "Tuần trước" if weeks_ago == 1 else f"{weeks_ago} tuần trước"
-        span = f'{time.strftime("%d/%m", time.localtime(start))}–{time.strftime("%d/%m", time.localtime(end))}'
-        windows.append(dict(weeks_ago=weeks_ago, start=start, end=end, name=name, span=span))
+        span = f'{time.strftime("%d/%m", time.localtime(start))}–{time.strftime("%d/%m", time.localtime(sunday))}'
+        windows.append(dict(weeks_ago=weeks_ago, start=start, end=end, name=name, span=span,
+                            week_start=time.strftime("%Y-%m-%d", time.localtime(start + 12 * 3600))))
     return windows
 
-def task_context(db, project, task, since):
-    condition, params = ("task IS NULL", [project, since]) if task == UNASSIGNED_TASK else ("task=?", [project, since, task])
-    found = db.execute(f"SELECT session_id, cwd FROM turns WHERE project=? AND prompt_ts>=? AND {condition} GROUP BY session_id", params).fetchall()
+def task_context(db, project, task, since, until):
+    condition, params = ("task IS NULL", [project, since, until]) if task == UNASSIGNED_TASK else ("task=?", [project, since, until, task])
+    found = db.execute(f"SELECT session_id, cwd FROM turns WHERE project=? AND prompt_ts>=? AND prompt_ts<? AND {condition} GROUP BY session_id", params).fetchall()
     sessions = [dict(session_id=sid, transcript=next(iter(glob.glob(TRANSCRIPT_GLOB.format(session_id=sid))), None)) for sid, _ in found]
     return dict(cwd=found[0][1] if found else "", sessions=sessions)
 
@@ -131,15 +135,15 @@ def load_reviews():
 
 def review_for_window(reviews, window):
     matched = [review for reviewed_at, review in reviews
-               if reviewed_at > window["start"] and (window["weeks_ago"] == 0 or reviewed_at <= window["end"])]
+               if (review.get("week_start") == window["week_start"] if review.get("week_start") else window["start"] <= reviewed_at < window["end"])]
     return matched[-1] if matched else None
 
-def export_json(path, db, days, since, task_rows, skill_rows, weeks, windows):
+def export_json(path, db, days, since, until, week_start, task_rows, skill_rows, weeks, windows):
     costly_keys = {(r["project"], r["task"]) for r in costly_tasks(task_rows)}
-    tasks = [dict(r, costly=(r["project"], r["task"]) in costly_keys, **task_context(db, r["project"], r["task"], since)) for r in task_rows]
+    tasks = [dict(r, costly=(r["project"], r["task"]) in costly_keys, **task_context(db, r["project"], r["task"], since, until)) for r in task_rows]
     trend = [dict(week=w["span"], metrics={k: v for k, v in m.items() if k != "tasks"} if m else None)
              for w, m in reversed(list(zip(windows, weeks)))]
-    data = dict(generated_at=time.strftime("%Y-%m-%d %H:%M"), days=days, rubric=os.path.join(os.path.dirname(os.path.abspath(__file__)), "rubric.md"),
+    data = dict(generated_at=time.strftime("%Y-%m-%d %H:%M"), days=days, week_start=week_start, rubric=os.path.join(os.path.dirname(os.path.abspath(__file__)), "rubric.md"),
                 review_dir=REVIEW_DIR, trend=trend, tasks=tasks, skills=[dict(skill=name, stats=stats) for name, stats in skill_rows])
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -191,43 +195,8 @@ def bar_row(index, name, value, max_value, value_text, tip, previous_value=None,
             f'<div class="bar-track"><div class="bar" style="width:{100 * value / max_value:.0f}%;--i:{index}" {tooltip_attrs(tip)}></div>{previous_mark}</div>'
             f'<div class="bar-value">{html.escape(value_text)}</div></div>')
 
-def spark_points(values, width, height, pad):
-    points = [(i, v) for i, v in enumerate(values) if v is not None]
-    if len(points) < 2:
-        return []
-    low, high = min(v for _, v in points), max(v for _, v in points)
-    span = (high - low) or 1
-    return [(i, v, pad + i * (width - 2 * pad) / (len(values) - 1), height - pad - (v - low) * (height - 2 * pad) / span) for i, v in points]
-
-def sparkline(values, labels, selected, formatter):
-    coords = spark_points(values, 200, 34, 6)
-    if not coords:
-        return ""
-    line = " ".join(f"{x:.1f},{y:.1f}" for _, _, x, y in coords)
-    dots = "".join(f'<circle class="{"selected" if i == selected else ""}" cx="{x:.1f}" cy="{y:.1f}" r="4" {tooltip_attrs(f"{labels[i]}: {formatter(v)}")}/>'
-                   for i, v, x, y in coords)
-    return f'<svg class="spark" viewBox="0 0 200 34" role="img" aria-label="Xu hướng"><polyline points="{line}"/>{dots}</svg>'
-
-def mini_sparkline(values):
-    coords = spark_points(values, 72, 22, 3)
-    if not coords:
-        return ""
-    line = " ".join(f"{x:.1f},{y:.1f}" for _, _, x, y in coords)
-    _, _, last_x, last_y = coords[-1]
-    return f'<svg class="mini-spark" viewBox="0 0 72 22" aria-hidden="true"><polyline points="{line}"/><circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="3"/></svg>'
-
 def segments(score):
     return '<span class="segments" aria-hidden="true">' + "".join(f'<span class="{"on" if i < round(score) else ""}"></span>' for i in range(5)) + "</span>"
-
-def delta_html(current, previous, formatter, higher_is_better):
-    if previous is None:
-        return ""
-    if abs(current - previous) < 1e-9:
-        return f'<div class="delta">= Không đổi ({formatter(previous)})</div>'
-    improved = (current > previous) == higher_is_better
-    arrow = "▲" if current > previous else "▼"
-    return (f'<div class="delta"><span class="{"good" if improved else "bad"}">{arrow} {"Tốt hơn" if improved else "Kém hơn"}</span>'
-            f' · trước đó {html.escape(formatter(previous))}</div>')
 
 def scored(review):
     return [s for s in (review or {}).get("scores", []) if isinstance(s.get("score"), (int, float))]
@@ -245,10 +214,6 @@ def score_state(score):
         return "neutral", "Ổn"
     return "bad", "Cần chú ý"
 
-def metric_changes(week, previous_week):
-    return [(label, (week[key] - previous_week[key]) * (1 if higher_is_better else -1))
-            for key, label, _, higher_is_better in TREND_METRICS]
-
 def tag(kind):
     text = "Số liệu" if kind == "data" else "AI nhận định"
     return f'<span class="tag {kind}">{text}</span>'
@@ -257,42 +222,22 @@ def row(title, status, insight, detail, kind=""):
     return (f'<details class="row"><summary><div class="row-head"><span class="row-title">{title}</span>{tag(kind) if kind else ""}{status}<span class="chev"></span></div>'
             f'<div class="row-insight">{insight}</div></summary><div class="row-detail">{detail}</div></details>')
 
-def progress_row(weeks, windows, weeks_ago):
-    week, previous_week = weeks[weeks_ago], weeks[weeks_ago + 1]
-    if not week:
-        return row("Có tiến bộ không?", pill("neutral", "Chưa có dữ liệu"), "Tuần này chưa có lượt nhắn nào.", "")
-    oldest_first = list(reversed(range(TREND_WEEKS)))
-    labels = [windows[k]["span"] for k in oldest_first]
-    first_pass = [weeks[k]["first_pass_pct"] if weeks[k] else None for k in oldest_first]
-    if previous_week:
-        changes = metric_changes(week, previous_week)
-        better = sum(1 for _, change in changes if change > 1e-9)
-        worse = sum(1 for _, change in changes if change < -1e-9)
-        status = pill("good", "Tiến bộ") if better > worse else pill("bad", "Đi xuống") if worse > better else pill("warn", "Đi ngang")
-        insight = f"{better}/{len(changes)} chỉ số tốt hơn tuần trước"
-    else:
-        status = pill("neutral", "Chưa đủ dữ liệu")
-        insight = f"Xong ngay lần đầu {week['first_pass_pct']:.0f}%"
-    metrics = ""
-    for key, label, formatter, higher_is_better in TREND_METRICS:
-        previous = previous_week[key] if previous_week else None
-        values = [weeks[k][key] if weeks[k] else None for k in oldest_first]
-        metrics += (f'<div class="metric"><div class="metric-label">{html.escape(label)}</div>'
-                    f'<div class="metric-value">{html.escape(formatter(week[key]))}</div>'
-                    f'{delta_html(week[key], previous, formatter, higher_is_better)}'
-                    f'{sparkline(values, labels, oldest_first.index(weeks_ago), formatter) if previous_week else ""}</div>')
-    return row("Có tiến bộ không?", status, mini_sparkline(first_pass) + f'<span class="clip">{html.escape(insight)}</span>', f'<div class="metrics">{metrics}</div>', "data")
-
-def skills_row(review, previous_review):
+def progress_row(review, previous_review):
     ordered = sorted(scored(review), key=lambda s: s["score"])
     if not ordered:
-        return row("Kỹ năng nào yếu?", pill("neutral", "Chưa chấm"), "Chạy /ai-score để AI chấm điểm.", "")
+        return row("Có tiến bộ không?", pill("neutral", "Chưa chấm"), "Chạy /ai-score để AI chấm điểm.", "")
     weakest = ordered[0]
-    kind, word = score_state(weakest["score"])
-    previous_scores = {s["criterion"]: s["score"] for s in scored(previous_review)}
+    previous_scores = {s.get("name"): s["score"] for s in scored(previous_review)}
+    changes = [s["score"] - previous_scores[s.get("name")] for s in ordered if s.get("name") in previous_scores]
+    up, down = sum(1 for c in changes if c > 0), sum(1 for c in changes if c < 0)
+    if not changes:
+        status, change_text = pill("neutral", "Chưa có tuần trước"), ""
+    else:
+        status = pill("good", "Tiến bộ") if up > down else pill("bad", "Đi xuống") if down > up else pill("warn", "Đi ngang")
+        change_text = f" · {up} tiêu chí tăng, {down} giảm so với tuần trước"
     bars = ""
     for index, s in enumerate(ordered):
-        previous_score = previous_scores.get(s["criterion"])
+        previous_score = previous_scores.get(s.get("name"))
         tip = f'“{s.get("evidence", "")}”' + (f" · tuần trước {previous_score:g}/5" if previous_score is not None else "")
         bars += bar_row(index, str(s.get("name", "")), s["score"], 5, f'{s["score"]:g}/5', tip, previous_score, "weak" if s is weakest else "")
     quote = f'<p class="quote">“{html.escape(str(weakest.get("evidence", "")))}”</p>'
@@ -302,8 +247,8 @@ def skills_row(review, previous_review):
         notes += '<p class="note">Vạch đứng = tuần trước. Di chuột vào thanh để xem bằng chứng.</p>'
     if unscored:
         notes += f'<p class="note">Chưa chấm được: {html.escape(", ".join(unscored))}.</p>'
-    insight = segments(weakest["score"]) + f'<span class="clip">{html.escape(str(weakest.get("name", "")))} · {weakest["score"]:g}/5</span>'
-    return row("Kỹ năng nào yếu?", pill(kind, word), insight, bars + quote + notes, "ai")
+    insight = segments(weakest["score"]) + f'<span class="clip">Yếu nhất: {html.escape(str(weakest.get("name", "")))} · {weakest["score"]:g}/5{html.escape(change_text)}</span>'
+    return row("Có tiến bộ không?", status, insight, bars + quote + notes, "ai")
 
 def as_list(value):
     items = value if isinstance(value, list) else [value]
@@ -366,7 +311,7 @@ def stats_strip(week):
     if not week:
         return ""
     cards = [("Task", str(week["task_count"])), ("Lượt nhắn", str(week["turns"])),
-             ("Xong ngay lần đầu", f'{week["first_pass_pct"]:.0f}%'), ("Token mỗi task", format_tokens(round(week["tokens_k_per_task"])))]
+             ("Token mỗi task", format_tokens(round(week["tokens_k_per_task"])))]
     return '<div class="stats">' + "".join(f'<div class="stat"><b>{html.escape(v)}</b><span>{html.escape(l)}</span></div>' for l, v in cards) + "</div>"
 
 def project_summary(tasks):
@@ -468,7 +413,7 @@ def write_html(path, weeks, windows):
         projects = sorted(by_project.items(), key=lambda kv: -sum(t["turns"] for t in kv[1]))
         causes = {(str(c.get("project")), str(c.get("task"))): c for c in (review or {}).get("costly_tasks", [])}
         overview = (hero(review, previous_review) + stats_strip(week) + notice
-                    + '<div class="list">' + progress_row(weeks, windows, k) + skills_row(review, previous_review)
+                    + '<div class="list">' + progress_row(review, previous_review)
                     + costly_row(week, review) + actions_row(review) + "</div>")
         panes = "".join(project_pane(i, project, tasks, causes, review) for i, (project, tasks) in enumerate(projects))
         blocks += (f'<div class="week" data-week="{k}"><h1>{html.escape(window["span"])}</h1><p class="facts">{html.escape(window["name"])}{html.escape(facts)}</p>'
@@ -487,6 +432,7 @@ def write_html(path, weeks, windows):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=30)
+    ap.add_argument("--weeks-ago", type=int, help="chỉ lấy tuần lịch (thứ 2–CN) cách đây N tuần, 0 là tuần này; thay cho --days")
     ap.add_argument("--project")
     ap.add_argument("--gh", action="store_true", help="hỏi trạng thái issue qua gh CLI")
     ap.add_argument("--csv")
@@ -496,9 +442,14 @@ def main():
 
     db = sqlite3.connect(DB)
     now = time.time()
-    since = now - a.days * 86400
-    q = "SELECT id, session_id, project, cwd, task, prompt_ts, stop_ts, is_correction, tool_calls, tool_failures, tok_in+tok_cache_read+tok_cache_write, tok_out FROM turns WHERE prompt_ts>=?"
-    params = [since]
+    windows = week_windows(now)
+    if a.weeks_ago is not None:
+        window = windows[a.weeks_ago]
+        since, until, week_start = window["start"], window["end"], window["week_start"]
+    else:
+        since, until, week_start = now - a.days * 86400, now + 1, None
+    q = "SELECT id, session_id, project, cwd, task, prompt_ts, stop_ts, is_correction, tool_calls, tool_failures, tok_in+tok_cache_read+tok_cache_write, tok_out FROM turns WHERE prompt_ts>=? AND prompt_ts<?" + NOT_IGNORED_TURN
+    params = [since, until, *IGNORED_SKILLS]
     if a.project:
         q += " AND project=?"; params.append(a.project)
     rows = db.execute(q + " ORDER BY session_id, id", params).fetchall()
@@ -572,9 +523,8 @@ def main():
 
     if a.html or a.json:
         weeks = weekly_stats(db, a.project, now)
-        windows = week_windows(now)
         if a.json:
-            export_json(a.json, db, a.days, since, out, skill_rows, weeks, windows)
+            export_json(a.json, db, a.days, since, until, week_start, out, skill_rows, weeks, windows)
             print(f"Đã ghi {a.json}")
         if a.html:
             write_html(a.html, weeks, windows)

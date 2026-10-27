@@ -17,7 +17,7 @@ python3 ~/dotfiles/scripts/ai-metrics/ai_report.py --csv report.csv   # xuất C
 python3 ~/dotfiles/scripts/ai-metrics/ai_report.py --html ~/.ai-metrics/report.html && open ~/.ai-metrics/report.html
 ```
 
-Báo cáo HTML trả lời 4 câu: tiến bộ không, kỹ năng nào yếu, vì sao task tốn công, tuần tới làm gì. Phần 1 do script tính; phần 2–4 cần chạy `/ai-score` trong Claude Code (AI chấm theo `rubric.md`, ghi `~/.ai-metrics/reviews/<ngày>.json`, rồi render lại HTML).
+Báo cáo HTML trả lời 4 câu: tiến bộ không (điểm kỹ năng), vì sao task tốn công, tuần tới làm gì. Số liệu do script tính; điểm kỹ năng, nguyên nhân task tốn công và việc tuần tới cần chạy `/ai-score` trong Claude Code (AI chấm theo `rubric.md`, ghi `~/.ai-metrics/reviews/<ngày>.json`, rồi render lại HTML).
 
 - `--json out.json`: xuất dữ liệu cho skill `ai-score`
 - `ai_transcript.py <transcript.jsonl>`: rút gọn transcript để AI đọc
