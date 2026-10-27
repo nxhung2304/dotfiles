@@ -1,5 +1,24 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+format = """
+$directory$git_branch$git_status$cmd_duration
+$character"""
+add_newline = true
+
+[character]
+success_symbol = "[❯](bold #957fb8)"
+error_symbol = "[❯](bold #e82424)"
+vimcmd_symbol = "[❮](bold #98bb6c)"
+
+[git_status]
+style = "#e6c384"
+format = "([$all_status$ahead_behind]($style) )"
+
+[cmd_duration]
+min_time = 2000
+style = "#727169"
+format = "[took $duration]($style)"
+
 [aws]
 symbol = " "
 
@@ -51,6 +70,9 @@ symbol = " "
 
 [directory]
 read_only = " 󰌾"
+style = "bold #7e9cd8"
+truncation_length = 3
+truncate_to_repo = true
 
 [docker_context]
 symbol = " "
@@ -84,6 +106,8 @@ symbol = " "
 
 [git_branch]
 symbol = " "
+style = "#957fb8"
+format = "[$symbol$branch]($style) "
 
 [git_commit]
 tag_symbol = '  '

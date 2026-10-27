@@ -9,7 +9,7 @@ local function read_saved()
 			return name
 		end
 	end
-	return "github_dark_dimmed"
+	return "kanagawa-wave"
 end
 
 local function save_colorscheme(name)
@@ -20,10 +20,14 @@ local function save_colorscheme(name)
 	end
 end
 
+local function highlight_fg(name)
+	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+end
+
 local function apply_statusline()
 	local bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
-	vim.api.nvim_set_hl(0, "StatusLine", { fg = 0x6cb6ff, bg = bg, bold = true })
-	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = 0x768390, bg = bg })
+	vim.api.nvim_set_hl(0, "StatusLine", { fg = highlight_fg("Function"), bg = bg })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = highlight_fg("Comment"), bg = bg })
 end
 
 return {
@@ -74,4 +78,36 @@ return {
 		opts = {},
 	},
 	{ "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+	{
+		"rebelot/kanagawa.nvim",
+		lazy = false,
+		priority = 1000,
+		opts = {
+			transparent = true,
+			colors = {
+				theme = {
+					all = {
+						ui = {
+							bg_gutter = "none",
+						},
+					},
+				},
+			},
+			overrides = function(colors)
+				local theme = colors.theme
+				return {
+					NormalFloat = { bg = "none" },
+					FloatBorder = { fg = theme.ui.bg_p2, bg = "none" },
+					FloatTitle = { fg = theme.ui.special, bg = "none", bold = true },
+					SnacksPickerBorder = { fg = theme.ui.bg_p2, bg = "none" },
+					Pmenu = { fg = theme.ui.pmenu.fg, bg = "none" },
+					PmenuSel = { fg = "NONE", bg = theme.ui.bg_p2 },
+					WinSeparator = { fg = theme.ui.bg_p1, bg = "none" },
+					WinBar = { fg = theme.ui.fg_dim, bg = "none" },
+					WinBarNC = { fg = theme.ui.nontext, bg = "none" },
+					CursorLineNr = { fg = theme.syn.special1, bg = "none", bold = true },
+				}
+			end,
+		},
+	},
 }
