@@ -104,12 +104,16 @@ M.lsp_on_attach = function(client, bufnr)
 	keymap("n", "gl", "<cmd>lua vim.lsp.codelens.run()<CR>", { buffer = bufnr, desc = "Run Code Lens" })
 
 	if client.server_capabilities.codeLensProvider then
-		vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-			buffer = bufnr,
-			callback = function()
-				vim.lsp.codelens.refresh()
-			end,
-		})
+		if vim.fn.has("nvim-0.12") == 1 then
+			vim.lsp.codelens.enable(true, { bufnr = bufnr })
+		else
+			vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
+				buffer = bufnr,
+				callback = function()
+					vim.lsp.codelens.refresh()
+				end,
+			})
+		end
 	end
 
 	if client.server_capabilities.documentHighlightProvider then
