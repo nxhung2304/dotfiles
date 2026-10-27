@@ -6,7 +6,7 @@ function _G._statusline_component(name)
 end
 
 function components.position()
-	return "%3l:%-2c"
+	return "%3p%%"
 end
 
 -- Git branch
