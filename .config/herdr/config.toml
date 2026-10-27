@@ -131,14 +131,14 @@ description = "rails server tab"
 [[keys.command]]
 key = "prefix+shift+r"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
-description = "open PR or repo in browser"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page repo"
+description = "open repo in browser"
 
 [[keys.command]]
 key = "prefix+shift+p"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page pulls"
-description = "open repo pulls in browser"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
+description = "open PR (or repo) in browser"
 
 [[keys.command]]
 key = "prefix+shift+i"

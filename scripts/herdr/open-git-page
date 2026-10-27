@@ -10,6 +10,9 @@ case $page in
         url=$(gh pr view --json url -q .url 2>/dev/null || true)
         [[ -z $url ]] && url=$(gh repo view --json url -q .url)
         ;;
+    repo)
+        url=$(gh repo view --json url -q .url)
+        ;;
     pulls | issues)
         url=$(gh repo view --json url -q .url)/$page
         ;;
