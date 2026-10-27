@@ -20,10 +20,14 @@ local function save_colorscheme(name)
 	end
 end
 
+local function highlight_fg(name)
+	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+end
+
 local function apply_statusline()
 	local bg = vim.api.nvim_get_hl(0, { name = "Normal" }).bg
-	vim.api.nvim_set_hl(0, "StatusLine", { fg = 0x83a598, bg = bg, bold = true })
-	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = 0x928374, bg = bg })
+	vim.api.nvim_set_hl(0, "StatusLine", { fg = highlight_fg("Identifier"), bg = bg, bold = true })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { fg = highlight_fg("Comment"), bg = bg })
 end
 
 return {
@@ -78,8 +82,16 @@ return {
 		"ellisonleao/gruvbox.nvim",
 		lazy = false,
 		priority = 1000,
-		opts = {
-			italic = { strings = false },
-		},
+		opts = function()
+			local background = require("gruvbox").palette.dark0
+			local gutter_overrides = { SignColumn = { bg = background }, FoldColumn = { bg = background } }
+			for _, color in ipairs({ "Red", "Green", "Yellow", "Blue", "Purple", "Aqua", "Orange" }) do
+				gutter_overrides["Gruvbox" .. color .. "Sign"] = { bg = background }
+			end
+			return {
+				italic = { strings = false },
+				overrides = gutter_overrides,
+			}
+		end,
 	},
 }

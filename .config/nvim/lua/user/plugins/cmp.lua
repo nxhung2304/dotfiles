@@ -123,7 +123,7 @@ return {
 				},
 				window = {
 					documentation = {
-						border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+						border = "rounded",
 					},
 					completion = {
 						col_offset = -3,
