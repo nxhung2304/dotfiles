@@ -67,6 +67,7 @@ resize-overlay = never
 
 # Scrollback và history (value in bytes; ~100 MB)
 scrollback-limit = 100000000
+scrollbar = never
 mouse-hide-while-typing = true
 
 # Tab bar styling (nếu dùng tabs)
