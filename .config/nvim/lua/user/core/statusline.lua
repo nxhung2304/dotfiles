@@ -135,11 +135,6 @@ function components.filetype()
 	end
 end
 
-function components.winbar_file()
-	local modified_marker = vim.bo.modified and hi_pattern:format("WarningMsg", " ●") or ""
-	return components.filename() .. modified_marker
-end
-
 vim.api.nvim_create_autocmd({ "RecordingEnter", "RecordingLeave" }, {
 	callback = function()
 		vim.cmd("redrawstatus")
