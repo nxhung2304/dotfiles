@@ -9,30 +9,6 @@ function components.position()
 	return "%3l:%-2c"
 end
 
--- Git changed files count (repo-wide, via git status --porcelain)
-local git_status_cache = {}
-function components.git_status()
-	local cwd = vim.fn.getcwd()
-	local now = vim.fn.localtime()
-	if git_status_cache[cwd] and (now - git_status_cache[cwd].time) < 5 then
-		return git_status_cache[cwd].result
-	end
-
-	local handle = io.popen("git -C " .. vim.fn.shellescape(cwd) .. " status --porcelain 2>/dev/null")
-	local result = ""
-	if handle then
-		local count = 0
-		for _ in handle:lines() do count = count + 1 end
-		handle:close()
-		if count > 0 then
-			result = hi_pattern:format("DiagnosticOk", " 󰊢 " .. count .. "  ")
-		end
-	end
-
-	git_status_cache[cwd] = { result = result, time = now }
-	return result
-end
-
 -- Git branch
 local git_branch_cache = {}
 function components.git_branch()
@@ -123,7 +99,13 @@ function components.lsp_clients()
 		return ""
 	end
 
-	return hi_pattern:format("Function", "   ")
+	local short_names = {}
+	for _, client in ipairs(buf_clients) do
+		local short_name = client.name:gsub("[-_]?language[-_]server$", ""):gsub("[-_]?lsp$", ""):gsub("[-_]?ls$", "")
+		table.insert(short_names, short_name)
+	end
+
+	return hi_pattern:format("Function", "   " .. table.concat(short_names, " ") .. "  ")
 end
 
 -- Filename với icon
@@ -207,7 +189,6 @@ end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
-	'%{%v:lua._statusline_component("git_status")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
