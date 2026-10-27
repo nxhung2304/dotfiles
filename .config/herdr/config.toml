@@ -22,6 +22,9 @@ pane_borders = true
 pane_gaps = true
 
 status_indicators = "symbols"
+tab_bar_right = [
+  { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
+]
 [ui.toast]
 delivery = "off"
 delay_seconds = 1

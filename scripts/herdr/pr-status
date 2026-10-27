@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "${HERDR_ACTIVE_PANE_CWD:-$PWD}"
+
+branch=$(git branch --show-current 2>/dev/null || true)
+[[ -z $branch ]] && exit 0
+
+pr_number=$(gh pr view --json number -q .number 2>/dev/null || true)
+[[ -z $pr_number ]] && exit 0
+
+echo " #$pr_number"
