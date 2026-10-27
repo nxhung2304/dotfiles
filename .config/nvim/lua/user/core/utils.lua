@@ -36,12 +36,16 @@ function M.on_load(name, fn)
 	end
 end
 
+local function highlight_fg(name)
+	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+end
+
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-	local orangeColor = "#d65d0e"
-	local aquaColor = "#83a598"
-	local filenameColor = "#b8bb26"
-	local pathColor = "#928374"
+	local orangeColor = highlight_fg("Constant")
+	local aquaColor = highlight_fg("Type")
+	local filenameColor = highlight_fg("String")
+	local pathColor = highlight_fg("Comment")
 
 	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
