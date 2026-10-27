@@ -36,6 +36,9 @@ return {
 					hidden = true,
 					follow = true,
 				},
+				grep = {
+					layout = { preset = "dropdown", preview = true },
+				},
 			},
 		},
  -- 	dashboard = {

@@ -25,7 +25,7 @@ function components.git_status()
 		for _ in handle:lines() do count = count + 1 end
 		handle:close()
 		if count > 0 then
-			result = hi_pattern:format("DiffAdd", " 󰊢 " .. count .. "  ")
+			result = hi_pattern:format("DiagnosticOk", " 󰊢 " .. count .. "  ")
 		end
 	end
 
@@ -51,7 +51,7 @@ function components.git_branch()
 
 	local result = ""
 	if branch and branch ~= "" then
-		result = hi_pattern:format("DiffAdd", " 󰘬  " .. branch .. "  ") -- 󰘬
+		result = hi_pattern:format("DiagnosticOk", " 󰘬  " .. branch .. "  ") -- 󰘬
 	end
 
 	git_branch_cache[cwd] = { result = result, time = now }
@@ -123,13 +123,7 @@ function components.lsp_clients()
 		return ""
 	end
 
-	local client_names = {}
-	for _, client in ipairs(buf_clients) do
-		table.insert(client_names, client.name)
-	end
-
-	local lsp_info = table.concat(client_names, ", ")
-	return hi_pattern:format("Function", "   [" .. lsp_info .. "]  ")
+	return hi_pattern:format("Function", "   ")
 end
 
 -- Filename với icon
@@ -159,25 +153,15 @@ function components.filetype()
 	local icon = require("nvim-web-devicons").get_icon_by_filetype(ft, { default = true })
 
 	if icon then
-		return " " .. icon .. " " .. ft .. " "
+		return " " .. icon .. " "
 	else
 		return " " .. ft .. " "
 	end
 end
 
-function components.indent_info()
-	local expandtab = vim.bo.expandtab
-	local shiftwidth = vim.bo.shiftwidth
-	local tabstop = vim.bo.tabstop
-
-	local indent_info
-	if expandtab then
-		indent_info = "space: " .. shiftwidth
-	else
-		indent_info = "tab:" .. tabstop
-	end
-
-	return hi_pattern:format("Special", "  " .. indent_info)
+function components.winbar_file()
+	local modified_marker = vim.bo.modified and hi_pattern:format("WarningMsg", " ●") or ""
+	return components.filename() .. modified_marker
 end
 
 vim.api.nvim_create_autocmd({ "RecordingEnter", "RecordingLeave" }, {
@@ -229,7 +213,6 @@ local statusline = {
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("flutter_device")%}',
-	'%{%v:lua._statusline_component("indent_info")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("filetype")%}',
 	'%{%v:lua._statusline_component("position")%}',

@@ -85,3 +85,19 @@ vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
 		end
 	end,
 })
+
+local file_winbar = '%{%v:lua._statusline_component("winbar_file")%}'
+vim.api.nvim_create_autocmd("BufWinEnter", {
+	desc = "Show the file name in the winbar of normal file windows",
+	callback = function()
+		local win = vim.api.nvim_get_current_win()
+		if vim.api.nvim_win_get_config(win).relative ~= "" then
+			return
+		end
+		if vim.bo.buftype == "" then
+			vim.wo[win].winbar = file_winbar
+		elseif vim.wo[win].winbar == file_winbar then
+			vim.wo[win].winbar = ""
+		end
+	end,
+})

@@ -2,61 +2,59 @@
 input=$(cat)
 
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
-model=$(echo "$input" | jq -r '.model.display_name // empty')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
-remaining_pct=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 five_hour_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
-five_hour_resets_at=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 seven_day_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
 dir=$(basename "$cwd")
 branch=$(git -C "$cwd" branch --show-current 2>/dev/null)
 
-# Build context window segment
+green=$(printf '\033[32m')
+yellow=$(printf '\033[33m')
+red=$(printf '\033[31m')
+dim=$(printf '\033[2m')
+reset=$(printf '\033[0m')
+
+usage_color() {
+  if [ "$1" -ge 80 ]; then
+    printf "%s" "$red"
+  elif [ "$1" -ge 50 ]; then
+    printf "%s" "$yellow"
+  else
+    printf "%s" "$green"
+  fi
+}
+
+ctx_seg=""
 if [ -n "$used_pct" ]; then
   used_int=$(printf "%.0f" "$used_pct")
-  remaining_int=$(printf "%.0f" "$remaining_pct")
-  ctx_seg="ctx: ${used_int}% used (${remaining_int}% left)"
-else
-  ctx_seg="ctx: --"
+  ctx_seg="$(usage_color "$used_int")ctx ${used_int}%${reset}"
 fi
 
-# Build rate limit segment
 rate_seg=""
 if [ -n "$five_hour_pct" ]; then
   five_int=$(printf "%.0f" "$five_hour_pct")
-  if [ -n "$five_hour_resets_at" ]; then
-    now=$(date +%s)
-    secs_left=$((five_hour_resets_at - now))
-    if [ "$secs_left" -gt 0 ]; then
-      hours_left=$(awk "BEGIN { printf \"%.1f\", $secs_left / 3600 }")
-      rate_seg="5h: ${five_int}% (${hours_left}h left)"
-    else
-      rate_seg="5h: ${five_int}% (resetting)"
-    fi
-  else
-    rate_seg="5h: ${five_int}%"
+  if [ "$five_int" -ge 70 ]; then
+    rate_seg="$(usage_color "$five_int")5h ${five_int}%${reset}"
   fi
 fi
 if [ -n "$seven_day_pct" ]; then
   week_int=$(printf "%.0f" "$seven_day_pct")
-  if [ -n "$rate_seg" ]; then
-    rate_seg="${rate_seg} | 7d: ${week_int}%"
-  else
-    rate_seg="7d: ${week_int}%"
+  if [ "$week_int" -ge 70 ]; then
+    rate_seg="${rate_seg:+${rate_seg} }$(usage_color "$week_int")7d ${week_int}%${reset}"
   fi
 fi
 
-# Assemble output
-line1="  ${dir}"
+separator="${dim} · ${reset}"
+line="${dir}"
 if [ -n "$branch" ]; then
-  line1="${line1} |  ${branch}"
+  line="${line}${separator}${branch}"
 fi
-line1="${line1} | 󰚩 ${model}"
-
-line2="${ctx_seg}"
+if [ -n "$ctx_seg" ]; then
+  line="${line}${separator}${ctx_seg}"
+fi
 if [ -n "$rate_seg" ]; then
-  line2="${line2} | ${rate_seg}"
+  line="${line}${separator}${rate_seg}"
 fi
 
-printf "%s\n%s" "$line1" "$line2"
+printf "%s" "$line"
