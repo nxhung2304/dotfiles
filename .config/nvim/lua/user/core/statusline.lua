@@ -5,32 +5,13 @@ function _G._statusline_component(name)
 	return components[name]()
 end
 
+local progress_icons = { "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" }
 function components.position()
-	return "%3l:%-2c"
-end
-
--- Git changed files count (repo-wide, via git status --porcelain)
-local git_status_cache = {}
-function components.git_status()
-	local cwd = vim.fn.getcwd()
-	local now = vim.fn.localtime()
-	if git_status_cache[cwd] and (now - git_status_cache[cwd].time) < 5 then
-		return git_status_cache[cwd].result
-	end
-
-	local handle = io.popen("git -C " .. vim.fn.shellescape(cwd) .. " status --porcelain 2>/dev/null")
-	local result = ""
-	if handle then
-		local count = 0
-		for _ in handle:lines() do count = count + 1 end
-		handle:close()
-		if count > 0 then
-			result = hi_pattern:format("DiffAdd", " 󰊢 " .. count .. "  ")
-		end
-	end
-
-	git_status_cache[cwd] = { result = result, time = now }
-	return result
+	local current_line = vim.fn.line(".")
+	local total_lines = vim.fn.line("$")
+	local progress = total_lines > 1 and (current_line - 1) / (total_lines - 1) or 0
+	local icon_index = math.floor(progress * (#progress_icons - 1) + 0.5) + 1
+	return " " .. progress_icons[icon_index] .. " "
 end
 
 -- Git branch
@@ -51,23 +32,12 @@ function components.git_branch()
 
 	local result = ""
 	if branch and branch ~= "" then
-		result = hi_pattern:format("DiffAdd", " 󰘬  " .. branch .. "  ") -- 󰘬
+		result = hi_pattern:format("DiagnosticOk", " 󰘬  " .. branch .. "  ") -- 󰘬
 	end
 
 	git_branch_cache[cwd] = { result = result, time = now }
 	return result
 end
-
--- Diagnostic status (nvim 0.12+)
--- function components.diagnostic_status()
--- 	local status = vim.diagnostic.status(0)
---
--- 	if status == "" then
--- 		return ""
--- 	end
---
--- 	return hi_pattern:format("DiagnosticWarn", "  " .. status .. " ")
--- end
 function components.diagnostic_status()
 	local diagnostics = vim.diagnostic.get(0)
 
@@ -123,13 +93,7 @@ function components.lsp_clients()
 		return ""
 	end
 
-	local client_names = {}
-	for _, client in ipairs(buf_clients) do
-		table.insert(client_names, client.name)
-	end
-
-	local lsp_info = table.concat(client_names, ", ")
-	return hi_pattern:format("Function", "   [" .. lsp_info .. "]  ")
+	return hi_pattern:format("Function", "   ")
 end
 
 -- Filename với icon
@@ -159,25 +123,10 @@ function components.filetype()
 	local icon = require("nvim-web-devicons").get_icon_by_filetype(ft, { default = true })
 
 	if icon then
-		return " " .. icon .. " " .. ft .. " "
+		return " " .. icon .. " "
 	else
 		return " " .. ft .. " "
 	end
-end
-
-function components.indent_info()
-	local expandtab = vim.bo.expandtab
-	local shiftwidth = vim.bo.shiftwidth
-	local tabstop = vim.bo.tabstop
-
-	local indent_info
-	if expandtab then
-		indent_info = "space: " .. shiftwidth
-	else
-		indent_info = "tab:" .. tabstop
-	end
-
-	return hi_pattern:format("Special", "  " .. indent_info)
 end
 
 vim.api.nvim_create_autocmd({ "RecordingEnter", "RecordingLeave" }, {
@@ -223,15 +172,11 @@ end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
-	'%{%v:lua._statusline_component("git_status")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("flutter_device")%}',
-	'%{%v:lua._statusline_component("indent_info")%}',
-	'%{%v:lua._statusline_component("lsp_clients")%}',
-	'%{%v:lua._statusline_component("filetype")%}',
 	'%{%v:lua._statusline_component("position")%}',
 }
 

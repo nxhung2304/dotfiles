@@ -181,6 +181,8 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator"
 
+export FZF_DEFAULT_OPTS="--color=fg:#dcd7ba,bg:-1,hl:#7e9cd8,fg+:#dcd7ba,bg+:#2a2a37,hl+:#7fb4ca,info:#727169,prompt:#957fb8,pointer:#e6c384,marker:#98bb6c,spinner:#957fb8,header:#727169,border:#54546d,gutter:-1 --border=rounded --layout=reverse --info=inline-right --pointer='▌' --marker='▏'"
+
 # fzf-tab
 zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff --color=always $word'
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'  # nếu bạn dùng eza

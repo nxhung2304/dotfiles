@@ -16,9 +16,12 @@ local spinner_timer = nil
 local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
 
 local function ensure_hl()
-	vim.api.nvim_set_hl(0, "TestRunning", { fg = "#fabd2f", bold = true })
-	vim.api.nvim_set_hl(0, "TestPassed", { fg = "#b8bb26", bold = true })
-	vim.api.nvim_set_hl(0, "TestFailed", { fg = "#fb4934", bold = true })
+	local function diagnostic_fg(name)
+		return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+	end
+	vim.api.nvim_set_hl(0, "TestRunning", { fg = diagnostic_fg("DiagnosticWarn"), bold = true })
+	vim.api.nvim_set_hl(0, "TestPassed", { fg = diagnostic_fg("DiagnosticOk"), bold = true })
+	vim.api.nvim_set_hl(0, "TestFailed", { fg = diagnostic_fg("DiagnosticError"), bold = true })
 end
 ensure_hl()
 vim.api.nvim_create_autocmd("ColorScheme", { callback = ensure_hl })

@@ -36,12 +36,16 @@ function M.on_load(name, fn)
 	end
 end
 
+local function highlight_fg(name)
+	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
+end
+
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-	local orangeColor = "#d65d0e"
-	local aquaColor = "#83a598"
-	local filenameColor = "#b8bb26"
-	local pathColor = "#928374"
+	local orangeColor = highlight_fg("Constant")
+	local aquaColor = highlight_fg("Type")
+	local filenameColor = highlight_fg("String")
+	local pathColor = highlight_fg("Comment")
 
 	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
@@ -100,12 +104,16 @@ M.lsp_on_attach = function(client, bufnr)
 	keymap("n", "gl", "<cmd>lua vim.lsp.codelens.run()<CR>", { buffer = bufnr, desc = "Run Code Lens" })
 
 	if client.server_capabilities.codeLensProvider then
-		vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-			buffer = bufnr,
-			callback = function()
-				vim.lsp.codelens.refresh()
-			end,
-		})
+		if vim.fn.has("nvim-0.12") == 1 then
+			vim.lsp.codelens.enable(true, { bufnr = bufnr })
+		else
+			vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
+				buffer = bufnr,
+				callback = function()
+					vim.lsp.codelens.refresh()
+				end,
+			})
+		end
 	end
 
 	if client.server_capabilities.documentHighlightProvider then

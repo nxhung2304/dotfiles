@@ -36,41 +36,11 @@ return {
 					hidden = true,
 					follow = true,
 				},
+				grep = {
+					layout = { preset = "dropdown", preview = true },
+				},
 			},
 		},
- -- 	dashboard = {
- -- 		enabled = true,
- -- 		preset = {
- -- 			header = [[
- -- ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗
- -- ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║
- -- ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║
- -- ██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║
- -- ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║
- -- ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝]],
- -- 			keys = {
- -- 				{ icon = "󰈞 ", key = "f", desc = "Find File", action = ":lua Snacks.picker.files()" },
- -- 				{ icon = "󰈔 ", key = "n", desc = "New File", action = ":ene | startinsert" },
- -- 				{ icon = "󰋚 ", key = "r", desc = "Recent Files", action = ":lua Snacks.picker.recent({ filter = { cwd = true } })" },
- -- 				{ icon = "󰊢 ", key = "g", desc = "Git status", action = ":Neogit" },
- -- 				{ icon = "󰒓 ", key = "c", desc = "Config", action = ":lua Snacks.picker.files({ cwd = vim.fn.stdpath('config') })" },
- -- 				{ icon = "󰒲 ", key = "l", desc = "Lazy", action = ":Lazy" },
- -- 				{ icon = "󰗼 ", key = "q", desc = "Quit", action = ":qa" },
- -- 			},
- -- 		},
- -- 		sections = {
- -- 			{ section = "header" },
- -- 			{
- -- 				section = "recent_files",
- -- 				title = "Recent Files",
- -- 				cwd = true,
- -- 				limit = 5,
- -- 				padding = 1,
- -- 			},
- -- 			{ section = "keys", gap = 1, padding = 1 },
- -- 			{ section = "startup" },
- -- 		},
- -- 	},
 		quickfile = { enabled = true },
 		rename = { enabled = true },
 		statuscolumn = { enabled = true },

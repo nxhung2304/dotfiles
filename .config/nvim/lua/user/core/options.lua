@@ -24,7 +24,6 @@ opt.softtabstop = 2
 
 -- Numbers
 opt.number = true
-opt.numberwidth = 5
 opt.ruler = false
 opt.relativenumber = true
 
@@ -41,9 +40,14 @@ vim.o.winborder = "rounded" -- Default border for all floating windows (hover, s
 -- opt.shortmess:append("sI") -- disable nvim intro
 
 opt.cmdheight = 0 -- Hide command status
+if vim.fn.has("nvim-0.12") == 1 then
+	pcall(function()
+		require("vim._core.ui2").enable()
+	end)
+end
 
 -- Fold
-vim.o.foldcolumn = "1" -- '0' is not bad
+vim.o.foldcolumn = "0" -- '0' is not bad
 vim.o.foldlevel = 99 -- Using ufo provider need a large value, feel free to decrease the value
 vim.o.foldlevelstart = 99
 vim.o.foldenable = true

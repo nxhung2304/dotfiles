@@ -14,6 +14,7 @@ return {
 					prefix = "", -- Could be '■', '▎', 'x', etc.
 					source = "if_many", -- Show source 'always', 'if_many', or 'never'
 					spacing = 4,
+					current_line = true,
 				},
 				signs = {
 					text = {
@@ -23,7 +24,7 @@ return {
 						[vim.diagnostic.severity.INFO] = Configs.icons.diagnostics[4].text,
 					},
 				},
-				update_in_insert = true,
+				update_in_insert = false,
 				underline = true,
 				severity_sort = true,
 				float = {

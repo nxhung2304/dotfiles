@@ -8,19 +8,24 @@ shell_mode = "auto"
 new_cwd = "follow"
 
 [theme]
-name = "gruvbox"
+name = "kanagawa"
 auto_switch = false
 
 [ui]
 sidebar_width = 27
 sidebar_max_width = 45
+sidebar_start_collapsed = true
 mouse_capture = true
 confirm_close = true
 prompt_new_tab_name = false
 pane_borders = true
 pane_gaps = true
+pane_scrollbars = false
 
 status_indicators = "symbols"
+tab_bar_right = [
+  { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
+]
 [ui.toast]
 delivery = "off"
 delay_seconds = 1
@@ -127,14 +132,14 @@ description = "rails server tab"
 [[keys.command]]
 key = "prefix+shift+r"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
-description = "open PR or repo in browser"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page repo"
+description = "open repo in browser"
 
 [[keys.command]]
 key = "prefix+shift+p"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page pulls"
-description = "open repo pulls in browser"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
+description = "open PR (or pulls) in browser"
 
 [[keys.command]]
 key = "prefix+shift+i"

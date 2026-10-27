@@ -123,13 +123,13 @@ return {
 				},
 				window = {
 					documentation = {
-						border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│" },
+						border = "rounded",
 					},
 					completion = {
 						col_offset = -3,
 						side_padding = 0,
 						border = "rounded",
-						winhighlight = "Normal:Normal,FloatBorder:BorderBG,CursorLine:PmenuSel,Search:None",
+						winhighlight = "Normal:Normal,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None",
 					},
 				},
 				experimental = {
