@@ -5,8 +5,13 @@ function _G._statusline_component(name)
 	return components[name]()
 end
 
+local progress_icons = { "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" }
 function components.position()
-	return "%3p%%"
+	local current_line = vim.fn.line(".")
+	local total_lines = vim.fn.line("$")
+	local progress = total_lines > 1 and (current_line - 1) / (total_lines - 1) or 0
+	local icon_index = math.floor(progress * (#progress_icons - 1) + 0.5) + 1
+	return " " .. progress_icons[icon_index] .. " "
 end
 
 -- Git branch
