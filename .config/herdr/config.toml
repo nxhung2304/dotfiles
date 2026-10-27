@@ -138,7 +138,7 @@ description = "open repo in browser"
 key = "prefix+shift+p"
 type = "shell"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
-description = "open PR (or repo) in browser"
+description = "open PR (or pulls) in browser"
 
 [[keys.command]]
 key = "prefix+shift+i"
