@@ -38,17 +38,6 @@ function components.git_branch()
 	git_branch_cache[cwd] = { result = result, time = now }
 	return result
 end
-
--- Diagnostic status (nvim 0.12+)
--- function components.diagnostic_status()
--- 	local status = vim.diagnostic.status(0)
---
--- 	if status == "" then
--- 		return ""
--- 	end
---
--- 	return hi_pattern:format("DiagnosticWarn", "  " .. status .. " ")
--- end
 function components.diagnostic_status()
 	local diagnostics = vim.diagnostic.get(0)
 
@@ -188,8 +177,6 @@ local statusline = {
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("flutter_device")%}',
-	'%{%v:lua._statusline_component("lsp_clients")%}',
-	'%{%v:lua._statusline_component("filetype")%}',
 	'%{%v:lua._statusline_component("position")%}',
 }
 
