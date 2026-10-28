@@ -9,29 +9,58 @@ current_theme() {
     [[ -f $state_file ]] && cat "$state_file" || true
 }
 
+theme_label() {
+    sed -n 's/^label="\(.*\)"$/\1/p' "$themes_dir/$1/theme.conf"
+}
+
+theme_setting() {
+    sed -n "s/^$2=\"\(.*\)\"$/\1/p" "$themes_dir/$1/theme.conf"
+}
+
 list_themes() {
-    local current folder theme_id label
+    local current folder theme_id
     current=$(current_theme)
+    if [[ -n $current && -f $themes_dir/$current/theme.conf ]]; then
+        printf '%s\t● %s\n' "$current" "$(theme_label "$current")"
+    fi
     for folder in "$themes_dir"/*/; do
         theme_id=$(basename "$folder")
-        label=$(sed -n 's/^label="\(.*\)"$/\1/p' "$folder/theme.conf")
-        if [[ $theme_id == "$current" ]]; then
-            printf '%s\t● %s\n' "$theme_id" "$label"
-        else
-            printf '%s\t  %s\n' "$theme_id" "$label"
-        fi
+        [[ $theme_id == "$current" ]] && continue
+        printf '%s\t  %s\n' "$theme_id" "$(theme_label "$theme_id")"
     done
 }
 
-print_swatches() {
-    local ghostty_file="$themes_dir/$1/ghostty" hex row
-    for row in "0 1 2 3 4 5 6 7" "8 9 10 11 12 13 14 15"; do
-        for index in $row; do
-            hex=$(sed -n "s/^palette = $index=#\([0-9a-fA-F]\{6\}\)$/\1/p" "$ghostty_file")
-            printf '\033[38;2;%d;%d;%dm███\033[0m ' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
-        done
-        printf '\n'
-    done
+ghostty_setting_color() {
+    sed -n "s/^$2 = #\{0,1\}\([0-9a-fA-F]\{6\}\)$/\1/p" "$1"
+}
+
+ghostty_palette_color() {
+    sed -n "s/^palette = $2=#\([0-9a-fA-F]\{6\}\)$/\1/p" "$1"
+}
+
+foreground_escape() {
+    printf '\033[38;2;%d;%d;%dm' "0x${1:0:2}" "0x${1:2:2}" "0x${1:4:2}"
+}
+
+background_escape() {
+    printf '\033[48;2;%d;%d;%dm' "0x${1:0:2}" "0x${1:2:2}" "0x${1:4:2}"
+}
+
+print_preview() {
+    local ghostty_file="$themes_dir/$1/ghostty"
+    local line_start text comment keyword function_name string number
+    line_start=$(background_escape "$(ghostty_setting_color "$ghostty_file" background)")
+    text=$(foreground_escape "$(ghostty_setting_color "$ghostty_file" foreground)")
+    comment=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 8)")
+    keyword=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 5)")
+    function_name=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 4)")
+    string=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 2)")
+    number=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 3)")
+
+    printf '%s%s-- greet the user by name\033[K\033[0m\n' "$line_start" "$comment"
+    printf '%s%slocal function %sgreet%s(name)\033[K\033[0m\n' "$line_start" "$keyword" "$function_name" "$text"
+    printf '%s  %sreturn %s"hello, "%s .. name .. %s42\033[K\033[0m\n' "$line_start" "$keyword" "$string" "$text" "$number"
+    printf '%s%send\033[K\033[0m\n' "$line_start" "$keyword"
 }
 
 apply_ghostty() {
@@ -58,9 +87,14 @@ apply_claude() {
 }
 
 apply_nvim() {
-    local nvim_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
+    local nvim_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim" nvim_global
     mkdir -p "$nvim_data_dir"
-    printf '%s\n' "$1" > "$nvim_data_dir/colorscheme.txt"
+    {
+        printf '%s\n' "$1"
+        for nvim_global in $2; do
+            printf '%s\n' "$nvim_global"
+        done
+    } > "$nvim_data_dir/colorscheme.txt"
 }
 
 apply_fzf() {
@@ -75,13 +109,11 @@ apply_theme() {
         exit 1
     fi
 
-    local nvim_colorscheme
-    nvim_colorscheme=$(sed -n 's/^nvim_colorscheme="\(.*\)"$/\1/p' "$folder/theme.conf")
 
     apply_ghostty "$folder"
     apply_herdr "$folder"
     apply_claude "$folder"
-    apply_nvim "$nvim_colorscheme"
+    apply_nvim "$(theme_setting "$theme_id" nvim_colorscheme)" "$(theme_setting "$theme_id" nvim_globals)"
     apply_fzf "$folder"
 
     mkdir -p "$(dirname "$state_file")"
@@ -93,12 +125,17 @@ case ${1:-} in
         list_themes | cut -f1
         ;;
     --preview)
-        print_swatches "$2"
+        print_preview "$2"
         ;;
     "")
-        selected=$(list_themes | fzf --delimiter=$'\t' --with-nth=2 --prompt='theme ❯ ' \
-            --preview="$0 --preview {1}" --preview-window=down,3,border-top) || exit 0
-        apply_theme "$(cut -f1 <<< "$selected")"
+        theme_before_picker=$(current_theme)
+        if selected=$(list_themes | fzf --delimiter=$'\t' --with-nth=2 --prompt='theme ❯ ' \
+            --preview="$0 --preview {1}" --preview-window=down,5,border-top \
+            --bind="focus:execute-silent($0 {1})"); then
+            apply_theme "$(cut -f1 <<< "$selected")"
+        elif [[ -n $theme_before_picker ]]; then
+            apply_theme "$theme_before_picker"
+        fi
         ;;
     *)
         apply_theme "$1"
