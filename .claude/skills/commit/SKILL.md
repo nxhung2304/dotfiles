@@ -12,12 +12,13 @@ Read staged changes → format the commit message → create the commit → opti
 - `auto` (default `true`): if `true`, commit immediately with no confirmation; if `false`, show the message to the user and only commit after they approve it
 - `push` (default `false`): if `true`, run `git push` after the commit and report the push result
 - `footer` (default `false`): if `true`, append a blank line + the `Co-Authored-By:` trailer for the current model to the commit message
+- `scope` (default empty): if given, the subject MUST use `type(scope): subject`; if empty, use `type: subject`. Never ignore a `scope` passed in ARGUMENTS
 
 No args = `format=full auto=true push=false footer=false`.
 
 **Format (`full`):**
 ```
-type: subject (<70 chars, imperative)
+type(scope): subject (<70 chars, imperative)
 
 - What changed (bullet, no markdown)
 - Why it matters
@@ -29,7 +30,7 @@ closes #<issue>
 
 **Format (`short`):**
 ```
-type: subject (<70 chars, imperative)
+type(scope): subject (<70 chars, imperative)
 ```
 
 With `footer=true`, add after the message:
@@ -41,7 +42,7 @@ Co-Authored-By: <current model> <noreply@anthropic.com>
 **Types:** feat | fix | refactor | docs | test | chore | perf | style
 
 **Steps:**
-1. `git status` + `git diff --staged`
+1. `git status` + `git diff --staged`. If any file has both staged and unstaged changes (`MM` in `git status --short`), list those files and ask the user to confirm before committing, even with `auto=true` — the staged part alone may not build
 2. Format the message following the template for `format` (add the footer if `footer=true`)
 3. If `auto=false` → show the message to the user and ask for approval before continuing
 4. `git commit -m "$(cat <<'EOF'\n...\nEOF)"` (use a heredoc whenever the message is multi-line or has a footer)
@@ -49,7 +50,8 @@ Co-Authored-By: <current model> <noreply@anthropic.com>
 6. If `push=true` → `git push`, then report the commit hash and push result
 
 **Rules:**
-- Subject < 70 chars, imperative mood
+- Subject < 70 chars, imperative mood (the length includes `(scope)`)
+- `scope` given → subject is `type(scope): ...` in both `full` and `short`; no `scope` → drop the parentheses and use `type: ...`
 - Never put `closes #<issue>` in the subject; it only goes at the end of the bullets in `full` format. `short` has no `closes` line
 - `full`: bullets use `-`, no markdown; WHAT & WHY, not HOW
 - `short`: single line only, no body, no bullets; if there are multiple unrelated changes, summarize the most important one
