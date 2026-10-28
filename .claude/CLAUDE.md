@@ -31,11 +31,12 @@
 - Any claim that goes into a message for someone else (leader, PR, issue) must already be verified or explicitly marked as a guess inside that message.
 
 ## Code style
+- Before writing or modifying code, look up the relevant rules in `~/.claude/code-rules/` with the `rule-lookup` agent and follow them.
 - Variable and method names must be self-explanatory and contextually appropriate — a reader should understand their purpose immediately without needing extra explanation.
 - Do not add comments when writing or modifying code. Well-named code is the explanation; a comment restating what the code already says is noise. This includes section headers, inline notes, and doc comments except as allowed below.
 - Doc comments are allowed where the codebase already has a doc-comment convention (e.g. public API); follow that convention.
 - The only exception is a comment that records a non-obvious *reason* a reader could not recover from the code — a trap that already caused a bug, a workaround for a framework/library behaviour, or a deliberate choice that looks wrong. Even then: **ask me first and wait for my approval before adding it.** Describe the comment you propose and why, then let me decide.
-- When a comment is approved (including doc comments), write it short and to the point: state the main idea in plain language, no restating what the code already shows, no filler wording. Prefer one line over a paragraph.
+- When a comment is approved (including doc comments), write it short and to the point: state the main idea in plain language, no restating what the code already shows, no filler wording. Keep each idea to one line, and put a new idea on its own line instead of joining ideas with `;`.
 - Never delete or rewrite existing comments unless I ask for it. If my change makes an existing comment wrong, flag it in one line instead of editing it.
 - Prefer the simplest solution a mid-level dev on this codebase would write. Use advanced patterns only when the task needs them, and say why.
 - When code I'm writing in the current change becomes a self-contained unit (own state/concurrency, reusable, testable alone) or a function grows hard to read, propose splitting it into a new file or function — say what moves and why, then wait for my approval. This applies only to new code from the current change; splitting existing code still follows the Change scope rules.
