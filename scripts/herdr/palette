@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+group_entries() {
+    local group=$1
+    local script=$2
+    local label
+    while IFS= read -r label; do
+        printf '%-9s %s\t%s\t%s\n' "$group" "$label" "$script" "$label"
+    done < <("$SCRIPT_DIR/$script" --list)
+}
+
+build_entries() {
+    printf '%-9s %s\t%s\t\n' "Agents" "Status" "agents-menu"
+    group_entries "Worktree" "wt-menu"
+    group_entries "GitHub" "github-menu"
+    group_entries "Tool" "tools-menu"
+}
+
+selection=$(build_entries | pick "run" --delimiter=$'\t' --with-nth=1 --tiebreak=index || true)
+[[ -n $selection ]] || exit 0
+
+IFS=$'\t' read -r _ script label <<<"$selection"
+exec "$SCRIPT_DIR/$script" ${label:+"$label"}

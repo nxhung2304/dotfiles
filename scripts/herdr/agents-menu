@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+readonly PREVIEW_LINES=30
+readonly PREVIEW_WINDOW="right:55%"
+
+status_cell() {
+    case $1 in
+        blocked) printf '\033[1;31m◆ blocked\033[0m' ;;
+        done) printf '\033[32m✔ done   \033[0m' ;;
+        working) printf '\033[33m◐ working\033[0m' ;;
+        idle) printf '\033[2m○ idle   \033[0m' ;;
+        *) printf '? %-7s' "$1" ;;
+    esac
+}
+
+agent_rows() {
+    local workspaces
+    workspaces=$(herdr workspace list)
+    herdr agent list | jq -r --argjson workspaces "$workspaces" '
+        def rank: {"blocked": 0, "done": 1, "working": 2, "idle": 3}[.] // 4;
+        def workspace_label($id):
+            ($workspaces.result.workspaces | map(select(.workspace_id == $id)) | first | .label) // $id;
+        .result.agents | sort_by(.agent_status | rank) | .[]
+        | [.agent_status, .pane_id, .tab_id, .workspace_id, workspace_label(.workspace_id), (.terminal_title_stripped // "")]
+        | @tsv'
+}
+
+summary_header() {
+    cut -f1 <<<"$1" | sort | uniq -c | awk '{ printf "%s %s   ", $2, $1 }'
+}
+
+build_menu() {
+    local status pane_id tab_id workspace_id workspace_label title
+    while IFS=$'\t' read -r status pane_id tab_id workspace_id workspace_label title; do
+        printf '%s  %s  %s\t%s\t%s\t%s\n' "$(status_cell "$status")" "$workspace_label" "$title" "$pane_id" "$tab_id" "$workspace_id"
+    done <<<"$1"
+}
+
+focus_agent() {
+    herdr workspace focus "$1" >/dev/null
+    herdr tab focus "$2" >/dev/null
+    herdr agent focus "$3" >/dev/null
+}
+
+rows=$(agent_rows)
+if [[ -z $rows ]]; then
+    read -r -p "no agents running - press enter to close" _
+    exit 0
+fi
+
+selection=$(build_menu "$rows" | pick "agent" --ansi --delimiter=$'\t' --with-nth=1 --tiebreak=index \
+    --header="$(summary_header "$rows")" \
+    --preview "herdr agent read {2} --lines $PREVIEW_LINES" --preview-window "$PREVIEW_WINDOW") || exit 0
+[[ -n $selection ]] || exit 0
+
+IFS=$'\t' read -r _ pane_id tab_id workspace_id <<<"$selection"
+focus_agent "$workspace_id" "$tab_id" "$pane_id" || { pause_on_failure; exit 1; }

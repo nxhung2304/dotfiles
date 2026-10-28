@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+readonly ACTION_CURRENT_PR="Current PR"
+readonly ACTION_PULLS="Pull requests"
+readonly ACTION_ISSUES="Issues"
+readonly ACTION_REPO="Open repository"
+
+run_action() {
+    case $1 in
+        "$ACTION_CURRENT_PR") "$SCRIPT_DIR/open-git-page" current ;;
+        "$ACTION_PULLS") "$SCRIPT_DIR/open-git-page" pulls ;;
+        "$ACTION_ISSUES") "$SCRIPT_DIR/open-git-page" issues ;;
+        "$ACTION_REPO") "$SCRIPT_DIR/open-git-page" repo ;;
+    esac
+}
+
+action_labels() {
+    printf '%s\n' "$ACTION_CURRENT_PR" "$ACTION_PULLS" "$ACTION_ISSUES" "$ACTION_REPO"
+}
+
+if [[ ${1:-} == --list ]]; then
+    action_labels
+    exit 0
+fi
+
+selected_action=${1:-$(action_labels | pick "github" || true)}
+[[ -n $selected_action ]] || exit 0
+
+run_action "$selected_action" || { pause_on_failure; exit 1; }

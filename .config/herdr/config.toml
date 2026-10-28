@@ -112,40 +112,12 @@ command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
 description = "clear pane screen"
 
 [[keys.command]]
-key = "prefix+shift+c"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab claude claude"
-description = "claude code tab"
-
-[[keys.command]]
-key = "prefix+shift+e"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab neovim nvim"
-description = "neovim tab"
-
-[[keys.command]]
-key = "prefix+shift+s"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/focus-or-create-tab rails-server bundle exec rails server"
-description = "rails server tab"
-
-[[keys.command]]
-key = "prefix+shift+r"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page repo"
-description = "open repo in browser"
-
-[[keys.command]]
-key = "prefix+shift+p"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page current"
-description = "open PR (or pulls) in browser"
-
-[[keys.command]]
-key = "prefix+shift+i"
-type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page issues"
-description = "open repo issues in browser"
+key = "prefix+m"
+type = "popup"
+width = "95%"
+height = "70%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/palette"
+description = "command palette: agents, worktree, github, tools"
 
 [[keys.command]]
 key = "prefix+t"
@@ -169,16 +141,8 @@ switch_ascii_input_source_in_prefix = true
 [ui.sidebar.agents.rows_by_agent]
 claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
 
-[[keys.command]]
-key = "prefix+o"
-type = "popup"
-width = "90%"
-height = "70%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-menu"
-description = "worktrunk: worktree menu"
-
 [theme.custom]
 accent = "#a89984"
 panel_bg = "#282828"
-active_row_bg = "#3c3836"
-selection_bg = "#504945"
+active_row_bg = "#32302f"
+selection_bg = "#45403d"

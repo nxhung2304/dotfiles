@@ -106,7 +106,16 @@ run_action() {
     esac
 }
 
-selected_action=$(printf '%s\n' "$ACTION_SWITCH" "$ACTION_NEW" "$ACTION_FINISH" "$ACTION_REMOVE" | pick "worktree") || exit 0
+action_labels() {
+    printf '%s\n' "$ACTION_SWITCH" "$ACTION_NEW" "$ACTION_FINISH" "$ACTION_REMOVE"
+}
+
+if [[ ${1:-} == --list ]]; then
+    action_labels
+    exit 0
+fi
+
+selected_action=${1:-$(action_labels | pick "worktree" || true)}
 [[ -n $selected_action ]] || exit 0
 
 run_action "$selected_action" || { pause_on_failure; exit 1; }

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+readonly TOOL_CLAUDE="Claude"
+readonly TOOL_NEOVIM="Neovim"
+readonly TOOL_RAILS_SERVER="Rails server"
+
+run_tool() {
+    case $1 in
+        "$TOOL_CLAUDE") "$SCRIPT_DIR/focus-or-create-tab" claude claude ;;
+        "$TOOL_NEOVIM") "$SCRIPT_DIR/focus-or-create-tab" neovim nvim ;;
+        "$TOOL_RAILS_SERVER") "$SCRIPT_DIR/focus-or-create-tab" rails-server bundle exec rails server ;;
+    esac
+}
+
+tool_labels() {
+    printf '%s\n' "$TOOL_CLAUDE" "$TOOL_NEOVIM" "$TOOL_RAILS_SERVER"
+}
+
+if [[ ${1:-} == --list ]]; then
+    tool_labels
+    exit 0
+fi
+
+selected_tool=${1:-$(tool_labels | pick "tool" || true)}
+[[ -n $selected_tool ]] || exit 0
+
+run_tool "$selected_tool" || { pause_on_failure; exit 1; }
