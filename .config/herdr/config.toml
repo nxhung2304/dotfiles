@@ -172,8 +172,8 @@ claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
 [[keys.command]]
 key = "prefix+o"
 type = "popup"
-width = "60%"
-height = "40%"
+width = "90%"
+height = "70%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-menu"
 description = "worktrunk: worktree menu"
 
