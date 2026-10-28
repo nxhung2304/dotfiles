@@ -83,7 +83,7 @@ if [ -n "$rate_seg" ]; then
   usage_line="${usage_line:+${usage_line}, }${rate_seg}"
 fi
 if [ -n "$usage_line" ]; then
-  line="${line}${separator}${usage_line}"
+  printf "%s\n%s" "$line" "$usage_line"
+else
+  printf "%s" "$line"
 fi
-
-printf "%s" "$line"
