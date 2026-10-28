@@ -44,7 +44,6 @@ eval "$(zoxide init zsh)"
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH="/usr/local/opt/postgresql@17/bin:$PATH"
 export PATH="$HOME/fvm/default/bin:$PATH"
-export PATH="~/Dev/personal/scripts/tmux-sessionizer:$PATH"
 
 # ASDF
 export PATH="$HOME/.asdf/shims:$PATH"
@@ -123,15 +122,6 @@ export PATH="$HOME/.local/bin:$PATH"
 alias n="nvim"
 alias v="nvim"
 alias c="clear"
-t() {
-  if [ -z "$TMUX" ]; then
-    tmux new-session -As "$(basename "$PWD")"
-  else
-    tmux
-  fi
-}
-alias ta="tmux attach"
-alias da="tmux detach"
 
 alias wtn="wt switch --create"
 alias wtd="wt remove"
@@ -158,10 +148,6 @@ alias ip="ipconfig getifaddr en0"
 # Dev
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
 
-claude() {
-  tmux rename-window "claude" 2>/dev/null
-  command claude "$@"
-}
 export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 
 alias ffd="fvm flutter devices"

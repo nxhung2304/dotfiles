@@ -40,17 +40,18 @@ local function highlight_fg(name)
 	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
 end
 
+local function set_winbar_highlights()
+	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = highlight_fg("Constant"), bold = true })
+	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = highlight_fg("Type"), bold = true })
+	vim.api.nvim_set_hl(0, "WinBarPath", { fg = highlight_fg("Comment") })
+	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = highlight_fg("String"), bold = true })
+end
+
+set_winbar_highlights()
+vim.api.nvim_create_autocmd("ColorScheme", { callback = set_winbar_highlights })
+
 M.get_filepath_with_navic = function()
 	local filepath = vim.fn.expand("%:~:.")
-	local orangeColor = highlight_fg("Constant")
-	local aquaColor = highlight_fg("Type")
-	local filenameColor = highlight_fg("String")
-	local pathColor = highlight_fg("Comment")
-
-	vim.api.nvim_set_hl(0, "NavicHighlight1", { fg = orangeColor, bold = true })
-	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = aquaColor, bold = true })
-	vim.api.nvim_set_hl(0, "WinBarPath", { fg = pathColor })
-	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = filenameColor, bold = true })
 
 	local path_parts = vim.split(filepath, "/")
 	local filename = path_parts[#path_parts]
