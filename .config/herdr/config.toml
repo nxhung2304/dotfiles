@@ -117,7 +117,7 @@ type = "popup"
 width = "95%"
 height = "70%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/palette"
-description = "command palette: agents, worktree, github, tools"
+description = "command palette: agents, worktree, github, theme, files, reload"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true
