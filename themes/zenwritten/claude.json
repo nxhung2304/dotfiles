@@ -1,0 +1,33 @@
+{
+  "name": "Zenwritten",
+  "base": "dark",
+  "overrides": {
+    "claude": "#b77e64",
+    "claudeShimmer": "#bbbbbb",
+    "text": "#bbbbbb",
+    "inverseText": "#191919",
+    "inactive": "#8e8e8e",
+    "subtle": "#3d3839",
+    "suggestion": "#6099c0",
+    "permission": "#66a5ad",
+    "remember": "#b279a7",
+    "success": "#819b69",
+    "error": "#de6e7c",
+    "warning": "#d68c67",
+    "merged": "#b279a7",
+    "promptBorder": "#3d3839",
+    "planMode": "#66a5ad",
+    "autoAccept": "#b279a7",
+    "bashBorder": "#de6e7c",
+    "ide": "#6099c0",
+    "diffAdded": "#2c3027",
+    "diffRemoved": "#3c282b",
+    "diffAddedDimmed": "#222520",
+    "diffRemovedDimmed": "#2b2122",
+    "diffAddedWord": "#4d5a41",
+    "diffRemovedWord": "#7c444a",
+    "userMessageBackground": "#242424",
+    "userMessageBackgroundHover": "#404040",
+    "selectionBg": "#404040"
+  }
+}

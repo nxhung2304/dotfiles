@@ -72,5 +72,5 @@ chmod +x install.sh
 | `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane`, `scripts/herdr/` | Herdr session, focus-or-create tab, git page and drag-drop helpers |
 | `scripts/open-or-focus-tab` | Open or focus an existing terminal tab |
 | `scripts/theme-switch`, `themes/` | Switch Ghostty, Herdr, Neovim, Claude Code and fzf to one theme at once (`prefix+t` in Herdr, `:CS` in Neovim, or `scripts/theme-switch <name>`); Starship and eza use ANSI colors, so they follow Ghostty. Herdr's `[theme.custom]` block in `config.toml` is rewritten on every switch |
-| `scripts/themes/generate.py` | Palettes of the switchable themes; regenerates `themes/` |
+| `scripts/themes/generate.py` | Palettes of the switchable themes; regenerates `themes/` and warns about low-contrast color pairs |
 

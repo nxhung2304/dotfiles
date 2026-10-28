@@ -1,0 +1,33 @@
+{
+  "name": "Melange",
+  "base": "dark",
+  "overrides": {
+    "claude": "#ebc06d",
+    "claudeShimmer": "#ece1d7",
+    "text": "#ece1d7",
+    "inverseText": "#292522",
+    "inactive": "#867462",
+    "subtle": "#504b46",
+    "suggestion": "#7f91b2",
+    "permission": "#7b9695",
+    "remember": "#b380b0",
+    "success": "#78997a",
+    "error": "#bd8183",
+    "warning": "#e49b5d",
+    "merged": "#b380b0",
+    "promptBorder": "#504b46",
+    "planMode": "#7b9695",
+    "autoAccept": "#b380b0",
+    "bashBorder": "#bd8183",
+    "ide": "#7f91b2",
+    "diffAdded": "#373a32",
+    "diffRemoved": "#443633",
+    "diffAddedDimmed": "#302f2a",
+    "diffRemovedDimmed": "#362d2b",
+    "diffAddedWord": "#505f4e",
+    "diffRemovedWord": "#735352",
+    "userMessageBackground": "#34302c",
+    "userMessageBackgroundHover": "#403a36",
+    "selectionBg": "#403a36"
+  }
+}

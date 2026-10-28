@@ -1,0 +1,33 @@
+{
+  "name": "Vague",
+  "base": "dark",
+  "overrides": {
+    "claude": "#f3be7c",
+    "claudeShimmer": "#cdcdcd",
+    "text": "#cdcdcd",
+    "inverseText": "#141415",
+    "inactive": "#606079",
+    "subtle": "#3d3d3d",
+    "suggestion": "#6e94b2",
+    "permission": "#b4d4cf",
+    "remember": "#bb9dbd",
+    "success": "#7fa563",
+    "error": "#d8647e",
+    "warning": "#e8b589",
+    "merged": "#bb9dbd",
+    "promptBorder": "#3d3d3d",
+    "planMode": "#b4d4cf",
+    "autoAccept": "#bb9dbd",
+    "bashBorder": "#d8647e",
+    "ide": "#6e94b2",
+    "diffAdded": "#272e23",
+    "diffRemoved": "#372228",
+    "diffAddedDimmed": "#1e211c",
+    "diffRemovedDimmed": "#261b1e",
+    "diffAddedWord": "#4a5c3c",
+    "diffRemovedWord": "#763c4a",
+    "userMessageBackground": "#252530",
+    "userMessageBackgroundHover": "#333738",
+    "selectionBg": "#333738"
+  }
+}
