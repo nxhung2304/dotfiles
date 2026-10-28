@@ -184,3 +184,9 @@ width = "60%"
 height = "20%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-create"
 description = "worktrunk: new worktree"
+
+[theme.custom]
+accent = "#a89984"
+panel_bg = "#282828"
+active_row_bg = "#3c3836"
+selection_bg = "#504945"
