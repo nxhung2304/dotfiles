@@ -49,8 +49,6 @@ end, { expr = true, desc = "Substitute in file" })
 keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
 keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
 
-keymap("n", "<leader>ci", "<cmd>NewIssueSpec<cr>", { desc = "New issue file in specs/issues" })
-
 keymap("t", "<Esc>", "<C-\\><C-n>")
 
 keymap("v", ">", ">gv", { desc = "Indent in" })
@@ -126,50 +124,82 @@ vim.keymap.set("t", "jk", [[<C-\><C-n>]])
 vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]])
 
 -- Claude Code integration
+local function herdr_json(args)
+	local output = vim.fn.system(vim.list_extend({ "herdr" }, args))
+	if vim.v.shell_error ~= 0 then
+		return nil
+	end
+	local ok, decoded = pcall(vim.json.decode, output)
+	return ok and decoded or nil
+end
+
 local function find_claude_pane()
-	local result = vim.fn.systemlist("tmux list-panes -s -F '#{window_id} #{pane_id} #{pane_current_command}' 2>/dev/null")
-	for _, line in ipairs(result) do
-		if line:lower():match("claude") then
-			local win, pane = line:match("^(%S+)%s+(%S+)")
-			return win, pane
+	local listing = herdr_json({ "pane", "list" })
+	if not listing then
+		return nil
+	end
+	local current_workspace_id
+	for _, pane in ipairs(listing.result.panes) do
+		if pane.pane_id == vim.env.HERDR_PANE_ID then
+			current_workspace_id = pane.workspace_id
+		end
+	end
+	for _, pane in ipairs(listing.result.panes) do
+		if pane.agent == "claude" and pane.workspace_id == current_workspace_id then
+			return pane.tab_id, pane.pane_id
 		end
 	end
 end
 
-local function send_to_claude(ref)
-	if vim.fn.exists("$TMUX") == 0 then
-		vim.notify("Not inside a tmux session", vim.log.levels.WARN)
+local function send_to_claude(lines)
+	if not vim.env.HERDR_PANE_ID then
+		vim.notify("Not inside a herdr session", vim.log.levels.WARN)
 		return
 	end
 
-	local function do_send(win, pane)
-		vim.fn.system(string.format("tmux send-keys -t %s -l %s", pane, vim.fn.shellescape(ref)))
-		vim.fn.system(string.format("tmux send-keys -t %s -l '\\'", pane))
-		vim.fn.system(string.format("tmux send-keys -t %s Enter", pane))
-		vim.fn.system(string.format("tmux select-window -t %s", win))
-		vim.fn.system(string.format("tmux select-pane -t %s", pane))
+	local function do_send(tab_id, pane_id)
+		for _, line in ipairs(lines) do
+			vim.fn.system({ "herdr", "pane", "send-text", pane_id, line .. "\\" })
+			vim.fn.system({ "herdr", "pane", "send-keys", pane_id, "enter" })
+		end
+		vim.fn.system({ "herdr", "tab", "focus", tab_id })
+		vim.fn.system({ "herdr", "agent", "focus", pane_id })
 	end
 
-	local win, pane = find_claude_pane()
-	if pane then
-		do_send(win, pane)
-	else
-		vim.fn.system("tmux new-window 'claude'")
-		vim.defer_fn(function()
-			win, pane = find_claude_pane()
-			if pane then
-				do_send(win, pane)
-			else
-				vim.notify("Could not find Claude Code pane after launch", vim.log.levels.WARN)
-			end
-		end, 3500)
+	local tab_id, pane_id = find_claude_pane()
+	if pane_id then
+		do_send(tab_id, pane_id)
+		return
 	end
+
+	local current = herdr_json({ "pane", "current", "--current" })
+	if not current then
+		vim.notify("Could not read current herdr pane", vim.log.levels.WARN)
+		return
+	end
+	local current_pane = current.result.pane
+	local created = herdr_json({
+		"tab", "create",
+		"--workspace", current_pane.workspace_id,
+		"--cwd", current_pane.cwd,
+		"--label", "claude",
+		"--focus",
+	})
+	if not created then
+		vim.notify("Could not create herdr tab for Claude Code", vim.log.levels.WARN)
+		return
+	end
+	local root_pane_id = created.result.root_pane.pane_id
+	vim.fn.system({ "herdr", "pane", "run", root_pane_id, "claude" })
+	vim.defer_fn(function()
+		do_send(created.result.tab.tab_id, root_pane_id)
+	end, 3500)
 end
 
 keymap("n", "<leader>cc", function()
 	local lnum = vim.fn.line(".")
 	local rel = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:.")
-	send_to_claude(string.format("@%s:%d", rel, lnum))
+	send_to_claude({ string.format("%s:%d", rel, lnum) })
 end, { desc = "Send current line ref to Claude Code" })
 
 vim.keymap.set("x", "<leader>cc", function()
@@ -178,7 +208,11 @@ vim.keymap.set("x", "<leader>cc", function()
 	local s = math.min(anchor, cursor)
 	local e = math.max(anchor, cursor)
 	local rel = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:.")
-	send_to_claude(string.format("@%s:%d-%d", rel, s, e))
+	local selected_lines = vim.api.nvim_buf_get_lines(0, s - 1, e, false)
+	local lines = { string.format("%s:%d-%d", rel, s, e), "```" }
+	vim.list_extend(lines, selected_lines)
+	table.insert(lines, "```")
+	send_to_claude(lines)
 end, { noremap = true, silent = true, desc = "Send selection ref to Claude Code" })
 
 -- Generic test runner (framework detected per buffer/project — see

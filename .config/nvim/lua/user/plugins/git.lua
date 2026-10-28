@@ -236,6 +236,9 @@ return {
 					base = "#FFCC66",
 				},
 			})
+			-- conflict.nvim maps <LeftMouse> even when ui.markers = false
+			-- the mapping does nothing then, but swallows statusline clicks
+			vim.keymap.del("n", "<LeftMouse>")
 		end,
 	},
 }
