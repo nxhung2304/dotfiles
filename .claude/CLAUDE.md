@@ -7,6 +7,7 @@
 - If I ask a question, answer it. Don't edit files unless I asked for a change.
 - If my request or assumption looks wrong or risky, say so before doing it.
 - When mentioning a Japanese keyword (UI label, setting name, screen/button/menu name, OS permission option), write it in English with the original Japanese in parentheses, e.g. "Always (常に許可)", "Settings (設定)", "On (オン)". Code identifiers and string literals stay as-is.
+- When producing text I will paste somewhere else (PR description, issue/PR comment, Slack message), write it to a file and give me a `pbcopy < <path>` command instead of only printing it — long Japanese text copied from the terminal can lose characters.
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
 - Structure every chat reply as below, omitting any section that has no content:
   - **Kết luận** — 1–2 lines that directly answer the question.
