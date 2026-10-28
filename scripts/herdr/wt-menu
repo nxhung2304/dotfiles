@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+readonly ACTION_SWITCH="Switch worktree"
+readonly ACTION_NEW="New worktree"
+readonly ACTION_FINISH="Finish (merge + clean up)"
+readonly ACTION_REMOVE="Remove another worktree"
+
+pick() {
+    fzf --prompt="$1> " --height=100% --reverse "${@:2}"
+}
+
+confirm() {
+    local answer
+    read -r -p "$1 [y/N] " answer
+    [[ $answer == y ]]
+}
+
+pause_on_failure() {
+    echo
+    read -r -p "failed - press enter to close" _
+}
+
+repo_root() {
+    git rev-parse --show-toplevel
+}
+
+changed_files() {
+    local root=$1
+    { git -C "$root" diff --name-only HEAD; git -C "$root" ls-files --others --exclude-standard; } | sort -u
+}
+
+worktree_path_for() {
+    wt list --format=json | jq -r --arg branch "$1" '.items[] | select(.branch == $branch) | .worktree.path'
+}
+
+create_worktree_with_files() {
+    local root=$1
+    local branch_name=$2
+    shift 2
+    git -C "$root" stash push -u -- "$@"
+    if ! wt switch --create "$branch_name"; then
+        git -C "$root" stash pop
+        return 1
+    fi
+    git -C "$(worktree_path_for "$branch_name")" stash pop
+}
+
+new_worktree() {
+    local branch_name root file
+    local carried_files=()
+    read -r -p "new branch> " branch_name
+    [[ -n $branch_name ]] || return 0
+
+    root=$(repo_root)
+    while IFS= read -r file; do
+        [[ -n $file ]] && carried_files+=("$file")
+    done < <(changed_files "$root" | pick "carry files (tab=select, enter=confirm, esc=none)" --multi || true)
+
+    if [[ ${#carried_files[@]} -eq 0 ]]; then
+        wt switch --create "$branch_name"
+        return
+    fi
+    create_worktree_with_files "$root" "$branch_name" "${carried_files[@]}"
+}
+
+finish_worktree() {
+    local current_branch
+    current_branch=$(git branch --show-current)
+    confirm "merge '$current_branch' into default branch and remove worktree?" || return 0
+    wt merge
+}
+
+other_worktree_branches() {
+    local current_path
+    current_path=$(git rev-parse --show-toplevel)
+    wt list --format=json | jq -r --arg current "$current_path" \
+        '.items[] | select(.worktree.path != $current) | .branch'
+}
+
+remove_other_worktree() {
+    local branch_name
+    branch_name=$(other_worktree_branches | pick "remove") || return 0
+    [[ -n $branch_name ]] || return 0
+    confirm "remove worktree '$branch_name'?" || return 0
+    wt remove "$branch_name"
+}
+
+run_action() {
+    case $1 in
+        "$ACTION_SWITCH") wt switch ;;
+        "$ACTION_NEW") new_worktree ;;
+        "$ACTION_FINISH") finish_worktree ;;
+        "$ACTION_REMOVE") remove_other_worktree ;;
+    esac
+}
+
+selected_action=$(printf '%s\n' "$ACTION_SWITCH" "$ACTION_NEW" "$ACTION_FINISH" "$ACTION_REMOVE" | pick "worktree") || exit 0
+[[ -n $selected_action ]] || exit 0
+
+run_action "$selected_action" || { pause_on_failure; exit 1; }

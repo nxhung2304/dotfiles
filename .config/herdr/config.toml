@@ -172,18 +172,10 @@ claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
 [[keys.command]]
 key = "prefix+o"
 type = "popup"
-width = "80%"
-height = "60%"
-command = "wt switch"
-description = "worktrunk: switch worktree"
-
-[[keys.command]]
-key = "prefix+shift+o"
-type = "popup"
 width = "60%"
-height = "20%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-create"
-description = "worktrunk: new worktree"
+height = "40%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-menu"
+description = "worktrunk: worktree menu"
 
 [theme.custom]
 accent = "#a89984"
