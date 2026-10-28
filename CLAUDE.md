@@ -9,9 +9,8 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 ## Setup Commands
 
 - **Initial setup (full installation)**: `./install.sh` - Sets up Oh My Zsh, installs Zsh plugins, asdf runtime manager, direnv, and creates symlinks
-- **Migrate existing dotfiles**: `./script.sh` - Copies existing dotfiles to repository and creates symlinks for centralized management
-- **Make scripts executable**: `chmod +x script.sh` or `chmod +x install.sh`
-- **Environment setup**: Copy `.env.sample` to `~/.env` and configure environment variables
+- **Make scripts executable**: `chmod +x install.sh`
+- **Environment setup**: Create `~/.env` for machine-specific secrets and values (e.g. `IPHONE_16_UDID`, `DATABASE_PASSWORD`); it is sourced by `.zshrc` and never committed
 
 ## Architecture and Structure
 
@@ -56,16 +55,14 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ### Script Utilities
 - **tmux-sessionizer**: Custom tmux session management script (moved to `~/.local/bin/scripts/` during install)
-- **Dotfile management**: Two approaches:
-  - `install.sh`: Full environment setup including Oh My Zsh, plugins, and package managers
-  - `script.sh`: Migration tool for existing dotfiles to centralized management
+- **Dotfile management**: `install.sh` runs the modular steps in `scripts/install/` (Oh My Zsh, plugins, package managers, stow symlinks)
 
 ### Managed Configuration Files
 - **Dotfiles**: `.zshrc`, `.tmux.conf`, `.gitconfig`, `.vimrc`
 - **Config directories**: `nvim`, `wezterm`, `tmux`, `alacritty` (in `.config/`)
 
 ## Environment Configuration
-- Copy `.env.sample` to `~/.env` for environment-specific variables
+- Put environment-specific variables in `~/.env`
 - Asdf integration for managing Ruby, Node.js versions
 - Docker command aliases for common operations
 - Flutter development path configured

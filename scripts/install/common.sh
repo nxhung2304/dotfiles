@@ -13,6 +13,30 @@ ask() {
     [[ $ans =~ ^[Yy]$ ]]
 }
 
+backup_path() {
+    local target="$1"
+    local backup_dir="${BACKUP_DIR:-$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)}"
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+        mkdir -p "$backup_dir"
+        mv "$target" "$backup_dir/"
+        log_info "Backed up $target -> $backup_dir"
+    fi
+}
+
+link_path() {
+    local source="$1"
+    local target="$2"
+    if [ "$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")" = "$(cd "$(dirname "$source")" && pwd -P)/$(basename "$source")" ]; then
+        return
+    fi
+    if [ -L "$target" ]; then
+        rm "$target"
+    else
+        backup_path "$target"
+    fi
+    ln -s "$source" "$target"
+}
+
 log_header() {
     echo ""
     echo "====================== $1 ======================"

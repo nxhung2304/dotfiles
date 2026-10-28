@@ -1,6 +1,3 @@
-# Skip security checks for completions to speed up startup
-ZSH_DISABLE_COMPFIX="true"
-
 # Faster compinit caching
 autoload -Uz compinit
 _comp_path="${ZDOTDIR:-$HOME}/.zcompdump-${HOST%%.*}-${ZSH_VERSION}"
@@ -35,7 +32,7 @@ eval "$(zoxide init zsh)"
 
 ## [Completion]
 ## Completion scripts setup. Remove the following line to uninstall
-[[ -f /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh ]] && . /Users/rightsvn-hung/.dart-cli-completion/zsh-config.zsh || true
+[[ -f "$HOME/.dart-cli-completion/zsh-config.zsh" ]] && . "$HOME/.dart-cli-completion/zsh-config.zsh" || true
 ## [/Completion]
 #
 
@@ -70,7 +67,7 @@ if [ -d "/usr/local/opt/tcl-tk" ]; then
 fi
 
 # opencode
-export PATH=/Users/rightsvn-hung/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"
 
 if [ -z "$TMUX" ]; then
     export TERM=xterm-256color
@@ -110,9 +107,7 @@ export SDKMAN_DIR="$HOME/.sdkman"
 nv () { NVIM_APPNAME="minimal-nvim" nvim }
 
 
-export PATH="/Users/rightsvn-hung/.opencode/bin:$PATH"
-
-export DATABASE_PASSWORD="12345678"
+export PATH="$HOME/.opencode/bin:$PATH"
 
 # Disable GSS encryption mode
 export PGGSSENCMODE=disable
@@ -153,7 +148,7 @@ export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
 alias ffd="fvm flutter devices"
 alias ffr="fvm flutter run"
 alias ffpg="fvm flutter pub get"
-alias ffr_ip16="fvm flutter run -d 00008140-000C6D961447001C"
+alias ffr_ip16='fvm flutter run -d "$IPHONE_16_UDID"'
 
 alias andr_ls="emulator -list-avds"
 andr_run() {

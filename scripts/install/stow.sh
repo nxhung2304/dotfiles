@@ -8,11 +8,12 @@ install_stow() {
         BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
         mkdir -p "$BACKUP_DIR"
         echo "📦 Backup location: $BACKUP_DIR"
-        cp -r ~/.config/nvim ~/.config/karabiner ~/.config/wezterm ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.vimrc 2>/dev/null || true
-        mv ~/.* "$BACKUP_DIR/" 2>/dev/null || true
+        for path in ~/.config/nvim ~/.config/karabiner ~/.config/wezterm ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.vimrc; do
+            [ -e "$path" ] && [ ! -L "$path" ] && cp -R "$path" "$BACKUP_DIR/"
+        done
     fi
 
-    brew install stow || true
+    command -v stow &>/dev/null || brew install stow
 
     echo "🔗 Creating symlinks with stow..."
     stow --restow --target="$HOME" --verbose .config 2>&1 | tee stow-config.log

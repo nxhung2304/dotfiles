@@ -27,7 +27,7 @@ install_ai() {
     echo "🔗 Creating symlinks for Gemini config..."
     mkdir -p "$HOME/.gemini"
     ln -sf "$DOTFILES_DIR/.gemini/settings.json" "$HOME/.gemini/settings.json"
-    rm -rf "$HOME/.gemini/skills" && ln -sf "$DOTFILES_DIR/.gemini/skills" "$HOME/.gemini/skills"
+    link_path "$DOTFILES_DIR/.gemini/skills" "$HOME/.gemini/skills"
 
     # --- Codex ---
     echo "💻 Setting up Codex CLI..."
@@ -43,16 +43,15 @@ install_ai() {
     echo "🔗 Creating symlinks for Codex config..."
     mkdir -p "$HOME/.codex"
     ln -sf "$DOTFILES_DIR/.codex/config.toml" "$HOME/.codex/config.toml"
-    rm -rf "$HOME/.codex/rules" && ln -sf "$DOTFILES_DIR/.codex/rules" "$HOME/.codex/rules"
-    rm -rf "$HOME/.codex/skills" && ln -sf "$DOTFILES_DIR/.codex/skills" "$HOME/.codex/skills"
+    link_path "$DOTFILES_DIR/.codex/rules" "$HOME/.codex/rules"
+    link_path "$DOTFILES_DIR/.codex/skills" "$HOME/.codex/skills"
 
     # --- Claude ---
     echo "🛡️ Setting up Claude Code config..."
     # (Claude binary is installed via Brewfile)
     mkdir -p "$HOME/.claude"
     for item in settings.json CLAUDE.md commands agents skills code-rules statusline-command.sh; do
-        rm -rf "$HOME/.claude/$item"
-        ln -sf "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
+        link_path "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
     done
 
     mkdir -p "$HOME/.claude/hooks"
@@ -81,7 +80,7 @@ install_ai() {
 </dict>
 </plist>
 EOF
-    launchctl bootout "gui/$(id -u)" "$review_plist" 2>/dev/null
+    launchctl bootout "gui/$(id -u)" "$review_plist" 2>/dev/null || true
     launchctl bootstrap "gui/$(id -u)" "$review_plist"
 
     echo "📂 Registering ai-reveal:// links (open in Finder)..."
