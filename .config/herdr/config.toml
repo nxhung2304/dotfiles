@@ -8,7 +8,7 @@ shell_mode = "auto"
 new_cwd = "follow"
 
 [theme]
-name = "kanagawa"
+name = "gruvbox"
 auto_switch = false
 
 [ui]
@@ -146,6 +146,14 @@ key = "prefix+shift+i"
 type = "shell"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page issues"
 description = "open repo issues in browser"
+
+[[keys.command]]
+key = "prefix+t"
+type = "popup"
+width = "50%"
+height = "50%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/theme-switch"
+description = "switch theme (ghostty, herdr, nvim, claude)"
 
 [[keys.command]]
 key = "prefix+d"

@@ -9,7 +9,7 @@ local function read_saved()
 			return name
 		end
 	end
-	return "kanagawa-wave"
+	return "gruvbox"
 end
 
 local function save_colorscheme(name)
@@ -18,6 +18,21 @@ local function save_colorscheme(name)
 		f:write(name)
 		f:close()
 	end
+end
+
+local function follow_saved_colorscheme()
+	if vim.fn.filereadable(persist_file) == 0 then
+		save_colorscheme(read_saved())
+	end
+	local watcher = vim.uv.new_fs_event()
+	watcher:start(persist_file, {}, function()
+		vim.defer_fn(function()
+			local name = read_saved()
+			if name ~= vim.g.colors_name then
+				pcall(vim.cmd.colorscheme, name)
+			end
+		end, 100)
+	end)
 end
 
 local function highlight_fg(name)
@@ -69,6 +84,7 @@ return {
 			vim.keymap.set("n", "<leader>uc", "<cmd>CS<cr>", { desc = "Pick colorscheme" })
 
 			vim.cmd("colorscheme " .. read_saved())
+			follow_saved_colorscheme()
 		end,
 	},
 	{
@@ -78,6 +94,10 @@ return {
 		opts = {},
 	},
 	{ "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+	{ "ellisonleao/gruvbox.nvim", lazy = false, priority = 1000 },
+	{ "sainnhe/gruvbox-material", lazy = false, priority = 1000 },
+	{ "sainnhe/everforest", lazy = false, priority = 1000 },
+	{ "gbprod/nord.nvim", lazy = false, priority = 1000 },
 	{
 		"rebelot/kanagawa.nvim",
 		lazy = false,

@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+dotfiles_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+themes_dir="$dotfiles_dir/themes"
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/theme/current"
+
+current_theme() {
+    [[ -f $state_file ]] && cat "$state_file" || true
+}
+
+list_themes() {
+    local current folder theme_id label
+    current=$(current_theme)
+    for folder in "$themes_dir"/*/; do
+        theme_id=$(basename "$folder")
+        label=$(sed -n 's/^label="\(.*\)"$/\1/p' "$folder/theme.conf")
+        if [[ $theme_id == "$current" ]]; then
+            printf '%s\t● %s\n' "$theme_id" "$label"
+        else
+            printf '%s\t  %s\n' "$theme_id" "$label"
+        fi
+    done
+}
+
+print_swatches() {
+    local ghostty_file="$themes_dir/$1/ghostty" hex row
+    for row in "0 1 2 3 4 5 6 7" "8 9 10 11 12 13 14 15"; do
+        for index in $row; do
+            hex=$(sed -n "s/^palette = $index=#\([0-9a-fA-F]\{6\}\)$/\1/p" "$ghostty_file")
+            printf '\033[38;2;%d;%d;%dm███\033[0m ' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+        done
+        printf '\n'
+    done
+}
+
+apply_ghostty() {
+    mkdir -p "$HOME/.config/ghostty"
+    cp "$1/ghostty" "$HOME/.config/ghostty/theme"
+    pkill -USR2 -x ghostty 2>/dev/null || true
+}
+
+apply_herdr() {
+    local config="$HOME/.config/herdr/config.toml" updated
+    [[ -f $config ]] || return 0
+    updated=$(sed "/^\[theme\]/,/^\[/ s/^name = .*/name = \"$1\"/" "$config")
+    printf '%s\n' "$updated" > "$config"
+    "${HERDR_BIN_PATH:-herdr}" server reload-config >/dev/null 2>&1 || true
+}
+
+apply_claude() {
+    local config_dir
+    for config_dir in "$HOME/.claude" "$HOME/.claude-personal"; do
+        [[ -d $config_dir ]] || continue
+        mkdir -p "$config_dir/themes"
+        cp "$1/claude.json" "$config_dir/themes/current.json"
+    done
+}
+
+apply_nvim() {
+    local nvim_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
+    mkdir -p "$nvim_data_dir"
+    printf '%s\n' "$1" > "$nvim_data_dir/colorscheme.txt"
+}
+
+apply_theme() {
+    local theme_id=$1 folder="$themes_dir/$1"
+    if [[ ! -f $folder/theme.conf ]]; then
+        echo "Unknown theme: $theme_id" >&2
+        exit 1
+    fi
+
+    local herdr_theme nvim_colorscheme
+    herdr_theme=$(sed -n 's/^herdr_theme="\(.*\)"$/\1/p' "$folder/theme.conf")
+    nvim_colorscheme=$(sed -n 's/^nvim_colorscheme="\(.*\)"$/\1/p' "$folder/theme.conf")
+
+    apply_ghostty "$folder"
+    apply_herdr "$herdr_theme"
+    apply_claude "$folder"
+    apply_nvim "$nvim_colorscheme"
+
+    mkdir -p "$(dirname "$state_file")"
+    printf '%s\n' "$theme_id" > "$state_file"
+}
+
+case ${1:-} in
+    --list)
+        list_themes | cut -f1
+        ;;
+    --preview)
+        print_swatches "$2"
+        ;;
+    "")
+        selected=$(list_themes | fzf --delimiter=$'\t' --with-nth=2 --prompt='theme ❯ ' \
+            --preview="$0 --preview {1}" --preview-window=down,3,border-top) || exit 0
+        apply_theme "$(cut -f1 <<< "$selected")"
+        ;;
+    *)
+        apply_theme "$1"
+        ;;
+esac

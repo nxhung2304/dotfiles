@@ -85,7 +85,7 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
-  "theme": "custom:kanagawa",
+  "theme": "custom:current",
   "spinnerTipsEnabled": false,
   "agentPushNotifEnabled": true,
   "hasCompletedOnboarding": true,

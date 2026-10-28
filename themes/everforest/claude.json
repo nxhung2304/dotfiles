@@ -1,0 +1,33 @@
+{
+  "name": "Everforest Dark",
+  "base": "dark",
+  "overrides": {
+    "claude": "#dbbc7f",
+    "claudeShimmer": "#d3c6aa",
+    "text": "#d3c6aa",
+    "inverseText": "#2d353b",
+    "inactive": "#859289",
+    "subtle": "#475258",
+    "suggestion": "#7fbbb3",
+    "permission": "#83c092",
+    "remember": "#d699b6",
+    "success": "#a7c080",
+    "error": "#e67e80",
+    "warning": "#e69875",
+    "merged": "#d699b6",
+    "promptBorder": "#475258",
+    "planMode": "#83c092",
+    "autoAccept": "#d699b6",
+    "bashBorder": "#e67e80",
+    "ide": "#7fbbb3",
+    "diffAdded": "#434e47",
+    "diffRemoved": "#4e4247",
+    "diffAddedDimmed": "#384241",
+    "diffRemovedDimmed": "#3e3c41",
+    "diffAddedWord": "#6a7a5e",
+    "diffRemovedWord": "#8a5a5e",
+    "userMessageBackground": "#343f44",
+    "userMessageBackgroundHover": "#3d484d",
+    "selectionBg": "#543a48"
+  }
+}

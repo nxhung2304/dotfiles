@@ -1,0 +1,33 @@
+{
+  "name": "Nord",
+  "base": "dark",
+  "overrides": {
+    "claude": "#ebcb8b",
+    "claudeShimmer": "#d8dee9",
+    "text": "#d8dee9",
+    "inverseText": "#2e3440",
+    "inactive": "#616e88",
+    "subtle": "#4c566a",
+    "suggestion": "#81a1c1",
+    "permission": "#8fbcbb",
+    "remember": "#b48ead",
+    "success": "#a3be8c",
+    "error": "#bf616a",
+    "warning": "#d08770",
+    "merged": "#b48ead",
+    "promptBorder": "#4c566a",
+    "planMode": "#8fbcbb",
+    "autoAccept": "#b48ead",
+    "bashBorder": "#bf616a",
+    "ide": "#81a1c1",
+    "diffAdded": "#434d4e",
+    "diffRemoved": "#483c48",
+    "diffAddedDimmed": "#394047",
+    "diffRemovedDimmed": "#3b3844",
+    "diffAddedWord": "#687966",
+    "diffRemovedWord": "#764a55",
+    "userMessageBackground": "#3b4252",
+    "userMessageBackgroundHover": "#434c5e",
+    "selectionBg": "#434c5e"
+  }
+}
