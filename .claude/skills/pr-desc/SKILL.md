@@ -1,7 +1,7 @@
 ---
 name: pr-desc
 model: claude-sonnet-5-5
-allowed-tools: Bash(git:*), Read
+allowed-tools: Bash(git:*), Bash(gh pr list:*), Bash(ls:*), Read
 description: Generate a short, plain-language PR description from the diff/commit log between the current branch and base, so a leader/reviewer understands what was done at a glance. Prints content only — does not create/update the PR on GitHub. Defaults to Vietnamese, accepts a `lang` override via ARGUMENTS. Trigger on "viết PR content", "tạo nội dung PR", "tóm tắt PR", "pr-desc", "write PR description".
 ---
 
@@ -24,8 +24,19 @@ Read the diff + commit log between the current branch and the base branch → su
    - `git log <base>..HEAD --oneline` — list of commits
    - `git diff <base>...HEAD --stat` — which files changed, lines added/removed
    - If the commit messages aren't clear enough to understand the change, also read `git diff <base>...HEAD` for the important files
+   - If the issue number is known, find its docs with `ls specs/issues/ | grep '^<n>-'` and read what exists (the issue/spec file, `comment.log`, `testcases.md`, `report.md`). Take from them:
+     - items deliberately left out of scope or left for a later fix
+     - behaviour changes listed under impact/影響範囲 that the diff alone doesn't show
+     - the test checklist and any test results already recorded
+     - related issues the spec says share the same cause or should be merged
 
-3. Write the PR content in the target language, following this format:
+3. Pick the format:
+   - Run `gh pr list --author @me --state all --limit 5 --json body`
+   - If at least 3 of these PRs share the same section headings, use those headings in the same order instead of the default template below. Map the content onto them (summary, what was done, tests/evidence, notes/risks, related issues)
+   - Checkbox sections in that template (e.g. change type, monthly report): tick the change type that matches the commits, and copy the other checkboxes as ticked in the most recent PR
+   - If the gh command fails or no shared headings are found, use the default template below
+
+4. Write the PR content in the target language, following this format:
 
 ```
 ## Tóm tắt
@@ -50,7 +61,7 @@ closes #[issue number]
 
 (The template above is the Vietnamese default — translate the headers and content to the requested language when one is given.)
 
-4. Print the content for the user (in a code block for easy copying). Do not run `gh pr create` or `gh pr edit` yourself.
+5. Print the content for the user (in a code block for easy copying). Do not run `gh pr create` or `gh pr edit` yourself. Below the code block, list every placeholder the user must fill in and every related issue suggested for `closes`.
 
 **Rules:**
 - Prioritize BREVITY — a leader/reviewer should understand what was done within 10-15 seconds of reading
@@ -61,7 +72,8 @@ closes #[issue number]
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
 - If there are multiple unrelated groups of changes, list them as separate bullets in "Đã thực hiện" instead of blending them together
 - Leave out minor cleanups (deleted comments, unused variables/imports) and things that were kept unchanged — they don't help the reviewer decide
-- "Bằng chứng": only from what is stated in the conversation, commits or the issue's spec files (test run, output, screenshot the user mentioned); never invent a before/after. If there is none, drop the whole section
+- "Bằng chứng": only from what is stated in the conversation, commits or the issue's spec files (test run, output, screenshot the user mentioned); never invent a before/after. If there is none but the spec has a test checklist, keep the section and list each checklist case with a placeholder `[result / video to fill in]` (translated to the output language). Drop the section only when there is neither evidence nor a checklist
 - "Rủi ro merge": don't write filler lines that tell the reviewer nothing (e.g. "revert là về như cũ", "ảnh hưởng màn X"). If there is nothing to report, drop the whole section
 - Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one
 - `closes #N`: take N from the branch name (`#(\d+)`) or a commit's `closes #N`; if none is found, drop the line instead of leaving `closes #`
+- Related issues from the spec (same cause / to be merged): don't add them to the code block — suggest them below it for the user to confirm
