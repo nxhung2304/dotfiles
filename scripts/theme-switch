@@ -40,14 +40,6 @@ apply_ghostty() {
     pkill -USR2 -x ghostty 2>/dev/null || true
 }
 
-apply_herdr() {
-    local config="$HOME/.config/herdr/config.toml" updated
-    [[ -f $config ]] || return 0
-    updated=$(sed "/^\[theme\]/,/^\[/ s/^name = .*/name = \"$1\"/" "$config")
-    printf '%s\n' "$updated" > "$config"
-    "${HERDR_BIN_PATH:-herdr}" server reload-config >/dev/null 2>&1 || true
-}
-
 apply_claude() {
     local config_dir
     for config_dir in "$HOME/.claude" "$HOME/.claude-personal"; do
@@ -75,12 +67,10 @@ apply_theme() {
         exit 1
     fi
 
-    local herdr_theme nvim_colorscheme
-    herdr_theme=$(sed -n 's/^herdr_theme="\(.*\)"$/\1/p' "$folder/theme.conf")
+    local nvim_colorscheme
     nvim_colorscheme=$(sed -n 's/^nvim_colorscheme="\(.*\)"$/\1/p' "$folder/theme.conf")
 
     apply_ghostty "$folder"
-    apply_herdr "$herdr_theme"
     apply_claude "$folder"
     apply_nvim "$nvim_colorscheme"
     apply_fzf "$folder"

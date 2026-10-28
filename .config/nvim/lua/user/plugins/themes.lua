@@ -35,6 +35,21 @@ local function follow_saved_colorscheme()
 	end)
 end
 
+local theme_switch_script = vim.fs.joinpath(
+	vim.fs.dirname(vim.fs.dirname(vim.fn.resolve(vim.fn.stdpath("config")))),
+	"scripts",
+	"theme-switch"
+)
+
+local function pick_theme()
+	local themes = vim.fn.systemlist({ theme_switch_script, "--list" })
+	vim.ui.select(themes, { prompt = "Theme" }, function(theme)
+		if theme then
+			vim.system({ theme_switch_script, theme })
+		end
+	end)
+end
+
 local function highlight_fg(name)
 	return vim.api.nvim_get_hl(0, { name = name, link = false }).fg
 end
@@ -56,32 +71,19 @@ return {
 		config = function() end,
 	},
 	{
-		"projekt0n/github-nvim-theme",
-		name = "github-theme",
+		"ellisonleao/gruvbox.nvim",
 		lazy = false,
 		priority = 999,
 		config = function()
-			require("github-theme").setup({})
-
 			-- Reapply statusline overrides on every colorscheme change
 			vim.api.nvim_create_autocmd("ColorScheme", {
 				callback = apply_statusline,
 			})
 
 			-- :CS — open Snacks colorscheme picker and persist selection
-			vim.api.nvim_create_user_command("CS", function()
-				Snacks.picker.colorschemes({
-					confirm = function(picker, item)
-						picker:close()
-						if item then
-							vim.cmd("colorscheme " .. item.text)
-							save_colorscheme(item.text)
-						end
-					end,
-				})
-			end, { nargs = 0 })
+			vim.api.nvim_create_user_command("CS", pick_theme, { nargs = 0 })
 
-			vim.keymap.set("n", "<leader>uc", "<cmd>CS<cr>", { desc = "Pick colorscheme" })
+			vim.keymap.set("n", "<leader>uc", "<cmd>CS<cr>", { desc = "Pick theme (all apps)" })
 
 			if not pcall(vim.cmd.colorscheme, read_saved()) then
 				vim.cmd.colorscheme("gruvbox")
@@ -89,14 +91,6 @@ return {
 			follow_saved_colorscheme()
 		end,
 	},
-	{
-		"folke/tokyonight.nvim",
-		lazy = false,
-		priority = 1000,
-		opts = {},
-	},
-	{ "catppuccin/nvim", name = "catppuccin", priority = 1000 },
-	{ "ellisonleao/gruvbox.nvim", lazy = false, priority = 1000 },
 	{ "sainnhe/gruvbox-material", lazy = false, priority = 1000 },
 	{ "sainnhe/everforest", lazy = false, priority = 1000 },
 	{ "gbprod/nord.nvim", lazy = false, priority = 1000 },
