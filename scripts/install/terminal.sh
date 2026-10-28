@@ -17,7 +17,7 @@ install_terminal() {
     fi
 
     log_info "Linking Tmux config..."
-    rm -rf "$HOME/.config/tmux" && ln -sf "$DOTFILES_DIR/.config/tmux" "$HOME/.config/tmux"
+    link_path "$DOTFILES_DIR/.config/tmux" "$HOME/.config/tmux"
     
     mkdir -p "$HOME/.local/bin/scripts"
     ln -sf "$DOTFILES_DIR/scripts/tmux-sessionizer" "$HOME/.local/bin/scripts/tmux-sessionizer"

@@ -11,7 +11,8 @@ claude -p "/ai-score" \
     --permission-mode dontAsk \
     --settings '{"disableAllHooks": true}' \
     --no-session-persistence \
-    --add-dir "$HOME" \
+    --add-dir "$HOME/.claude/projects" \
+    --add-dir "$HOME/dotfiles" \
     --allowedTools "Bash(python3:*)" "Bash(mkdir:*)" "Bash(open:*)" "Read" "Glob" "Grep" \
         "Edit(~/.ai-metrics/**)" "Write(~/.ai-metrics/**)" \
     >> "$LOG_FILE" 2>&1

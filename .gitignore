@@ -25,3 +25,5 @@ backups/
 .config/ghostty/theme
 reset-trial-crossover.sh
 .config/gcloud/
+.env
+.env.*
