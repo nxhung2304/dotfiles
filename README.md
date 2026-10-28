@@ -71,5 +71,5 @@ chmod +x install.sh
 | `scripts/tmux-sessionizer` | Fuzzy-find and jump between tmux sessions |
 | `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane`, `scripts/herdr/` | Herdr session, focus-or-create tab, git page and drag-drop helpers |
 | `scripts/open-or-focus-tab` | Open or focus an existing terminal tab |
-| `scripts/theme-switch`, `themes/` | Switch Ghostty, Herdr, Neovim and Claude Code to one theme at once (`prefix+t` in Herdr, or `scripts/theme-switch <name>`) |
+| `scripts/theme-switch`, `themes/` | Switch Ghostty, Herdr, Neovim, Claude Code and fzf to one theme at once (Starship and eza use ANSI colors, so they follow Ghostty) (`prefix+t` in Herdr, or `scripts/theme-switch <name>`) |
 

@@ -6,17 +6,17 @@ $character"""
 add_newline = true
 
 [character]
-success_symbol = "[❯](bold #957fb8)"
-error_symbol = "[❯](bold #e82424)"
-vimcmd_symbol = "[❮](bold #98bb6c)"
+success_symbol = "[❯](bold purple)"
+error_symbol = "[❯](bold bright-red)"
+vimcmd_symbol = "[❮](bold bright-green)"
 
 [git_status]
-style = "#e6c384"
+style = "bright-yellow"
 format = "([$all_status$ahead_behind]($style) )"
 
 [cmd_duration]
 min_time = 2000
-style = "#727169"
+style = "bright-black"
 format = "[took $duration]($style)"
 
 [aws]
@@ -70,7 +70,7 @@ symbol = " "
 
 [directory]
 read_only = " 󰌾"
-style = "bold #7e9cd8"
+style = "bold blue"
 truncation_length = 3
 truncate_to_repo = true
 
@@ -106,7 +106,7 @@ symbol = " "
 
 [git_branch]
 symbol = " "
-style = "#957fb8"
+style = "purple"
 format = "[$symbol$branch]($style) "
 
 [git_commit]

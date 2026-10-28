@@ -63,6 +63,11 @@ apply_nvim() {
     printf '%s\n' "$1" > "$nvim_data_dir/colorscheme.txt"
 }
 
+apply_fzf() {
+    mkdir -p "$(dirname "$state_file")"
+    cp "$1/fzf" "$(dirname "$state_file")/fzf"
+}
+
 apply_theme() {
     local theme_id=$1 folder="$themes_dir/$1"
     if [[ ! -f $folder/theme.conf ]]; then
@@ -78,6 +83,7 @@ apply_theme() {
     apply_herdr "$herdr_theme"
     apply_claude "$folder"
     apply_nvim "$nvim_colorscheme"
+    apply_fzf "$folder"
 
     mkdir -p "$(dirname "$state_file")"
     printf '%s\n' "$theme_id" > "$state_file"
