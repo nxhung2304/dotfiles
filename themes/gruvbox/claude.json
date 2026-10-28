@@ -1,0 +1,33 @@
+{
+  "name": "Gruvbox Dark",
+  "base": "dark",
+  "overrides": {
+    "claude": "#fabd2f",
+    "claudeShimmer": "#ebdbb2",
+    "text": "#ebdbb2",
+    "inverseText": "#282828",
+    "inactive": "#928374",
+    "subtle": "#665c54",
+    "suggestion": "#83a598",
+    "permission": "#8ec07c",
+    "remember": "#d3869b",
+    "success": "#b8bb26",
+    "error": "#fb4934",
+    "warning": "#fe8019",
+    "merged": "#d3869b",
+    "promptBorder": "#665c54",
+    "planMode": "#8ec07c",
+    "autoAccept": "#d3869b",
+    "bashBorder": "#fb4934",
+    "ide": "#83a598",
+    "diffAdded": "#424228",
+    "diffRemoved": "#4e2e2a",
+    "diffAddedDimmed": "#353528",
+    "diffRemovedDimmed": "#3b2b29",
+    "diffAddedWord": "#707227",
+    "diffRemovedWord": "#92382e",
+    "userMessageBackground": "#3c3836",
+    "userMessageBackgroundHover": "#504945",
+    "selectionBg": "#504945"
+  }
+}

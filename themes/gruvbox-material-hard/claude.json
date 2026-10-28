@@ -1,0 +1,33 @@
+{
+  "name": "Gruvbox Material Hard",
+  "base": "dark",
+  "overrides": {
+    "claude": "#d8a657",
+    "claudeShimmer": "#d4be98",
+    "text": "#d4be98",
+    "inverseText": "#1d2021",
+    "inactive": "#928374",
+    "subtle": "#504945",
+    "suggestion": "#7daea3",
+    "permission": "#89b482",
+    "remember": "#d3869b",
+    "success": "#a9b665",
+    "error": "#ea6962",
+    "warning": "#e78a4e",
+    "merged": "#d3869b",
+    "promptBorder": "#504945",
+    "planMode": "#89b482",
+    "autoAccept": "#d3869b",
+    "bashBorder": "#ea6962",
+    "ide": "#7daea3",
+    "diffAdded": "#363b2d",
+    "diffRemoved": "#422d2d",
+    "diffAddedDimmed": "#2a2e27",
+    "diffRemovedDimmed": "#2f2727",
+    "diffAddedWord": "#636b43",
+    "diffRemovedWord": "#844442",
+    "userMessageBackground": "#282828",
+    "userMessageBackgroundHover": "#3c3836",
+    "selectionBg": "#3c3836"
+  }
+}

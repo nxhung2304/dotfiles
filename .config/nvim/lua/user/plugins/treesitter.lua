@@ -9,8 +9,13 @@ return {
 		},
 		config = function(_, opts)
 			require("treesitter-context").setup(opts)
-			vim.api.nvim_set_hl(0, "TreesitterContextBottom", { underline = true, sp = "#555555" })
-			vim.api.nvim_set_hl(0, "TreesitterContextLineNumberBottom", { underline = true, sp = "#555555" })
+			local function set_context_bottom_hl()
+				local separator_color = vim.api.nvim_get_hl(0, { name = "WinSeparator", link = false }).fg
+				vim.api.nvim_set_hl(0, "TreesitterContextBottom", { underline = true, sp = separator_color })
+				vim.api.nvim_set_hl(0, "TreesitterContextLineNumberBottom", { underline = true, sp = separator_color })
+			end
+			set_context_bottom_hl()
+			vim.api.nvim_create_autocmd("ColorScheme", { callback = set_context_bottom_hl })
 
 			-- box shadow: dim the context slightly and set winblend on its float window
 			vim.api.nvim_create_autocmd("WinNew", {

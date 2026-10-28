@@ -7,6 +7,7 @@ backups/
 .claude/skills/synced/
 .claude/skills/.system/
 .claude/skills/.trash/
+.claude/themes/current.json
 
 .config/github-copilot/apps.json
 .config/github-copilot/auth.db
@@ -21,5 +22,6 @@ backups/
 .config/flutter/
 .config/gh/hosts.yml
 .config/herdr/sessions/
+.config/ghostty/theme
 reset-trial-crossover.sh
 .config/gcloud/

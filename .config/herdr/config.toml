@@ -8,7 +8,7 @@ shell_mode = "auto"
 new_cwd = "follow"
 
 [theme]
-name = "kanagawa"
+name = "terminal"
 auto_switch = false
 
 [ui]
@@ -148,6 +148,14 @@ command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/open-git-page issues"
 description = "open repo issues in browser"
 
 [[keys.command]]
+key = "prefix+t"
+type = "popup"
+width = "50%"
+height = "50%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/theme-switch"
+description = "switch theme (ghostty, herdr, nvim, claude)"
+
+[[keys.command]]
 key = "prefix+d"
 type = "popup"
 width = "80%"
@@ -176,3 +184,9 @@ width = "60%"
 height = "20%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/wt-create"
 description = "worktrunk: new worktree"
+
+[theme.custom]
+accent = "#a89984"
+panel_bg = "#282828"
+active_row_bg = "#3c3836"
+selection_bg = "#504945"

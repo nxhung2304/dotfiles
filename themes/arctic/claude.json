@@ -1,0 +1,33 @@
+{
+  "name": "Arctic",
+  "base": "dark",
+  "overrides": {
+    "claude": "#dcdcaa",
+    "claudeShimmer": "#cccccc",
+    "text": "#cccccc",
+    "inverseText": "#1f1f1f",
+    "inactive": "#808080",
+    "subtle": "#454545",
+    "suggestion": "#569cd6",
+    "permission": "#4ec9b0",
+    "remember": "#c586c0",
+    "success": "#6a9955",
+    "error": "#f44747",
+    "warning": "#ce9178",
+    "merged": "#c586c0",
+    "promptBorder": "#454545",
+    "planMode": "#4ec9b0",
+    "autoAccept": "#c586c0",
+    "bashBorder": "#f44747",
+    "ide": "#569cd6",
+    "diffAdded": "#2c3529",
+    "diffRemoved": "#452626",
+    "diffAddedDimmed": "#262a24",
+    "diffRemovedDimmed": "#322323",
+    "diffAddedWord": "#445c3a",
+    "diffRemovedWord": "#8a3333",
+    "userMessageBackground": "#2d2d2d",
+    "userMessageBackgroundHover": "#3c3c3c",
+    "selectionBg": "#264f78"
+  }
+}

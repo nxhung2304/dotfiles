@@ -1,0 +1,33 @@
+{
+  "name": "Zenbones",
+  "base": "dark",
+  "overrides": {
+    "claude": "#b77e64",
+    "claudeShimmer": "#b4bdc3",
+    "text": "#b4bdc3",
+    "inverseText": "#1c1917",
+    "inactive": "#888f94",
+    "subtle": "#403833",
+    "suggestion": "#6099c0",
+    "permission": "#66a5ad",
+    "remember": "#b279a7",
+    "success": "#819b69",
+    "error": "#de6e7c",
+    "warning": "#d68c67",
+    "merged": "#b279a7",
+    "promptBorder": "#403833",
+    "planMode": "#66a5ad",
+    "autoAccept": "#b279a7",
+    "bashBorder": "#de6e7c",
+    "ide": "#6099c0",
+    "diffAdded": "#2e3026",
+    "diffRemoved": "#3f2829",
+    "diffAddedDimmed": "#25251e",
+    "diffRemovedDimmed": "#2d2120",
+    "diffAddedWord": "#4e5a40",
+    "diffRemovedWord": "#7d444a",
+    "userMessageBackground": "#272423",
+    "userMessageBackgroundHover": "#3d4042",
+    "selectionBg": "#3d4042"
+  }
+}

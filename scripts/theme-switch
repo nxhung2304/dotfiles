@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+dotfiles_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+themes_dir="$dotfiles_dir/themes"
+state_file="${XDG_STATE_HOME:-$HOME/.local/state}/theme/current"
+
+current_theme() {
+    [[ -f $state_file ]] && cat "$state_file" || true
+}
+
+theme_label() {
+    sed -n 's/^label="\(.*\)"$/\1/p' "$themes_dir/$1/theme.conf"
+}
+
+theme_setting() {
+    sed -n "s/^$2=\"\(.*\)\"$/\1/p" "$themes_dir/$1/theme.conf"
+}
+
+list_themes() {
+    local current folder theme_id
+    current=$(current_theme)
+    if [[ -n $current && -f $themes_dir/$current/theme.conf ]]; then
+        printf '%s\t● %s\n' "$current" "$(theme_label "$current")"
+    fi
+    for folder in "$themes_dir"/*/; do
+        theme_id=$(basename "$folder")
+        [[ $theme_id == "$current" ]] && continue
+        printf '%s\t  %s\n' "$theme_id" "$(theme_label "$theme_id")"
+    done
+}
+
+ghostty_setting_color() {
+    sed -n "s/^$2 = #\{0,1\}\([0-9a-fA-F]\{6\}\)$/\1/p" "$1"
+}
+
+ghostty_palette_color() {
+    sed -n "s/^palette = $2=#\([0-9a-fA-F]\{6\}\)$/\1/p" "$1"
+}
+
+foreground_escape() {
+    printf '\033[38;2;%d;%d;%dm' "0x${1:0:2}" "0x${1:2:2}" "0x${1:4:2}"
+}
+
+background_escape() {
+    printf '\033[48;2;%d;%d;%dm' "0x${1:0:2}" "0x${1:2:2}" "0x${1:4:2}"
+}
+
+print_preview() {
+    local ghostty_file="$themes_dir/$1/ghostty"
+    local line_start text comment keyword function_name string number
+    line_start=$(background_escape "$(ghostty_setting_color "$ghostty_file" background)")
+    text=$(foreground_escape "$(ghostty_setting_color "$ghostty_file" foreground)")
+    comment=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 8)")
+    keyword=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 5)")
+    function_name=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 4)")
+    string=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 2)")
+    number=$(foreground_escape "$(ghostty_palette_color "$ghostty_file" 3)")
+
+    printf '%s%s-- greet the user by name\033[K\033[0m\n' "$line_start" "$comment"
+    printf '%s%slocal function %sgreet%s(name)\033[K\033[0m\n' "$line_start" "$keyword" "$function_name" "$text"
+    printf '%s  %sreturn %s"hello, "%s .. name .. %s42\033[K\033[0m\n' "$line_start" "$keyword" "$string" "$text" "$number"
+    printf '%s%send\033[K\033[0m\n' "$line_start" "$keyword"
+}
+
+apply_ghostty() {
+    mkdir -p "$HOME/.config/ghostty"
+    cp "$1/ghostty" "$HOME/.config/ghostty/theme"
+    pkill -USR2 -x ghostty 2>/dev/null || true
+}
+
+apply_herdr() {
+    local config="$HOME/.config/herdr/config.toml" config_without_custom_colors
+    [[ -f $config ]] || return 0
+    config_without_custom_colors=$(awk '/^\[/ { in_custom_colors = ($0 == "[theme.custom]") } !in_custom_colors' "$config")
+    printf '%s\n\n%s\n' "$config_without_custom_colors" "$(cat "$1/herdr")" > "$config"
+    "${HERDR_BIN_PATH:-herdr}" server reload-config >/dev/null 2>&1 || true
+}
+
+apply_claude() {
+    local config_dir
+    for config_dir in "$HOME/.claude" "$HOME/.claude-personal"; do
+        [[ -d $config_dir ]] || continue
+        mkdir -p "$config_dir/themes"
+        cp "$1/claude.json" "$config_dir/themes/current.json"
+    done
+}
+
+apply_nvim() {
+    local nvim_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim" nvim_global
+    mkdir -p "$nvim_data_dir"
+    {
+        printf '%s\n' "$1"
+        for nvim_global in $2; do
+            printf '%s\n' "$nvim_global"
+        done
+    } > "$nvim_data_dir/colorscheme.txt"
+}
+
+apply_fzf() {
+    mkdir -p "$(dirname "$state_file")"
+    cp "$1/fzf" "$(dirname "$state_file")/fzf"
+}
+
+apply_theme() {
+    local theme_id=$1 folder="$themes_dir/$1"
+    if [[ ! -f $folder/theme.conf ]]; then
+        echo "Unknown theme: $theme_id" >&2
+        exit 1
+    fi
+
+
+    apply_ghostty "$folder"
+    apply_herdr "$folder"
+    apply_claude "$folder"
+    apply_nvim "$(theme_setting "$theme_id" nvim_colorscheme)" "$(theme_setting "$theme_id" nvim_globals)"
+    apply_fzf "$folder"
+
+    mkdir -p "$(dirname "$state_file")"
+    printf '%s\n' "$theme_id" > "$state_file"
+}
+
+case ${1:-} in
+    --list)
+        list_themes | cut -f1
+        ;;
+    --preview)
+        print_preview "$2"
+        ;;
+    "")
+        theme_before_picker=$(current_theme)
+        if selected=$(list_themes | fzf --delimiter=$'\t' --with-nth=2 --prompt='theme ❯ ' \
+            --preview="$0 --preview {1}" --preview-window=down,5,border-top \
+            --bind="focus:execute-silent($0 {1})"); then
+            apply_theme "$(cut -f1 <<< "$selected")"
+        elif [[ -n $theme_before_picker ]]; then
+            apply_theme "$theme_before_picker"
+        fi
+        ;;
+    *)
+        apply_theme "$1"
+        ;;
+esac

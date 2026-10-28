@@ -1,0 +1,5 @@
+[theme.custom]
+accent = "#a89984"
+panel_bg = "#1d2021"
+active_row_bg = "#282828"
+selection_bg = "#3c3836"

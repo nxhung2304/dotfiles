@@ -1,0 +1,33 @@
+{
+  "name": "Everforest Dark Hard",
+  "base": "dark",
+  "overrides": {
+    "claude": "#dbbc7f",
+    "claudeShimmer": "#d3c6aa",
+    "text": "#d3c6aa",
+    "inverseText": "#272e33",
+    "inactive": "#859289",
+    "subtle": "#414b50",
+    "suggestion": "#7fbbb3",
+    "permission": "#83c092",
+    "remember": "#d699b6",
+    "success": "#a7c080",
+    "error": "#e67e80",
+    "warning": "#e69875",
+    "merged": "#d699b6",
+    "promptBorder": "#414b50",
+    "planMode": "#83c092",
+    "autoAccept": "#d699b6",
+    "bashBorder": "#e67e80",
+    "ide": "#7fbbb3",
+    "diffAdded": "#3e4841",
+    "diffRemoved": "#493c41",
+    "diffAddedDimmed": "#333b3a",
+    "diffRemovedDimmed": "#38353a",
+    "diffAddedWord": "#67775a",
+    "diffRemovedWord": "#86565a",
+    "userMessageBackground": "#2e383c",
+    "userMessageBackgroundHover": "#374145",
+    "selectionBg": "#4c3743"
+  }
+}
