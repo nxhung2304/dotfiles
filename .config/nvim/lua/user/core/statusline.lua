@@ -216,7 +216,6 @@ local statusline = {
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
-	'%{%v:lua._statusline_component("indent")%}',
 	'%{%v:lua._statusline_component("lsp_clients")%}',
 	'%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("position")%}',
