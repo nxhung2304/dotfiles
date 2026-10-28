@@ -119,22 +119,6 @@ height = "70%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/palette"
 description = "command palette: agents, worktree, github, tools"
 
-[[keys.command]]
-key = "prefix+t"
-type = "popup"
-width = "50%"
-height = "50%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/theme-switch"
-description = "switch theme (ghostty, herdr, nvim, claude)"
-
-[[keys.command]]
-key = "prefix+d"
-type = "popup"
-width = "80%"
-height = "40%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/drag-drop"
-description = "drag and drop files into cwd"
-
 [experimental]
 switch_ascii_input_source_in_prefix = true
 

@@ -13,11 +13,17 @@ group_entries() {
     done < <("$SCRIPT_DIR/$script" --list)
 }
 
+single_entry() {
+    printf '%-9s %s\t%s\t\n' "$1" "$2" "$3"
+}
+
 build_entries() {
-    printf '%-9s %s\t%s\t\n' "Agents" "Status" "agents-menu"
+    single_entry "Agents" "Status" "agents-menu"
     group_entries "Worktree" "wt-menu"
     group_entries "GitHub" "github-menu"
-    group_entries "Tool" "tools-menu"
+    single_entry "Theme" "Switch" "../theme-switch"
+    single_entry "Files" "Drag and drop" "drag-drop"
+    single_entry "Herdr" "Reload config" "reload-config"
 }
 
 selection=$(build_entries | pick "run" --delimiter=$'\t' --with-nth=1 --tiebreak=index || true)
