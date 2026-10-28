@@ -80,7 +80,7 @@ return {
 				callback = apply_statusline,
 			})
 
-			-- :CS — open Snacks colorscheme picker and persist selection
+			-- :CS — pick a theme and apply it to every app via scripts/theme-switch
 			vim.api.nvim_create_user_command("CS", pick_theme, { nargs = 0 })
 
 			vim.keymap.set("n", "<leader>uc", "<cmd>CS<cr>", { desc = "Pick theme (all apps)" })
