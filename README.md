@@ -1,76 +1,54 @@
 # dotfiles
 
-Personal macOS development environment configuration managed via GNU Stow.
+My macOS development environment: Neovim, Ghostty, Herdr/tmux, Zsh and AI coding assistants (Claude Code, Codex, Gemini) — one repo, one install command, one theme for everything.
 
-## Quick Setup
+![Hero](docs/images/hero.png)
+
+## Highlights
+
+- **One command setup** — `./install.sh` walks through each component and asks before installing it.
+- **Symlinks via GNU Stow** — edit files in the repo, changes apply instantly.
+- **One theme everywhere** — switch Ghostty, Herdr, Neovim, Claude Code and fzf together with `scripts/theme-switch <name>`.
+- **Shared AI setup** — Claude Code, Codex and Gemini use the same skills, rules and hooks.
+- **Safe by default** — existing configs are backed up to `~/.dotfiles-backup/`, never deleted.
+
+## Install
+
+Requires macOS and git.
 
 ```bash
-chmod +x install.sh
+git clone https://github.com/nxhung2304/dotfiles.git ~/dotfiles
+cd ~/dotfiles
 ./install.sh
 ```
 
-## What's Included
+Machine-specific values and secrets go in `~/.env` (sourced by `.zshrc`, never committed), for example:
 
-### Editors
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Neovim | `.config/nvim/` | Primary editor with Lazy.nvim, LSP, and environment-specific configs |
-| Vim | `.vimrc` | Lightweight fallback editor config |
+```bash
+export IPHONE_16_UDID="..."
+```
 
-### Terminal Emulators
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Wezterm | `.config/wezterm/` | GPU-accelerated terminal with modular Lua config |
-| Ghostty | `.config/ghostty/` | Fast native terminal emulator |
-| Alacritty | `.config/alacritty/` | Minimal GPU-accelerated terminal |
-| iTerm2 | `.config/iterm2/` | Feature-rich macOS terminal emulator |
+## Preview
 
-### Shell
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Zsh | `.zshrc` | Shell config with Oh My Zsh, plugins, and custom aliases |
-| Starship | `.config/starship.toml` | Cross-shell prompt with git and language indicators |
+| Neovim | Herdr |
+|--------|-------|
+| ![Neovim](docs/images/nvim.png) | ![Herdr](docs/images/herdr.png) |
 
-### Multiplexer
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Tmux | `.config/tmux/` | Terminal multiplexer with custom keybindings and gruvbox theme |
+![Theme switch](docs/images/theme-switch.gif)
 
-### Git & GitHub
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Git | `.config/git/` | Global gitignore |
-| GitHub CLI | `.config/gh/` | gh CLI auth and host config |
-| GitHub Copilot | `.config/github-copilot/` | Copilot editor integration settings |
+## What's inside
 
-### CLI Tools
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Eza | `.config/eza/` | Modern `ls` replacement with custom color theme |
-| Karabiner | `.config/karabiner/` | macOS keyboard remapping and complex modifications |
+| Area | Path | Notes |
+|------|------|-------|
+| Editor | `.config/nvim/`, `.vimrc` | Lazy.nvim, LSP, separate setups for VS Code and Xcode |
+| Terminal | `.config/ghostty/`, `wezterm/`, `alacritty/` | Ghostty is the daily driver |
+| Multiplexer | `.config/herdr/`, `.config/tmux/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
+| Shell | `.zshrc`, `.config/starship.toml` | Oh My Zsh, zoxide, direnv, aliases |
+| CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/` | Modern `ls`, key remapping, global gitignore |
+| AI | `.claude/`, `.codex/`, `.gemini/` | Agents, skills, hooks and code rules |
+| Packages | `Brewfile` | Declarative Homebrew list |
+| Scripts | `scripts/` | Installers, sessionizers, theme switcher |
 
-### Dev Environment
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Flutter | `.config/flutter/` | Flutter SDK settings and device preferences |
-| Homebrew | `Brewfile` | Declarative list of all brew packages and casks |
-| Herdr | `.config/herdr/` | Agent multiplexer settings (tmux-style keys, sessionizer, git/drag-drop shortcuts) |
+## License
 
-### AI Coding Assistants
-| Tool | Config path | Description |
-|------|-------------|-------------|
-| Claude Code | `.claude/` | Agents, commands, skills, hooks, and project code rules |
-| Codex CLI | `.codex/` | Rules, config, and shared skills (symlinked from `.claude/skills`) |
-| Gemini CLI | `.gemini/` | Settings and shared skills (symlinked from `.claude/skills`) |
-
-### Scripts
-| Path | Description |
-|------|-------------|
-| `scripts/install/` | Modular install steps (stow, terminal, etc.) sourced by `install.sh` |
-| `scripts/nvim/`, `scripts/tmux/` | Helper scripts for Neovim and tmux |
-| `scripts/tmux-sessionizer` | Fuzzy-find and jump between tmux sessions |
-| `scripts/herdr-sessionizer`, `scripts/herdr-clear-pane`, `scripts/herdr/` | Herdr session, focus-or-create tab, git page and drag-drop helpers |
-| `scripts/open-or-focus-tab` | Open or focus an existing terminal tab |
-| `scripts/theme-switch`, `themes/` | Switch Ghostty, Herdr, Neovim, Claude Code and fzf to one theme at once (`prefix+t` in Herdr, `:CS` in Neovim, or `scripts/theme-switch <name>`); Starship and eza use ANSI colors, so they follow Ghostty. Herdr's `[theme.custom]` block in `config.toml` is rewritten on every switch |
-| `scripts/themes/generate.py` | Palettes of the switchable themes; regenerates `themes/` and warns about low-contrast color pairs |
-
+Personal configuration — use anything you like.

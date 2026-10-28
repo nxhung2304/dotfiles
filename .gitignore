@@ -27,3 +27,4 @@ reset-trial-crossover.sh
 .config/gcloud/
 .env
 .env.*
+docs/images/*.mov
