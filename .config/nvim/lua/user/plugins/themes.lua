@@ -83,7 +83,9 @@ return {
 
 			vim.keymap.set("n", "<leader>uc", "<cmd>CS<cr>", { desc = "Pick colorscheme" })
 
-			vim.cmd("colorscheme " .. read_saved())
+			if not pcall(vim.cmd.colorscheme, read_saved()) then
+				vim.cmd.colorscheme("gruvbox")
+			end
 			follow_saved_colorscheme()
 		end,
 	},
@@ -98,36 +100,4 @@ return {
 	{ "sainnhe/gruvbox-material", lazy = false, priority = 1000 },
 	{ "sainnhe/everforest", lazy = false, priority = 1000 },
 	{ "gbprod/nord.nvim", lazy = false, priority = 1000 },
-	{
-		"rebelot/kanagawa.nvim",
-		lazy = false,
-		priority = 1000,
-		opts = {
-			transparent = true,
-			colors = {
-				theme = {
-					all = {
-						ui = {
-							bg_gutter = "none",
-						},
-					},
-				},
-			},
-			overrides = function(colors)
-				local theme = colors.theme
-				return {
-					NormalFloat = { bg = "none" },
-					FloatBorder = { fg = theme.ui.bg_p2, bg = "none" },
-					FloatTitle = { fg = theme.ui.special, bg = "none", bold = true },
-					SnacksPickerBorder = { fg = theme.ui.bg_p2, bg = "none" },
-					Pmenu = { fg = theme.ui.pmenu.fg, bg = "none" },
-					PmenuSel = { fg = "NONE", bg = theme.ui.bg_p2 },
-					WinSeparator = { fg = theme.ui.bg_p1, bg = "none" },
-					WinBar = { fg = theme.ui.fg_dim, bg = "none" },
-					WinBarNC = { fg = theme.ui.nontext, bg = "none" },
-					CursorLineNr = { fg = theme.syn.special1, bg = "none", bold = true },
-				}
-			end,
-		},
-	},
 }
