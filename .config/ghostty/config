@@ -52,7 +52,7 @@ window-save-state = always
 window-step-resize = true
 
 # Transparency và blur effects (macOS)
-background-opacity = 0.90
+background-opacity = 0.95
 background-blur-radius = 24
 
 # Font rendering improvements
