@@ -48,7 +48,7 @@ Panels: Files (`<leader>1`), Search (`<leader>2` or `<leader>sg`). Toggle: `<lea
 | `ga` | LSP code action |
 | `]e` / `[e` | Next/prev error diagnostic |
 | `<leader>cc` | Copy to clipboard (OSC52) |
-| `<leader>ca` / `<leader>cr` | Copy absolute/relative path |
+| `<leader>ya` / `<leader>yr` | Copy absolute/relative path |
 
 ## LSP Setup Pattern
 
