@@ -1,41 +1,53 @@
+local JDTLS_JAVA_CANDIDATES = {
+	"~/.asdf/installs/java/temurin-25*/bin/java",
+	"/opt/homebrew/opt/openjdk/bin/java",
+	"/opt/homebrew/opt/openjdk@25/bin/java",
+	"/usr/local/opt/openjdk/bin/java",
+}
+
+local function find_jdtls_java_executable()
+	local overridden_executable = vim.env.JDTLS_JAVA_EXECUTABLE
+	if overridden_executable and vim.fn.executable(overridden_executable) == 1 then
+		return overridden_executable
+	end
+
+	for _, pattern in ipairs(JDTLS_JAVA_CANDIDATES) do
+		local executables = vim.fn.glob(vim.fn.expand(pattern), false, true)
+		if #executables > 0 then
+			return executables[#executables]
+		end
+	end
+
+	vim.notify(
+		"jdtls needs JDK 25: install one or set JDTLS_JAVA_EXECUTABLE (falling back to `java` in PATH)",
+		vim.log.levels.WARN
+	)
+	return "java"
+end
+
+local JDTLS_ROOT_MARKERS = { "settings.gradle", "settings.gradle.kts", ".git", "mvnw", "gradlew" }
+
 return {
 	"mfussenegger/nvim-jdtls",
 	ft = "java",
 	config = function()
 		local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
-		local workspace_dir = "~/Dev/" .. project_name
+		local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/workspace/" .. project_name
+		local jdtls_java_executable = find_jdtls_java_executable()
 
 		local opts = {
 			-- The command that starts the language server
 			-- See: https://github.com/eclipse/eclipse.jdt.ls#running-from-the-command-line
 			cmd = {
-
-				"/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java",
+				"jdtls",
+				"--java-executable",
+				jdtls_java_executable,
 				-- depends on if `java` is in your $PATH env variable and if it points to the right version.
-
-				"-Declipse.application=org.eclipse.jdt.ls.core.id1",
-				"-Dosgi.bundles.defaultStartLevel=4",
-				"-Declipse.product=org.eclipse.jdt.ls.core.product",
-				"-Dlog.protocol=true",
-				"-Dlog.level=ALL",
-				"-Xmx1g",
-				"--add-modules=ALL-SYSTEM",
-				"--add-opens",
-				"java.base/java.util=ALL-UNNAMED",
-				"--add-opens",
-				"java.base/java.lang=ALL-UNNAMED",
-
-				"-jar",
-				"/Users/rightsvn-hung/jdt-language-server-1.9.0/plugins/org.eclipse.equinox.launcher_1.6.400.v20210924-0641.jar",
-
-				"-configuration",
-				"/Users/rightsvn-hung/jdt-language-server-1.9.0/config_mac",
-
 				"-data",
 				workspace_dir,
 			},
 
-			root_dir = require("jdtls.setup").find_root({ ".git", "mvnw", "gradlew" }),
+			root_dir = require("jdtls.setup").find_root(JDTLS_ROOT_MARKERS),
 
 			-- Here you can configure eclipse.jdt.ls specific settings
 			-- See https://github.com/eclipse/eclipse.jdt.ls/wiki/Running-the-JAVA-LS-server-from-the-command-line#initialize-request
@@ -54,8 +66,18 @@ return {
 			init_options = {
 				bundles = {},
 			},
+
+			on_attach = require("user.core.utils").lsp_on_attach,
+			capabilities = require("cmp_nvim_lsp").default_capabilities(),
 		}
 
 		require("jdtls").start_or_attach(opts)
+		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("JdtlsAttach", { clear = true }),
+			pattern = "java",
+			callback = function(args)
+				require("jdtls").start_or_attach(opts, nil, { bufnr = args.buf })
+			end,
+		})
 	end,
 }

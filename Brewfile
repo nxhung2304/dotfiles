@@ -2,6 +2,7 @@
 brew "tmux"
 brew "herdr"
 brew "neovim"
+brew "tree-sitter-cli"
 brew "git"
 brew "stow"
 brew "asdf"
@@ -38,11 +39,11 @@ brew "stylua"
 brew "swiftformat"
 brew "xcode-build-server"
 brew "xcbeautify"
+brew "pipx"
 
 # Development
-brew "claude-code"
-brew "docker"
-brew "docker-desktop"
+cask "claude-code"
+cask "docker-desktop"
 
 # Editors
 cask "visual-studio-code"
@@ -50,8 +51,8 @@ cask "sublime-text"
 cask "android-studio"
 
 # Work
-brew "notion"
-brew "postman"
+cask "notion"
+cask "postman"
 
 # ========================
 # CASKS

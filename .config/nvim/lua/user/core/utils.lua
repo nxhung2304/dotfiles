@@ -104,6 +104,13 @@ M.lsp_on_attach = function(client, bufnr)
 	keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>", { buffer = bufnr, desc = "Code Action" })
 	keymap("n", "gl", "<cmd>lua vim.lsp.codelens.run()<CR>", { buffer = bufnr, desc = "Run Code Lens" })
 
+	if client.server_capabilities.inlayHintProvider then
+		vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+		keymap("n", "<leader>uh", function()
+			vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }), { bufnr = bufnr })
+		end, { buffer = bufnr, desc = "Toggle Inlay Hints" })
+	end
+
 	if client.server_capabilities.codeLensProvider then
 		if vim.fn.has("nvim-0.12") == 1 then
 			vim.lsp.codelens.enable(true, { bufnr = bufnr })

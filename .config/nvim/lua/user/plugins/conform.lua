@@ -2,6 +2,9 @@ return {
 	"stevearc/conform.nvim",
 	opts = {
 		formatters = {
+			["google-java-format"] = {
+				prepend_args = { "--aosp" },
+			},
 			rubocop = {
 				args = { "--auto-correct", "--format", "quiet", "--stderr", "--stdin", "$FILENAME" },
 			},
@@ -34,6 +37,9 @@ return {
 			},
 			swift = {
 				"swiftformat",
+			},
+			java = {
+				"google-java-format",
 			},
 		},
 	},

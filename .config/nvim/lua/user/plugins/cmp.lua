@@ -1,3 +1,47 @@
+local current_buffer_words_cache = { bufnr = nil, changedtick = nil, words = {} }
+
+vim.api.nvim_create_autocmd("InsertEnter", {
+	group = vim.api.nvim_create_augroup("CmpCurrentBufferWords", { clear = true }),
+	callback = function()
+		current_buffer_words_cache.bufnr = nil
+	end,
+})
+
+local function is_insert_mode()
+	return vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+end
+
+local function get_current_buffer_words()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local changedtick = vim.api.nvim_buf_get_changedtick(bufnr)
+	local cache = current_buffer_words_cache
+	if cache.bufnr == bufnr and (cache.changedtick == changedtick or is_insert_mode()) then
+		return cache.words
+	end
+
+	local words = {}
+	for _, line in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+		if #line < 5000 then
+			for word in line:gmatch("[%a_][%w_]*[?!]?") do
+				words[word] = true
+			end
+		end
+	end
+
+	cache.bufnr, cache.changedtick, cache.words = bufnr, changedtick, words
+	return words
+end
+
+local function prefer_current_buffer_words(entry1, entry2)
+	local words = get_current_buffer_words()
+	local is_entry1_in_buffer = words[entry1.word] == true
+	local is_entry2_in_buffer = words[entry2.word] == true
+	if is_entry1_in_buffer ~= is_entry2_in_buffer then
+		return is_entry1_in_buffer
+	end
+	return nil
+end
+
 return {
 	{
 		"hrsh7th/nvim-cmp",
@@ -7,6 +51,7 @@ return {
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-nvim-lua",
+			"hrsh7th/cmp-nvim-lsp-signature-help",
 		},
 		opts = function()
 			local cmp = require("cmp")
@@ -103,11 +148,27 @@ return {
 					end,
 				},
 				sources = {
+					{ name = "nvim_lsp_signature_help", priority = 1200 },
 					{ name = "nvim_lsp", priority = 1000 },
 					-- { name = "minuet", priority = 100 },
 					{ name = "i18n",    priority = 900 },
 					{ name = "buffer",  priority = 500, keyword_length = 3, max_item_count = 5 },
 					{ name = "path",    priority = 250 },
+				},
+				sorting = {
+					priority_weight = 2,
+					comparators = {
+						cmp.config.compare.offset,
+						cmp.config.compare.exact,
+						prefer_current_buffer_words,
+						cmp.config.compare.score,
+						cmp.config.compare.recently_used,
+						cmp.config.compare.locality,
+						cmp.config.compare.kind,
+						cmp.config.compare.sort_text,
+						cmp.config.compare.length,
+						cmp.config.compare.order,
+					},
 				},
 				performance = {
 					debounce = 60,
@@ -144,6 +205,7 @@ return {
 			require("rails-tools.integrations.cmp").setup()
 			cmp.setup.filetype({ "ruby", "eruby" }, {
 				sources = cmp.config.sources({
+					{ name = "nvim_lsp_signature_help", priority = 1200 },
 					{ name = "rails_schema", priority = 1100 },
 					{ name = "nvim_lsp",     priority = 1000 },
 					{ name = "buffer",       priority = 500, keyword_length = 3, max_item_count = 5 },
