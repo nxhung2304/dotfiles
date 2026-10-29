@@ -9,6 +9,8 @@ return {
 
 		lint.linters_by_ft = {
 			eruby = { "erb_lint" },
+			swift = { "swiftlint" },
+			kotlin = { "ktlint" },
 		}
 
 		vim.api.nvim_create_autocmd({ "BufWritePost", "InsertLeave" }, {

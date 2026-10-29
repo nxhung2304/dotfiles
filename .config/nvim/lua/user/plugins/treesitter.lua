@@ -50,31 +50,38 @@ return {
 			"nvim-treesitter/nvim-treesitter-textobjects",
 		},
 		config = function()
+			local parsers = {
+				"bash",
+				"css",
+				"dart",
+				"embedded_template",
+				"go",
+				"gomod",
+				"gosum",
+				"gotmpl",
+				"gowork",
+				"groovy",
+				"html",
+				"java",
+				"javascript",
+				"json",
+				"kotlin",
+				"lua",
+				"markdown",
+				"markdown_inline",
+				"ruby",
+				"swift",
+				"templ",
+				"tsx",
+				"typescript",
+				"vim",
+				"vimdoc",
+				"xml",
+				"yaml",
+			}
+
 			require("nvim-treesitter").setup({
-        ensure_installed = {
-						"bash",
-						"css",
-						"dart",
-						"embedded_template",
-						"go",
-						"gomod",
-						"gosum",
-						"gowork",
-						"gotmpl",
-						"templ",
-						"html",
-						"javascript",
-						"json",
-						"lua",
-						"markdown",
-						"markdown_inline",
-						"ruby",
-						"typescript",
-						"tsx",
-						"vim",
-						"vimdoc",
-						"yaml",
-					},
+        ensure_installed = parsers,
 				textobjects = {
 					select = {
 						enable = true,
@@ -126,6 +133,19 @@ return {
 				},
 				indent = { enable = true, disable = { "dart" } },
 			})
+			require("nvim-treesitter").install(parsers)
+
+			local highlighted_filetypes = { "groovy", "java", "kotlin", "swift", "xml" }
+			vim.api.nvim_create_autocmd("FileType", {
+				group = vim.api.nvim_create_augroup("TreesitterMobileHighlight", { clear = true }),
+				pattern = highlighted_filetypes,
+				callback = function(args)
+					pcall(vim.treesitter.start, args.buf)
+				end,
+			})
+			if vim.tbl_contains(highlighted_filetypes, vim.bo.filetype) then
+				pcall(vim.treesitter.start)
+			end
 		end,
 	},
 }

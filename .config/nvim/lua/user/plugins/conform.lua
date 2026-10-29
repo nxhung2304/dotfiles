@@ -35,6 +35,12 @@ return {
 			swift = {
 				"swiftformat",
 			},
+			kotlin = {
+				"ktlint",
+			},
+			java = {
+				"google-java-format",
+			},
 		},
 	},
 	event = { "BufWritePre" },
