@@ -11,6 +11,8 @@ local vue_plugin = {
 
 return {
 	on_attach = function(client, bufnr)
+		require("user.core.utils").lsp_on_attach(client, bufnr)
+
 		-- Disable semantic tokens for Vue files to let Volar handle them
 		if vim.bo[bufnr].filetype == "vue" then
 			client.server_capabilities.semanticTokensProvider = nil

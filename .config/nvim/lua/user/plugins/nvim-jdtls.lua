@@ -54,8 +54,18 @@ return {
 			init_options = {
 				bundles = {},
 			},
+
+			on_attach = require("user.core.utils").lsp_on_attach,
+			capabilities = require("cmp_nvim_lsp").default_capabilities(),
 		}
 
 		require("jdtls").start_or_attach(opts)
+		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("JdtlsAttach", { clear = true }),
+			pattern = "java",
+			callback = function(args)
+				require("jdtls").start_or_attach(opts, nil, { bufnr = args.buf })
+			end,
+		})
 	end,
 }
