@@ -69,13 +69,13 @@ return {
 				return state
 			end
 
-			vim.keymap.set("n", "<leader>at", function()
+			vim.keymap.set("n", "<leader>ct", function()
 				local suggestion = require("copilot.suggestion")
 				suggestion.toggle_auto_trigger()
 				vim.notify("Copilot auto-trigger: " .. (auto_trigger_on() and "ON" or "OFF"), vim.log.levels.INFO)
 			end, { desc = "Toggle Copilot auto-trigger" })
 
-			vim.keymap.set("n", "<leader>ad", function()
+			vim.keymap.set("n", "<leader>cD", function()
 				local suggestion = require("copilot.suggestion")
 				if auto_trigger_on() then
 					suggestion.toggle_auto_trigger()

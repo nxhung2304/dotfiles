@@ -11,10 +11,8 @@ return {
 		local wk = require("which-key")
 		wk.add({
 			mode = { "n", "v" },
-			{ "<leader>a", desc = "AI" },
 			{ "<leader>c", desc = "Code" },
 			{ "<leader>C", desc = "Claude Code" },
-			{ "<leader>d", desc = "Debug" },
 			{ "<leader>g", desc = "Git" },
 			{ "<leader>s", desc = "Search" },
 			{ "<leader>F", desc = "Flutter" },
@@ -22,8 +20,7 @@ return {
 			{ "<leader>R", desc = "Rails runtime" },
 			{ "<leader>u", desc = "UI" },
 			{ "<leader>t", desc = "Test" },
-			{ "<leader>x", desc = "Xcode" },
-			{ "<leader>y", desc = "Copy" },
+			{ "<leader>q", desc = "Macro" },
 		})
 
 		wk.setup(opts)

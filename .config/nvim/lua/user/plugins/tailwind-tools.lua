@@ -4,7 +4,7 @@ return {
     "css", "eruby", "html"
   },
   keys = {
-    { "<leader>uT", "<cmd>TailwindColorToggle<cr>", desc = "Toggle Tailwind color highlight" },
+    { "<leader>ct", "<cmd>TailwindColorToggle<cr>", desc = "Toggle Tailwind color highlight" },
   },
   opts = {
     document_color = {

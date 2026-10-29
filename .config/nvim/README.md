@@ -115,9 +115,9 @@ go install golang.org/x/tools/cmd/goimports@latest
 | Key | Action |
 |---|---|
 | `<leader>cc` | Copy to clipboard (OSC52) |
-| `<leader>ya` | Copy absolute path |
-| `<leader>yr` | Copy relative path |
-| `<leader>yd` | Copy current diagnostic |
+| `<leader>ca` | Copy absolute path |
+| `<leader>cr` | Copy relative path |
+| `<leader>cd` | Copy current diagnostic |
 | `<leader>cs` | Substitute word in file |
 
 ### Sidebar panels
