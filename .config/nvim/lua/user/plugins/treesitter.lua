@@ -137,16 +137,20 @@ return {
 			local visual_and_operator_modes = { "x", "o" }
 			local move_keymaps = {
 				{ lhs = "]f", action = "goto_next_start", query = "@function.outer", modes = visual_and_operator_modes },
-				{ lhs = "]c", action = "goto_next_start", query = "@class.outer", modes = all_modes },
+				{ lhs = "]c", action = "goto_next_start", query = "@class.outer", modes = all_modes, keeps_diff_jump = true },
 				{ lhs = "]F", action = "goto_next_end", query = "@function.outer", modes = all_modes },
 				{ lhs = "]C", action = "goto_next_end", query = "@class.outer", modes = all_modes },
 				{ lhs = "[f", action = "goto_previous_start", query = "@function.outer", modes = visual_and_operator_modes },
-				{ lhs = "[c", action = "goto_previous_start", query = "@class.outer", modes = all_modes },
+				{ lhs = "[c", action = "goto_previous_start", query = "@class.outer", modes = all_modes, keeps_diff_jump = true },
 				{ lhs = "[F", action = "goto_previous_end", query = "@function.outer", modes = all_modes },
 				{ lhs = "[C", action = "goto_previous_end", query = "@class.outer", modes = visual_and_operator_modes },
 			}
 			for _, mapping in ipairs(move_keymaps) do
 				vim.keymap.set(mapping.modes, mapping.lhs, function()
+					if mapping.keeps_diff_jump and vim.wo.diff then
+						vim.cmd("normal! " .. vim.v.count1 .. mapping.lhs)
+						return
+					end
 					move_textobjects[mapping.action](mapping.query, "textobjects")
 				end, { desc = mapping.action .. " " .. mapping.query })
 			end
