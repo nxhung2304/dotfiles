@@ -7,6 +7,9 @@ return {
 		lint.linters.erb_lint.cmd = "erblint"
 		lint.linters.erb_lint.args = { "--format", "compact" }
 
+		local ktlint_default_editorconfig = vim.fn.stdpath("config") .. "/ktlint-android.editorconfig"
+		lint.linters.ktlint.args = { "--reporter=json", "--stdin", "--editorconfig=" .. ktlint_default_editorconfig }
+
 		lint.linters_by_ft = {
 			eruby = { "erb_lint" },
 			swift = { "swiftlint" },

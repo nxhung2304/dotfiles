@@ -1,10 +1,21 @@
 local current_buffer_words_cache = { bufnr = nil, changedtick = nil, words = {} }
 
+vim.api.nvim_create_autocmd("InsertEnter", {
+	group = vim.api.nvim_create_augroup("CmpCurrentBufferWords", { clear = true }),
+	callback = function()
+		current_buffer_words_cache.bufnr = nil
+	end,
+})
+
+local function is_insert_mode()
+	return vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+end
+
 local function get_current_buffer_words()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local changedtick = vim.api.nvim_buf_get_changedtick(bufnr)
 	local cache = current_buffer_words_cache
-	if cache.bufnr == bufnr and cache.changedtick == changedtick then
+	if cache.bufnr == bufnr and (cache.changedtick == changedtick or is_insert_mode()) then
 		return cache.words
 	end
 
