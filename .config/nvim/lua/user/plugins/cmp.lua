@@ -40,6 +40,7 @@ return {
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-nvim-lua",
+			"hrsh7th/cmp-nvim-lsp-signature-help",
 		},
 		opts = function()
 			local cmp = require("cmp")
@@ -136,6 +137,7 @@ return {
 					end,
 				},
 				sources = {
+					{ name = "nvim_lsp_signature_help", priority = 1200 },
 					{ name = "nvim_lsp", priority = 1000 },
 					-- { name = "minuet", priority = 100 },
 					{ name = "i18n",    priority = 900 },
@@ -192,6 +194,7 @@ return {
 			require("rails-tools.integrations.cmp").setup()
 			cmp.setup.filetype({ "ruby", "eruby" }, {
 				sources = cmp.config.sources({
+					{ name = "nvim_lsp_signature_help", priority = 1200 },
 					{ name = "rails_schema", priority = 1100 },
 					{ name = "nvim_lsp",     priority = 1000 },
 					{ name = "buffer",       priority = 500, keyword_length = 3, max_item_count = 5 },
