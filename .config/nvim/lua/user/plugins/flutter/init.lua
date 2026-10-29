@@ -49,7 +49,6 @@ return {
 
 				debugger = {
 					enabled = true,
-					run_via_dap = true,
 					exception_breakpoints = {},
 					evaluate_to_string_in_debug_views = true,
 				},
@@ -81,11 +80,34 @@ return {
 			require("dap-view").setup({
 				winbar = {
 					show = true,
-					sections = { "scopes", "repl" },
+					sections = { "scopes", "watches", "breakpoints", "exceptions", "repl" },
 					default_section = "scopes",
-					controls = { enabled = true, position = "right" },
+					controls = {
+						enabled = true,
+						position = "right",
+						buttons = { "play", "step_into", "step_over", "step_out", "hot_reload", "hot_restart", "terminate" },
+						custom_buttons = {
+							hot_reload = {
+								render = function()
+									return "%#NvimDapViewControlPlay#󰑓%*"
+								end,
+								action = function()
+									vim.cmd("FlutterReload")
+								end,
+							},
+							hot_restart = {
+								render = function()
+									return "%#NvimDapViewControlRunLast#󰜉%*"
+								end,
+								action = function()
+									vim.cmd("FlutterRestart")
+								end,
+							},
+						},
+					},
 				},
 				windows = { size = 0.35, position = "left" },
+				auto_toggle = true,
 			})
 
 			local dap = require("dap")
@@ -117,23 +139,26 @@ return {
 
 			-- Always focus the source window when execution stops (breakpoint/step),
 			-- even if focus was in dap-repl/dap-view at the time.
-			dap.listeners.after.event_stopped["flutter_focus_source"] = function(session)
-				vim.schedule(function()
-					local frame = session.current_frame
-					if not (frame and frame.source and frame.source.path) then
-						return
+			local function find_source_window(bufnr)
+				local shown_win = vim.fn.bufwinid(bufnr)
+				if shown_win ~= -1 then
+					return shown_win
+				end
+				for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+					local win_buf = vim.api.nvim_win_get_buf(win)
+					if vim.api.nvim_win_get_config(win).relative == "" and vim.bo[win_buf].buftype == "" then
+						return win
 					end
-					local bufnr = vim.fn.bufnr(frame.source.path)
-					if bufnr == -1 then
-						return
-					end
-					for _, win in ipairs(vim.api.nvim_list_wins()) do
-						if vim.api.nvim_win_get_buf(win) == bufnr then
-							vim.api.nvim_set_current_win(win)
-							return
-						end
-					end
-				end)
+				end
+				vim.cmd("vsplit")
+				return vim.api.nvim_get_current_win()
+			end
+
+			dap.defaults.dart.switchbuf = function(bufnr, line, column)
+				local source_win = find_source_window(bufnr)
+				vim.api.nvim_win_set_buf(source_win, bufnr)
+				vim.api.nvim_set_current_win(source_win)
+				pcall(vim.api.nvim_win_set_cursor, source_win, { line, column - 1 })
 			end
 
 			-- Flutter dev_log → tmux pane
@@ -379,8 +404,12 @@ return {
 				end
 			end
 
-			local function run_or_debug(force_debug)
-				local commands = require("flutter-tools.commands")
+			local launch_without_debugger = false
+
+			dap.listeners.on_config["flutter_prepare_launch"] = function(config)
+				if config.type ~= "dart" or config.request ~= "launch" then
+					return config
+				end
 				clear_flutter_log()
 				open_flutter_log_window()
 
@@ -399,6 +428,21 @@ return {
 					pcall(vim.api.nvim_del_autocmd, once)
 					stop()
 				end, 120000)
+
+				if launch_without_debugger then
+					launch_without_debugger = false
+					return vim.tbl_extend("force", config, { noDebug = true })
+				end
+				return config
+			end
+
+			local function run_or_debug(force_debug)
+				local commands = require("flutter-tools.commands")
+				if commands.is_running() then
+					vim.notify("Flutter is already running", vim.log.levels.WARN, { title = "Flutter" })
+					return
+				end
+				launch_without_debugger = not force_debug
 
 				if not commands.current_device() and preferred_device then
 					commands.run({ device = preferred_device, force_debug = force_debug })
@@ -485,7 +529,13 @@ return {
 			vim.keymap.set("n", "<leader>Fa", boot_android_emulator, { desc = "Flutter: Boot Android emulator" })
 
 			-- DAP controls (<leader>d)
-			vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "Debug: Continue" })
+			vim.keymap.set("n", "<leader>dc", function()
+				if dap.session() then
+					dap.continue()
+				else
+					run_or_debug(true)
+				end
+			end, { desc = "Debug: Continue" })
 			vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "Debug: Step Over" })
 			vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "Debug: Step Into" })
 			vim.keymap.set("n", "<leader>dO", dap.step_out, { desc = "Debug: Step Out" })
