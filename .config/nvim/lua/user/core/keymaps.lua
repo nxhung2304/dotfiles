@@ -46,8 +46,8 @@ keymap("n", "<leader>cs", function()
 	return ":%s/" .. vim.fn.escape(word, "/\\") .. "/"
 end, { expr = true, desc = "Substitute in file" })
 
-keymap("n", "<leader>ca", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
-keymap("n", "<leader>cr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
+keymap("n", "<leader>ya", "<cmd>CopyAbsolutePath<cr>", { desc = "Copy absolute filepath" })
+keymap("n", "<leader>yr", "<cmd>CoppyRelativePath<cr>", { desc = "Copy relative filepath" })
 
 keymap("n", "<leader>ci", "<cmd>NewIssueSpec<cr>", { desc = "New issue file in specs/issues" })
 
@@ -56,7 +56,7 @@ keymap("t", "<Esc>", "<C-\\><C-n>")
 keymap("v", ">", ">gv", { desc = "Indent in" })
 keymap("v", "<", "<gv", { desc = "Indent out" })
 
-vim.keymap.set("n", "<leader>cD", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Copy current diagnostic" })
+vim.keymap.set("n", "<leader>yd", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Copy current diagnostic" })
 
 -- Diagnostics
 keymap("n", "]e", function()

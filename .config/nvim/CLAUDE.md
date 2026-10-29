@@ -48,7 +48,7 @@ Panels: Files (`<leader>1`), Git (`<leader>2`), Search (`<leader>3`), Marks (`<l
 | `ga` | LSP code action |
 | `]e` / `[e` | Next/prev error diagnostic |
 | `<leader>cc` | Copy to clipboard (OSC52) |
-| `<leader>ca` / `<leader>cr` | Copy absolute/relative path |
+| `<leader>ya` / `<leader>yr` | Copy absolute/relative path |
 
 ## LSP Setup Pattern
 
