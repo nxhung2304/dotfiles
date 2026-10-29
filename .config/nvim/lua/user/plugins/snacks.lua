@@ -110,16 +110,9 @@ return {
 		{
 			"<leader>um",
 			function()
-				Snacks.win({
-					text = vim.split(vim.fn.execute("messages"), "\n", { trimempty = true }),
-					title = " Messages",
-					width = 0.8,
-					height = 0.6,
-					border = "rounded",
-					wo = { wrap = true },
-				})
+				Snacks.notifier.show_history()
 			end,
-			desc = "Show Messages",
+			desc = "Show Notification History",
 		},
 	},
 }

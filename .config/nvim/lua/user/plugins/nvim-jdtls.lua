@@ -1,21 +1,53 @@
+local JDTLS_JAVA_CANDIDATES = {
+	"~/.asdf/installs/java/temurin-25*/bin/java",
+	"/opt/homebrew/opt/openjdk/bin/java",
+	"/opt/homebrew/opt/openjdk@25/bin/java",
+	"/usr/local/opt/openjdk/bin/java",
+}
+
+local function find_jdtls_java_executable()
+	local overridden_executable = vim.env.JDTLS_JAVA_EXECUTABLE
+	if overridden_executable and vim.fn.executable(overridden_executable) == 1 then
+		return overridden_executable
+	end
+
+	for _, pattern in ipairs(JDTLS_JAVA_CANDIDATES) do
+		local executables = vim.fn.glob(vim.fn.expand(pattern), false, true)
+		if #executables > 0 then
+			return executables[#executables]
+		end
+	end
+
+	vim.notify(
+		"jdtls needs JDK 25: install one or set JDTLS_JAVA_EXECUTABLE (falling back to `java` in PATH)",
+		vim.log.levels.WARN
+	)
+	return "java"
+end
+
+local JDTLS_ROOT_MARKERS = { "settings.gradle", "settings.gradle.kts", ".git", "mvnw", "gradlew" }
+
 return {
 	"mfussenegger/nvim-jdtls",
 	ft = "java",
 	config = function()
 		local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
 		local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls/workspace/" .. project_name
+		local jdtls_java_executable = find_jdtls_java_executable()
 
 		local opts = {
 			-- The command that starts the language server
 			-- See: https://github.com/eclipse/eclipse.jdt.ls#running-from-the-command-line
 			cmd = {
 				"jdtls",
+				"--java-executable",
+				jdtls_java_executable,
 				-- depends on if `java` is in your $PATH env variable and if it points to the right version.
 				"-data",
 				workspace_dir,
 			},
 
-			root_dir = require("jdtls.setup").find_root({ ".git", "mvnw", "gradlew" }),
+			root_dir = require("jdtls.setup").find_root(JDTLS_ROOT_MARKERS),
 
 			-- Here you can configure eclipse.jdt.ls specific settings
 			-- See https://github.com/eclipse/eclipse.jdt.ls/wiki/Running-the-JAVA-LS-server-from-the-command-line#initialize-request
