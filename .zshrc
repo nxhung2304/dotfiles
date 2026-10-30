@@ -38,6 +38,8 @@ eval "$(zoxide init zsh)"
 
 
 # Envs
+export EDITOR="nvim"
+export VISUAL="nvim"
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH="/usr/local/opt/postgresql@17/bin:$PATH"
 export PATH="$HOME/fvm/default/bin:$PATH"
