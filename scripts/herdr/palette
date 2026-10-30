@@ -18,17 +18,36 @@ single_entry() {
 }
 
 build_entries() {
-    single_entry "Agents" "Status" "agents-menu"
-    group_entries "Worktree" "wt-menu"
-    group_entries "GitHub" "github-menu"
     group_entries "Hunk" "hunk-menu"
+    group_entries "GitHub" "github-menu"
+    group_entries "Worktree" "wt-menu"
     single_entry "Theme" "Switch" "../theme-switch"
+    single_entry "Agents" "Status" "agents-menu"
     single_entry "Files" "Drag and drop" "drag-drop"
     single_entry "Herdr" "Reload config" "reload-config"
 }
 
-selection=$(build_entries | pick "run" --delimiter=$'\t' --with-nth=1 --tiebreak=index || true)
+readonly HISTORY_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-palette/history"
+readonly HISTORY_LIMIT=200
+
+recent_first() {
+    [[ -s $HISTORY_FILE ]] || { cat; return; }
+    awk -F'\t' '
+        NR == FNR { if (!($0 in rank)) rank[$0] = NR; next }
+        { printf "%d\t%d\t%s\n", ($1 in rank) ? rank[$1] : 100000, FNR, $0 }
+    ' <(tail -r "$HISTORY_FILE") - | sort -n -k1,1 -k2,2 | cut -f3-
+}
+
+remember_selection() {
+    mkdir -p "$(dirname "$HISTORY_FILE")"
+    printf '%s\n' "$1" >> "$HISTORY_FILE"
+    tail -n "$HISTORY_LIMIT" "$HISTORY_FILE" > "$HISTORY_FILE.tmp" && mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+}
+
+selection=$(build_entries | recent_first | pick "run" --delimiter=$'\t' --with-nth=1 --tiebreak=index || true)
 [[ -n $selection ]] || exit 0
+
+remember_selection "${selection%%$'\t'*}"
 
 IFS=$'\t' read -r _ script label <<<"$selection"
 exec "$SCRIPT_DIR/$script" ${label:+"$label"}

@@ -5,7 +5,7 @@ if [[ -n ${HERDR_ACTIVE_PANE_ID:-} ]]; then
 fi
 
 pick() {
-    fzf --prompt="$1> " --height=100% --reverse "${@:2}"
+    fzf --prompt="$1> " --height=100% --reverse --gutter=' ' "${@:2}"
 }
 
 pause_on_failure() {
