@@ -21,10 +21,16 @@
 - Don't propose fixing a suspected bug in existing code until it's confirmed (reproduced or tested). Record it as a risk to test, and let me decide after testing.
 - If touching old logic seems necessary, state why the current change requires it and what could break, then wait for my approval.
 
+## Solutions (minimize my manual work)
+- Prefer the option that removes manual steps from me: make the code/config/script detect, generate or fall back by itself, instead of a checklist for me to run.
+- Before telling me to do a step by hand, look for a way to automate it within the change scope (idempotent, safe to re-run, no side effects outside the project's own gitignored/generated files). Leave a step manual only when it needs my credentials, a decision, or an action outside the machine/repo, and say why.
+- Automation stays inside the Change scope rules: fewer steps for me, not extra features or refactors.
+
 ## Verification
 - Double-check every claim before stating it, even if it costs many more tokens/tool calls — a wrong early claim breaks everything built on it. Double-check means a second, independent check: actively search for counter-evidence (other callers, other entry points, config/storyboard/server side, the opposite case), not re-reading the same evidence. If the second check can't be done, label the claim as a guess.
 - When changing a computed value/index that must match another value produced by an independent source or pipeline (e.g. two arrays built separately, a join key, a pagination offset, a checksum, two components' synced state), do not conclude the change is correct just because the applied condition is logically reasonable and no runtime error (crash/exception/out-of-bounds) occurs. Construct at least one concrete input example, manually trace both sides that produce the compared values, and confirm the final values actually match before claiming the fix is correct.
 - When giving steps to reproduce or verify a bug, add the simulation yourself as temporary debug code in the working tree (forced state/response, switch constants, tagged logs with a unique prefix like `[DEBUG-<topic>]`) instead of only describing it. Do this proactively, even when I only asked a question, as long as it takes a few lines. Lead with it, with exact file:line, so it can be triggered deterministically. Give the natural real-world repro only after it, if relevant.
+- Before handing me any manual or real-device test list, go through every case and add a debug trigger (button, forced state) for each one that can be simulated in a few lines. List the remaining cases with the reason each still needs manual work (real OS behaviour, external device or service, credentials).
 - Temporary debug code: never commit it, mark it only with the tag in log strings (no comments), and at the end list every file/line added and tell me to remove it.
 - Before deriving test cases or repro steps from an issue/bug report, read all of it, including attachments (images, videos, linked comments); download them if not readable inline. Call a case "the main/key case" only when the source itself shows it. If an attachment can't be read, say so upfront and label every case derived without it as an assumption, not ranked above the others.
 - Never weaken, skip or delete tests or assertions to make them pass. Update a test only when the spec intentionally changes the behavior that test checks, and list every test change in the report.
@@ -49,3 +55,9 @@
 
 ## Autonomous runs
 - When a skill says to run without stopping, don't wait for approvals required by these rules. Do the minimal safe option and list every item that needed my approval in the final summary.
+
+## Learning from mistakes
+- When I point out a mistake of yours, or you notice one, say in one line whether a rule would prevent it next time. Propose a rule only if the mistake can recur in other tasks, not for a one-off slip.
+- First check whether an existing rule already covers it. If so, propose rewording or widening that rule instead of adding a new one, and say why it was missed.
+- Pick the narrowest place that fits: project CLAUDE.md for this repo only, global CLAUDE.md for any project, the skill's SKILL.md when the mistake happened inside that skill's workflow.
+- Show the exact text and target file, then wait for my approval before editing.
