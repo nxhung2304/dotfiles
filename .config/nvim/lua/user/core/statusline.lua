@@ -16,7 +16,7 @@ local click_actions = {
 		vim.cmd("checkhealth vim.lsp")
 	end,
 	flutter_device = function()
-		vim.cmd("FlutterDevices")
+		vim.cmd("FlutterSelectDevice")
 	end,
 }
 local click_ids = { "git_branch", "diagnostics", "lsp", "flutter_device" }

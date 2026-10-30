@@ -530,6 +530,9 @@ return {
 				end
 			end
 
+			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
+				flutter_with_loading("Loading devices", "FlutterDevices")
+			end, {})
 			vim.api.nvim_create_user_command("FlutterBootIOS", boot_ios_simulator, {})
 			vim.api.nvim_create_user_command("FlutterBootAndroid", boot_android_emulator, {})
 			vim.keymap.set("n", "<leader>Fi", boot_ios_simulator, { desc = "Flutter: Boot iOS simulator" })
