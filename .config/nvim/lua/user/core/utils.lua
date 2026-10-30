@@ -45,6 +45,8 @@ local function set_winbar_highlights()
 	vim.api.nvim_set_hl(0, "NavicHighlight2", { fg = highlight_fg("Type"), bold = true })
 	vim.api.nvim_set_hl(0, "WinBarPath", { fg = highlight_fg("Comment") })
 	vim.api.nvim_set_hl(0, "WinBarFilename", { fg = highlight_fg("String"), bold = true })
+	vim.api.nvim_set_hl(0, "WinBar", { fg = highlight_fg("Comment"), bg = "NONE", bold = true })
+	vim.api.nvim_set_hl(0, "WinBarNC", { fg = highlight_fg("Comment"), bg = "NONE" })
 end
 
 set_winbar_highlights()
