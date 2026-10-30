@@ -19,17 +19,48 @@
       "mcp__claude_ai_Slack__slack_add_reaction",
       "mcp__claude_ai_Slack__slack_create_conversation",
       "mcp__claude_ai_Slack__slack_create_canvas",
-      "mcp__claude_ai_Slack__slack_update_canvas"
+      "mcp__claude_ai_Slack__slack_update_canvas",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.production)",
+      "Read(**/.env.test)",
+      "Read(~/.env)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.secret)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials*.json)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.netrc)",
+      "Read(~/.npmrc)",
+      "Bash(cat **/.env*)",
+      "Bash(cat .env*)",
+      "Bash(cat ~/.env*)",
+      "Bash(cat ~/.ssh/**)",
+      "Bash(cat ~/.aws/**)",
+      "Bash(printenv:*)",
+      "Bash(env)",
+      "Bash(env:*)",
+      "Bash(export)",
+      "Bash(set)"
     ]
   },
-  "model": "opus",
+  "model": "sonnet",
   "hooks": {
     "Notification": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh '🔔' 'CC - Need user input' 'Basso'"
+            "command": "~/dotfiles/scripts/herdr/notify-agent input"
           }
         ]
       }
@@ -51,7 +82,47 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/notify.sh '✅' 'CC - Task done' 'default'"
+            "command": "~/dotfiles/scripts/herdr/notify-agent done"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/ai_track.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/ai_track.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/ai_track.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/ai_track.py"
           }
         ]
       }
@@ -114,5 +185,10 @@
   "fileSuggestion": {
     "type": "command",
     "command": "~/.claude/file-suggestion.sh"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
   }
 }
