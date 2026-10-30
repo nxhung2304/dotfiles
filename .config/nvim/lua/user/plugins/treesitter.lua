@@ -9,27 +9,15 @@ return {
 		},
 		config = function(_, opts)
 			require("treesitter-context").setup(opts)
-			local function set_context_bottom_hl()
-				local separator_color = vim.api.nvim_get_hl(0, { name = "WinSeparator", link = false }).fg
-				vim.api.nvim_set_hl(0, "TreesitterContextBottom", { underline = true, sp = separator_color })
-				vim.api.nvim_set_hl(0, "TreesitterContextLineNumberBottom", { underline = true, sp = separator_color })
-			end
-			set_context_bottom_hl()
-			vim.api.nvim_create_autocmd("ColorScheme", { callback = set_context_bottom_hl })
 
-			-- box shadow: dim the context slightly and set winblend on its float window
-			vim.api.nvim_create_autocmd("WinNew", {
-				callback = function()
-					vim.schedule(function()
-						for _, win in ipairs(vim.api.nvim_list_wins()) do
-							local cfg = vim.api.nvim_win_get_config(win)
-							if cfg.zindex and cfg.zindex == 20 and cfg.relative ~= "" then
-								vim.wo[win].winblend = 15
-							end
-						end
-					end)
-				end,
-			})
+			local function set_context_hl()
+				local context_bg = vim.api.nvim_get_hl(0, { name = "CursorLine", link = false }).bg
+				local line_number_fg = vim.api.nvim_get_hl(0, { name = "LineNr", link = false }).fg
+				vim.api.nvim_set_hl(0, "TreesitterContext", { bg = context_bg })
+				vim.api.nvim_set_hl(0, "TreesitterContextLineNumber", { bg = context_bg, fg = line_number_fg })
+			end
+			set_context_hl()
+			vim.api.nvim_create_autocmd("ColorScheme", { callback = set_context_hl })
 		end,
 		keys = {
 			{
