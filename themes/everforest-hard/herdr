@@ -1,6 +1,5 @@
 [theme.custom]
 accent = "#a7c080"
 panel_bg = "#272e33"
-sidebar_bg = "#232a2e"
 active_row_bg = "#3a464c"
 selection_bg = "#434f55"
