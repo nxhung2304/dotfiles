@@ -20,6 +20,7 @@ source scripts/install/asdf.sh
 source scripts/install/mobile.sh
 source scripts/install/database.sh
 source scripts/install/stow.sh
+source scripts/install/git.sh
 source scripts/install/shell.sh
 source scripts/install/terminal.sh
 source scripts/install/ai.sh
@@ -33,6 +34,7 @@ install_asdf
 install_mobile
 install_database
 install_stow
+install_git_filters
 install_shell
 install_terminal
 install_ai

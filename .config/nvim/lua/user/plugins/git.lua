@@ -82,38 +82,6 @@ end
 
 return {
 	{
-		"esmuellert/codediff.nvim",
-		cmd = "CodeDiff",
-		opts = {
-			diff = {
-				layout = "side-by-side",
-				jump_to_first_change = true,
-				cycle_next_hunk = true,
-				cycle_next_file = true,
-			},
-			explorer = {
-				position = "left",
-				auto_refresh = true,
-				view_mode = "list",
-			},
-			keymaps = {
-				view = {
-					quit = "q",
-					next_hunk = "]c",
-					prev_hunk = "[c",
-					next_file = "]f",
-					prev_file = "[f",
-					toggle_stage = "-",
-					toggle_layout = "t",
-					show_help = "g?",
-				},
-			},
-		},
-		keys = {
-			{ "<leader>gd", "<cmd>CodeDiff<cr>", desc = "Open CodeDiff" },
-		},
-	},
-	{
 		"lewis6991/gitsigns.nvim",
 		event = { "BufReadPre", "BufNewFile" },
 		opts = {

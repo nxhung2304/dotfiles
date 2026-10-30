@@ -22,9 +22,13 @@ backups/
 .config/flutter/
 .config/gh/hosts.yml
 .config/herdr/sessions/
+.config/herdr/session-snapshots/
+.config/herdr/herdr.sock.agent
 .config/ghostty/theme
+.config/hunk/config.toml
 reset-trial-crossover.sh
 .config/gcloud/
 .env
 .env.*
 docs/images/*.mov
+.claude/skills/hunk-review
