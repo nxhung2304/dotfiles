@@ -97,6 +97,63 @@ apply_nvim() {
     } > "$nvim_data_dir/colorscheme.txt"
 }
 
+apply_hunk() {
+    local hunk_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/hunk" folder
+    mkdir -p "$hunk_config_dir"
+    {
+        printf 'theme = "dots-%s"\n' "$1"
+        for folder in "$themes_dir"/*/; do
+            printf '\n'
+            cat "$folder/hunk.toml"
+        done
+    } > "$hunk_config_dir/config.toml"
+}
+
+hunk_selector_cursor() {
+    herdr pane read "$1" --source visible --format text | sed -n 's/.*› *\(.*[^ ]\) *active.*/\1/p;s/.*› *\(.*[^ ]\) *│.*/\1/p' | head -1
+}
+
+theme_position() {
+    local position=0 folder
+    for folder in "$themes_dir"/*/; do
+        [[ $(theme_label "$(basename "$folder")") == "$1" ]] && { echo "$position"; return 0; }
+        position=$((position + 1))
+    done
+    return 1
+}
+
+retheme_running_hunk_pane() {
+    local pane_id=$1 target_label=$2 active_position target_position offset direction keys=()
+    herdr pane send-keys "$pane_id" t >/dev/null
+    sleep 0.3
+    active_position=$(theme_position "$(hunk_selector_cursor "$pane_id")") || active_position=
+    target_position=$(theme_position "$target_label") || target_position=
+    if [[ -z $active_position || -z $target_position || $active_position == "$target_position" ]]; then
+        herdr pane send-keys "$pane_id" esc >/dev/null
+        return 0
+    fi
+    offset=$((target_position - active_position))
+    direction=down
+    if (( offset < 0 )); then
+        direction=up
+        offset=$((-offset))
+    fi
+    while (( offset-- > 0 )); do
+        keys+=("$direction")
+    done
+    herdr pane send-keys "$pane_id" "${keys[@]}" enter >/dev/null
+}
+
+retheme_running_hunk_panes() {
+    local pane_id
+    command -v herdr >/dev/null || return 0
+    for pane_id in $(herdr pane list 2>/dev/null | jq -r '.result.panes[].pane_id'); do
+        if herdr pane process-info --pane "$pane_id" 2>/dev/null | jq -e '.result.process_info.foreground_processes | any(.argv0 == "hunk")' >/dev/null; then
+            retheme_running_hunk_pane "$pane_id" "$1"
+        fi
+    done
+}
+
 apply_fzf() {
     mkdir -p "$(dirname "$state_file")"
     cp "$1/fzf" "$(dirname "$state_file")/fzf"
@@ -114,6 +171,7 @@ apply_theme() {
     apply_herdr "$folder"
     apply_claude "$folder"
     apply_nvim "$(theme_setting "$theme_id" nvim_colorscheme)" "$(theme_setting "$theme_id" nvim_globals)"
+    apply_hunk "$theme_id"
     apply_fzf "$folder"
 
     mkdir -p "$(dirname "$state_file")"
@@ -132,7 +190,9 @@ case ${1:-} in
         if selected=$(list_themes | fzf --delimiter=$'\t' --with-nth=2 --prompt='theme ❯ ' \
             --preview="$0 --preview {1}" --preview-window=down,5,border-top \
             --bind="focus:execute-silent($0 {1})"); then
-            apply_theme "$(cut -f1 <<< "$selected")"
+            selected_theme=$(cut -f1 <<< "$selected")
+            apply_theme "$selected_theme"
+            retheme_running_hunk_panes "$(theme_label "$selected_theme")"
         elif [[ -n $theme_before_picker ]]; then
             apply_theme "$theme_before_picker"
         fi
