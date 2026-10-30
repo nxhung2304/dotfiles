@@ -145,7 +145,7 @@ Read back the `comment.log` you just wrote, and confirm:
 - Every field's content, not just the field labels, is actually written in the target language — no leftover English (or source-language) sentences under translated labels.
 - The writing is clear enough that a developer understands what to fix immediately, without needing to re-read the original code.
 
-Report back to the user in the chat-reply structure from the user's global rules (omit empty sections): **Kết luận** = count of MUST/SHOULD/NIT, how many are assumption-based, how many are pending confirmation, how many moved to the out-of-scope section; **Anh cần làm** = the MUST items to decide on, one line each, plus the questions from "Pending confirmation" and "Spec to review" to raise; **Còn treo** = which source was missing, if any; the log file path. Do not repeat the full report content in chat.
+Report back to the user in the chat-reply structure from the user's global rules (omit empty sections): **Kết luận** = count of MUST/SHOULD/NIT, how many are assumption-based, how many are pending confirmation, how many moved to the out-of-scope section; **Anh cần làm** = the MUST items to decide on, one line each, plus the questions from "Pending confirmation" and "Spec to review" to raise; **Còn treo** = which source was missing, if any; the log file path; when "Pending confirmation" or "Spec to review" has entries, add one line to **Còn treo**: after you decide, run `/pr-desc` to record the accepted risks in the PR. Do not repeat the full report content in chat.
 
 ## Rules
 

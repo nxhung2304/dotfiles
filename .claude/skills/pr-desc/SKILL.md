@@ -1,7 +1,7 @@
 ---
 name: pr-desc
 model: claude-sonnet-5-5
-allowed-tools: Bash(git:*), Bash(gh pr list:*), Bash(ls:*), Read
+allowed-tools: Bash(git:*), Bash(gh pr list:*), Bash(gh pr view:*), Bash(ls:*), Read
 description: Generate a short, plain-language PR description from the diff/commit log between the current branch and base, so a leader/reviewer understands what was done at a glance. Prints content only — does not create/update the PR on GitHub. Defaults to Vietnamese, accepts a `lang` override via ARGUMENTS. Trigger on "viết PR content", "tạo nội dung PR", "tóm tắt PR", "pr-desc", "write PR description".
 ---
 
@@ -19,6 +19,19 @@ Read the diff + commit log between the current branch and the base branch → su
    - `git symbolic-ref refs/remotes/origin/HEAD` (fallback: try `main`, then `master` if the above has no output)
    - Determine the current branch: `git branch --show-current`
    - If currently on the base branch → tell the user there is nothing to summarize, stop
+   - `gh pr view --json number,body,state` — if the branch has an OPEN PR, use **update mode** (below) instead of steps 3–4
+
+**Update mode** (PR already exists):
+- Compare the commits in `git log <base>..HEAD` with the current PR body; keep only the commits whose change the body does not describe yet (e.g. fixes after review)
+- Nothing new and no accepted risk missing from the body → tell the user the PR body already covers every commit, stop
+- An accepted risk (see the accepted-risk rule) the body does not mention yet counts as new, even with no new commit
+- Otherwise write only one section to append at the end of the body (before the closing/issue section if the body has one):
+  - A `###` heading naming the change, 1 line on what now behaves differently
+  - Before/after table or bullets only when evidence exists (same source rules as "Bằng chứng")
+  - A risk/trade-off line only when the change brings one the reviewer must know
+- Write it as part of the PR description, not as a reply to the reviewer: no "theo review", no "ご指摘", no commit hash
+- Match the language and section style of the existing body; no `closes` line
+- Then continue at step 5
 
 2. Gather context:
    - `git log <base>..HEAD --oneline` — list of commits
@@ -29,6 +42,7 @@ Read the diff + commit log between the current branch and the base branch → su
      - behaviour changes listed under impact/影響範囲 that the diff alone doesn't show
      - the test checklist and any test results already recorded
      - related issues the spec says share the same cause or should be merged
+     - accepted-risk candidates: open entries in `comment.log` ("Spec to review", "Pending confirmation", Assumption-based findings). Never put them in the PR on your own: before writing, ask the user in one short question which of them they accepted, and include only those (see the accepted-risk rule below)
 
 3. Pick the format:
    - Run `gh pr list --author @me --state all --limit 5 --json body`
@@ -69,11 +83,23 @@ closes #[issue number]
 - Avoid detailed implementation jargon (function/variable names) unless truly necessary for context
 - Vietnamese must read naturally for a non-developer: short simple sentences, describe what the user/app does instead of technical terms (e.g. "thông báo lỗi" not "alert", "app đang chạy nền" not "background", "chuyển sang màn tiếp theo" not "present"); keep a term only when there is no plain equivalent
 - One idea per bullet: when a bullet has several points, split them into sub-bullets — never chain them with `;`
+- No emoji/icons (✅ ❌ 🚀 …); write results in words (OK / NG, 停止 / 収集中)
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
 - If there are multiple unrelated groups of changes, list them as separate bullets in "Đã thực hiện" instead of blending them together
 - Leave out minor cleanups (deleted comments, unused variables/imports) and things that were kept unchanged — they don't help the reviewer decide
 - "Bằng chứng": only from what is stated in the conversation, commits or the issue's spec files (test run, output, screenshot the user mentioned); never invent a before/after. If there is none but the spec has a test checklist, keep the section and list each checklist case with a placeholder `[result / video to fill in]` (translated to the output language). Drop the section only when there is neither evidence nor a checklist
+- Test results taken from `testcases.md`: summarize, never list every case (the per-case placeholder list above is only for a checklist with no results yet)
+  - 2-3 lines in total: what kinds of cases passed, the device used, and what was simulated rather than a real failure
+  - Group the cases by kind and describe each group in plain words; never use internal IDs or labels from `testcases.md` (case numbers, group names) — the reader cannot look them up
+  - Say which cases were re-run after the last code change, and that the others ran on earlier code
+  - Keep a before/after table only for the one case that proves the fix
+  - Count a case as passed only if `testcases.md` or the conversation records it; never infer it
 - "Rủi ro merge": don't write filler lines that tell the reviewer nothing (e.g. "revert là về như cũ", "ảnh hưởng màn X"). If there is nothing to report, drop the whole section
+- Accepted risk (the user accepted it, listed in "Rủi ro merge"): keep only what the leader needs to decide
+  - One line each, at most 3 lines in total; merge items with the same cause
+  - Say what can go wrong for the user/app and that it is a deliberate choice, plus how it will be handled if reported (e.g. "sẽ sửa khi có báo cáo")
+  - If it was never tested on a real device, say so in plain words; never present it as verified
+  - No code/class names, no history of the discussion, no options list
 - Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one
 - `closes #N`: take N from the branch name (`#(\d+)`) or a commit's `closes #N`; if none is found, drop the line instead of leaving `closes #`
 - Related issues from the spec (same cause / to be merged): don't add them to the code block — suggest them below it for the user to confirm

@@ -1,7 +1,7 @@
 ---
 name: commit
 model: haiku
-allowed-tools: Bash(git:*), Bash(cat:*), Read, Write, Bash(git commit:*)
+allowed-tools: Bash(git:*), Bash(cat:*), Read, Write, Bash(git commit:*), Bash(gh pr view:*)
 description: Create git commits from staged changes — full bullet-point message or short one-liner, optional approval step, optional push
 ---
 
@@ -28,6 +28,8 @@ closes #<issue>
 
 `closes #<issue>` goes on its own line right after the last bullet. Take `<issue>` from the branch name (`git branch --show-current`, regex `#(\d+)`); if there is no match, omit the line.
 
+Omit the line also when an earlier commit on this branch already has it: find the base with `git symbolic-ref refs/remotes/origin/HEAD` (fallback `develop`, then `main`), then `git log <base>..HEAD --oneline -i -E --grep="close[sd]? #<issue>([^0-9]|$)"`; any match → no `closes` line.
+
 **Format (`short`):**
 ```
 type(scope): subject (<70 chars, imperative)
@@ -48,6 +50,7 @@ Co-Authored-By: <current model> <noreply@anthropic.com>
 4. `git commit -m "$(cat <<'EOF'\n...\nEOF)"` (use a heredoc whenever the message is multi-line or has a footer)
 5. `git log -1` verify
 6. If `push=true` → `git push`, then report the commit hash and push result
+7. `gh pr view --json number,url,state` — if the branch has an OPEN PR, end the report with one line: "PR #<number> đã có — commit này chưa có trong nội dung PR, chạy `/pr-desc` để lấy mục bổ sung". No PR, or the command fails → say nothing
 
 **Rules:**
 - Subject < 70 chars, imperative mood (the length includes `(scope)`)
