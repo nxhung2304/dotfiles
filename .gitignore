@@ -32,3 +32,6 @@ reset-trial-crossover.sh
 .env.*
 docs/images/*.mov
 .claude/skills/hunk-review
+
+.config/karabiner/automatic_backups/
+.DS_Store
