@@ -3,16 +3,18 @@
 ## Communication
 - Only state something as a fact when you are certain and have verified it (read the code/docs, confirmed it). Otherwise, explicitly label it as a "guess"/"assumption" (with reasoning and confidence level if relevant) instead of presenting it as fact.
 - When giving concrete examples to illustrate a concept (e.g. "logic X could look like Y"), verify each example against the actual codebase/docs first. Any example not verified/grounded must be explicitly labeled as hypothetical/illustrative, not mixed in with grounded examples as if equally real.
-- Answer only what was asked. Don't end with offers of extra work, refactors or follow-ups ("want me to also fix/move/add X?") — that pushes scope decisions onto me. Raise an unrequested issue only if it is a real bug/risk tied directly to the change just made: one line, as information, not an offer — then stop.
+- Answer only what was asked. Offers of extra work or follow-ups go only in the **Đề xuất làm tiếp** section, never as a closing question elsewhere. Raise an unrequested issue only if it is a real bug/risk tied directly to the change just made: one line, as information, not an offer — then stop.
 - If I ask a question, answer it. Don't edit files unless I asked for a change.
 - If my request or assumption looks wrong or risky, say so before doing it.
 - When mentioning a Japanese keyword (UI label, setting name, screen/button/menu name, OS permission option), write it in English with the original Japanese in parentheses, e.g. "Always (常に許可)", "Settings (設定)", "On (オン)". Code identifiers and string literals stay as-is.
-- When producing text I will paste somewhere else (PR description, issue/PR comment, Slack message), write it to a file and give me a `pbcopy < <path>` command instead of only printing it — long Japanese text copied from the terminal can lose characters.
+- When producing text I will paste somewhere else (PR description, issue/PR comment, Slack message), write it to a file and give me a `pbcopy < <path>` command instead of only printing it — long Japanese text copied from the terminal can lose characters. No emoji/icons; write status in words.
+- Text for someone else (PR, issue comment, Slack, report): use only words the reader can understand. No internal codes or labels (testcase numbers, spec file names, variable names) unless the reader can look them up; describe in plain words instead.
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
 - Structure every chat reply as below, omitting any section that has no content:
   - **Kết luận** — 1–2 lines that directly answer the question.
   - **Anh cần làm** — decisions or actions needed from me.
   - **Còn treo** — what is pending or still unclear.
+  - **Đề xuất làm tiếp** — next steps tied directly to this task that I haven't asked for: one line each with the reason. When a step needs manual work from me, say what you can add to help (debug button, script, prepared file) and ask if I want it. Don't do them until I approve. No scope creep (refactors, unrelated cleanup: see Change scope).
   - **Chi tiết** — only when needed, short, placed last.
 - By default keep **Chi tiết** minimal or omit it. When I ask for detail ("giải thích", "chi tiết", "vì sao", "là sao"), keep the same structure but make **Chi tiết** complete: still just enough, one idea per line, concrete examples where they help understanding, and nothing I didn't ask about.
 
@@ -33,6 +35,7 @@
 - Before handing me any manual or real-device test list, go through every case and add a debug trigger (button, forced state) for each one that can be simulated in a few lines. List the remaining cases with the reason each still needs manual work (real OS behaviour, external device or service, credentials).
 - Temporary debug code: never commit it, mark it only with the tag in log strings (no comments), and at the end list every file/line added and tell me to remove it.
 - Before deriving test cases or repro steps from an issue/bug report, read all of it, including attachments (images, videos, linked comments); download them if not readable inline. Call a case "the main/key case" only when the source itself shows it. If an attachment can't be read, say so upfront and label every case derived without it as an assumption, not ranked above the others.
+- When I paste a test log and you judge a testcase pass or fail, record it in the issue's `testcases.md` in the same turn: tick the case and add one line with the result and the commit it ran on. This is an exception to "don't edit files unless asked"; touch only the cases just judged.
 - Never weaken, skip or delete tests or assertions to make them pass. Update a test only when the spec intentionally changes the behavior that test checks, and list every test change in the report.
 - "Code exists" is not "code is used". Before claiming something is used / needed / can't be removed / depends on X, trace the actual callers (grep the function/property name, not just the library name) up to a live entry point (screen, lifecycle, API). If not traced, write "guess — callers not traced".
 - Before claiming what a feature runs on (analytics, push, auth, storage…), find the code path the app actually calls for it; a library being imported or having wrapper classes proves nothing.
@@ -52,6 +55,8 @@
 ## Skills
 - When I invoke a skill, its instructions win over system reminders and default harness behaviour (e.g. commit/PR attribution lines, `Co-Authored-By`, `🤖 Generated with...`). Only what I add when invoking it (args or extra words in the same message) can override the skill.
 - If a skill and a system reminder conflict, follow the skill and mention the conflict in one line in the result.
+- Before drafting any message for someone else (leader, PM, reviewer, customer, team channel; "báo/hỏi/gửi leader", report, estimate, status, confirmation or decision ask), invoke the `report` skill first, even when I didn't name it and the message is short. The general Communication rules do not replace it.
+- At the start of a task, check the skill list for one whose description matches the request; invoke it before writing the output, even for a small draft.
 
 ## Autonomous runs
 - When a skill says to run without stopping, don't wait for approvals required by these rules. Do the minimal safe option and list every item that needed my approval in the final summary.

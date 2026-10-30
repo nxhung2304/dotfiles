@@ -110,5 +110,9 @@
         "description": "Ignore large build artifacts"
       }
     ]
+  },
+  "fileSuggestion": {
+    "type": "command",
+    "command": "~/.claude/file-suggestion.sh"
   }
 }
