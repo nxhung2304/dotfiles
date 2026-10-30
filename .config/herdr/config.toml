@@ -12,7 +12,7 @@ name = "terminal"
 auto_switch = false
 
 [ui]
-sidebar_width = 27
+sidebar_width = 38
 sidebar_max_width = 45
 sidebar_start_collapsed = true
 mouse_capture = true
@@ -137,5 +137,12 @@ description = "list connected devices"
 [experimental]
 switch_ascii_input_source_in_prefix = true
 
+[ui.sidebar.spaces]
+row_gap = 1
+rows = [
+  ["state_icon", { token = "workspace", bold = true }],
+  [{ token = "branch", rules = [{ equals = "master", dim = true }, { equals = "main", dim = true }, { equals = "develop", dim = true }] }, { token = "git_status", dim = true }],
+]
+
 [ui.sidebar.agents.rows_by_agent]
-claude = [["state_icon", "workspace", "tab"], ["terminal_title_stripped"]]
+claude = [["state_icon", "workspace"], [{ token = "terminal_title_stripped", dim = true }]]
