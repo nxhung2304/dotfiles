@@ -25,12 +25,4 @@ install_stow() {
     done
 
     log_success "Symlinks created"
-
-    # .env setup
-    if [ ! -f "$HOME/.env" ] && [ -f ".env.sample" ]; then
-        if ask "Copy .env.sample → ~/.env?"; then
-            cp "$DOTFILES_DIR/.env.sample" ~/.env
-            log_success ".env created"
-        fi
-    fi
 }
