@@ -54,6 +54,10 @@ install_ai() {
         link_path "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
     done
 
+    if command -v hunk &>/dev/null; then
+        ln -sfn "$(brew --prefix hunk)/libexec/skills/hunk-review" "$DOTFILES_DIR/.claude/skills/hunk-review"
+    fi
+
     mkdir -p "$HOME/.claude/hooks"
     ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
 
