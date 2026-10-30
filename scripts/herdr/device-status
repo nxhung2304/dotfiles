@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="${HERDR_ACTIVE_PANE_CWD:-$PWD}"
+until [[ -e $project_dir/pubspec.yaml ]] || compgen -G "$project_dir/*.xcodeproj" >/dev/null; do
+  [[ $project_dir == / ]] && exit 0
+  project_dir=$(dirname "$project_dir")
+done
+
+names=$(xcrun devicectl list devices 2>/dev/null \
+  | awk -F '   +' '$0 ~ /connected/ && $0 ~ /physical/ {print $1}' \
+  | paste -sd, - | sed 's/,/, /g')
+[[ -z $names ]] && exit 0
+
+printf "\xef\x84\x8b %s\n" "$names"

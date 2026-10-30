@@ -25,6 +25,7 @@ pane_scrollbars = false
 status_indicators = "symbols"
 tab_bar_right = [
   { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
+  { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/device-status", interval_seconds = 10, timeout_seconds = 5 },
 ]
 [ui.toast]
 delivery = "off"
@@ -124,6 +125,14 @@ key = "prefix+d"
 type = "shell"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/hunk-split"
 description = "hunk: live diff in split"
+
+[[keys.command]]
+key = "prefix+shift+m"
+type = "popup"
+width = "60%"
+height = "40%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/device-list"
+description = "list connected devices"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bold=$'\e[1m'
+dim=$'\e[2m'
+green=$'\e[32m'
+reset=$'\e[0m'
+
+devices=$(xcrun devicectl list devices 2>/dev/null \
+  | awk -F '   +' '$0 ~ /connected/ && $0 ~ /physical/ {print $1 "\t" $2 "\t" $4}')
+
+printf '\n  %sConnected devices%s\n  %s─────────────────%s\n\n' "$bold" "$reset" "$dim" "$reset"
+
+if [[ -z $devices ]]; then
+  printf '  %sNo connected device%s\n' "$dim" "$reset"
+else
+  while IFS=$'\t' read -r name udid model; do
+    printf '  %s●%s %s%s%s\n' "$green" "$reset" "$bold" "$name" "$reset"
+    printf '    %s%s%s\n' "$dim" "$model" "$reset"
+    printf '    %s%s%s\n\n' "$dim" "${udid% (UDID)}" "$reset"
+  done <<< "$devices"
+fi
+
+printf '  %sPress any key to close%s' "$dim" "$reset"
+read -rsn1
