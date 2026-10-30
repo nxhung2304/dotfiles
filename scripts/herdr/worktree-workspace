@@ -15,9 +15,17 @@ workspace_ids_under_path() {
         | unique | .[]'
 }
 
+worktree_label() {
+    local worktree_path=$1
+    local repo_root=$2
+    local worktree_name
+
+    worktree_name=$(basename "$worktree_path")
+    echo "[WT] ${worktree_name#"$(basename "$repo_root")."}"
+}
+
 open_workspace() {
     local worktree_path=$1
-    local label=$2
     local existing_id created root_pane repo_root
 
     existing_id=$(workspace_ids_under_path "$worktree_path" | head -1)
@@ -27,7 +35,7 @@ open_workspace() {
     fi
 
     repo_root=$(dirname "$(git -C "$worktree_path" rev-parse --path-format=absolute --git-common-dir)")
-    created=$(herdr worktree open --cwd "$repo_root" --path "$worktree_path" --label "$label" --focus)
+    created=$(herdr worktree open --cwd "$repo_root" --path "$worktree_path" --label "$(worktree_label "$worktree_path" "$repo_root")" --focus)
     root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
     herdr agent start claude --kind claude --pane "$root_pane" >/dev/null || true
 }
@@ -50,10 +58,10 @@ close_workspaces() {
 [[ -n ${HERDR_ENV:-} ]] || exit 0
 
 case ${1:-} in
-    open) open_workspace "${2:?worktree path required}" "${3:?label required}" ;;
+    open) open_workspace "${2:?worktree path required}" ;;
     close) close_workspaces "${2:?worktree path required}" ;;
     *)
-        echo "usage: worktree-workspace open <path> <label> | close <path>" >&2
+        echo "usage: worktree-workspace open <path> | close <path>" >&2
         exit 2
         ;;
 esac
