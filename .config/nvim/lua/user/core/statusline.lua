@@ -15,8 +15,11 @@ local click_actions = {
 	lsp = function()
 		vim.cmd("checkhealth vim.lsp")
 	end,
+	flutter_device = function()
+		vim.cmd("FlutterSelectDevice")
+	end,
 }
-local click_ids = { "git_branch", "diagnostics", "lsp" }
+local click_ids = { "git_branch", "diagnostics", "lsp", "flutter_device" }
 
 function _G._statusline_click(id, _, button)
 	if button ~= "l" then
@@ -192,7 +195,7 @@ function components.flutter_device()
   end
   -- Strip the trailing "(mobile)"/"(desktop)"/"(web)" annotation flutter appends to the name
   local name = device.name:gsub(" %([^%(%)]-%)%s*$", "")
-  return "  " .. flutter_device_icon(device.platform) .. name .. " "
+  return clickable("flutter_device", "  " .. flutter_device_icon(device.platform) .. name .. " ")
 end
 
 vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {

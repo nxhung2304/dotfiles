@@ -49,8 +49,7 @@ return {
 
 				debugger = {
 					enabled = true,
-					run_via_dap = true,
-					exception_breakpoints = {},
+					exception_breakpoints = { "Unhandled" },
 					evaluate_to_string_in_debug_views = true,
 				},
 
@@ -81,14 +80,48 @@ return {
 			require("dap-view").setup({
 				winbar = {
 					show = true,
-					sections = { "scopes", "repl" },
+					sections = { "scopes", "breakpoints", "repl" },
 					default_section = "scopes",
-					controls = { enabled = true, position = "right" },
+					show_keymap_hints = false,
+					base_sections = {
+						scopes = { label = "[S]", keymap = "S" },
+						breakpoints = { label = "[B]", keymap = "B" },
+						repl = { label = "[R]", keymap = "R" },
+					},
+					controls = {
+						enabled = true,
+						position = "right",
+						buttons = { "play", "step_into", "step_over", "step_out", "hot_reload", "hot_restart", "terminate" },
+						custom_buttons = {
+							hot_reload = {
+								render = function()
+									return "%#NvimDapViewControlPlay#󰑓%*"
+								end,
+								action = function()
+									vim.cmd("FlutterReload")
+								end,
+							},
+							hot_restart = {
+								render = function()
+									return "%#NvimDapViewControlRunLast#󰜉%*"
+								end,
+								action = function()
+									vim.cmd("FlutterRestart")
+								end,
+							},
+						},
+					},
 				},
-				windows = { size = 0.35, position = "left" },
+				windows = { size = 0.2, position = "left" },
+				auto_toggle = true,
 			})
 
 			local dap = require("dap")
+			dap.listeners.before.event_stopped["flutter_pause_state"] = function(session, body)
+				if body.reason == "pause" and body.threadId then
+					session.stopped_thread_id = body.threadId
+				end
+			end
 			local dap_view = require("dap-view")
 
 			-- `debugPC` (the stopped-line highlight) is unstyled in most colorschemes,
@@ -117,23 +150,26 @@ return {
 
 			-- Always focus the source window when execution stops (breakpoint/step),
 			-- even if focus was in dap-repl/dap-view at the time.
-			dap.listeners.after.event_stopped["flutter_focus_source"] = function(session)
-				vim.schedule(function()
-					local frame = session.current_frame
-					if not (frame and frame.source and frame.source.path) then
-						return
+			local function find_source_window(bufnr)
+				local shown_win = vim.fn.bufwinid(bufnr)
+				if shown_win ~= -1 then
+					return shown_win
+				end
+				for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+					local win_buf = vim.api.nvim_win_get_buf(win)
+					if vim.api.nvim_win_get_config(win).relative == "" and vim.bo[win_buf].buftype == "" then
+						return win
 					end
-					local bufnr = vim.fn.bufnr(frame.source.path)
-					if bufnr == -1 then
-						return
-					end
-					for _, win in ipairs(vim.api.nvim_list_wins()) do
-						if vim.api.nvim_win_get_buf(win) == bufnr then
-							vim.api.nvim_set_current_win(win)
-							return
-						end
-					end
-				end)
+				end
+				vim.cmd("vsplit")
+				return vim.api.nvim_get_current_win()
+			end
+
+			dap.defaults.dart.switchbuf = function(bufnr, line, column)
+				local source_win = find_source_window(bufnr)
+				vim.api.nvim_win_set_buf(source_win, bufnr)
+				vim.api.nvim_set_current_win(source_win)
+				pcall(vim.api.nvim_win_set_cursor, source_win, { line, column - 1 })
 			end
 
 			-- Flutter dev_log → tmux pane
@@ -202,7 +238,7 @@ return {
 				end
 			end
 
-			local function open_flutter_log_window()
+			local function open_flutter_log_window(should_focus)
 				if vim.env.HERDR_ENV ~= "1" then
 					vim.notify("Not inside a herdr session", vim.log.levels.WARN)
 					return
@@ -212,7 +248,9 @@ return {
 				end
 				local existing_tab = find_flutter_log_tab()
 				if existing_tab then
-					vim.fn.system({ "herdr", "tab", "focus", existing_tab.tab_id })
+					if should_focus then
+						vim.fn.system({ "herdr", "tab", "focus", existing_tab.tab_id })
+					end
 					return
 				end
 				local created = herdr_json({
@@ -220,7 +258,7 @@ return {
 					"--workspace", vim.env.HERDR_WORKSPACE_ID,
 					"--cwd", vim.fn.getcwd(),
 					"--label", flutter_log_tab_label,
-					"--focus",
+					should_focus and "--focus" or "--no-focus",
 				})
 				if created then
 					vim.fn.system({ "herdr", "pane", "run", created.result.root_pane.pane_id, "tail -f " .. flutter_log_path })
@@ -253,7 +291,7 @@ return {
 			-- connected device; fall back to a simulator/emulator if none is plugged in.
 			-- flutter-tools only tracks "current device" once a run session starts, so
 			-- we cache our own pick and (a) surface it via vim.g.flutter_preferred_device
-			-- for the statusline, (b) feed it into <leader>Fr/<leader>FD below.
+			-- for the statusline, (b) feed it into <leader>Fr below.
 			local preferred_device = nil
 
 			local function is_virtual_device(device)
@@ -379,10 +417,12 @@ return {
 				end
 			end
 
-			local function run_or_debug(force_debug)
-				local commands = require("flutter-tools.commands")
+			dap.listeners.on_config["flutter_prepare_launch"] = function(config)
+				if config.type ~= "dart" or config.request ~= "launch" then
+					return config
+				end
 				clear_flutter_log()
-				open_flutter_log_window()
+				open_flutter_log_window(false)
 
 				-- Spin until the app is actually running: debugger_runner emits
 				-- FlutterToolsAppStarted on the DAP `app.started` event (i.e. once
@@ -393,6 +433,7 @@ return {
 					once = true,
 					callback = stop,
 				})
+				dap.listeners.before["event_flutter.appStarted"]["flutter_loading"] = stop
 				dap.listeners.before.event_terminated["flutter_loading"] = stop
 				dap.listeners.before.event_exited["flutter_loading"] = stop
 				vim.defer_fn(function()
@@ -400,10 +441,23 @@ return {
 					stop()
 				end, 120000)
 
+				local launch_config = vim.tbl_extend("keep", config, {
+					debugExternalPackageLibraries = false,
+					debugSdkLibraries = false,
+				})
+				return launch_config
+			end
+
+			local function run_with_debugger()
+				local commands = require("flutter-tools.commands")
+				if commands.is_running() then
+					vim.notify("Flutter is already running", vim.log.levels.WARN, { title = "Flutter" })
+					return
+				end
 				if not commands.current_device() and preferred_device then
-					commands.run({ device = preferred_device, force_debug = force_debug })
+					commands.run({ device = preferred_device, force_debug = true })
 				else
-					commands.run_command(nil, force_debug)
+					commands.run_command(nil, true)
 				end
 			end
 
@@ -438,16 +492,13 @@ return {
 			end
 
 			-- Flutter commands (<leader>F)
-			vim.keymap.set("n", "<leader>Fr", function()
-				run_or_debug(false)
-			end, { desc = "Flutter: Run" })
-			vim.keymap.set("n", "<leader>FD", function()
-				run_or_debug(true)
-			end, { desc = "Flutter: Debug" })
+			vim.keymap.set("n", "<leader>Fr", run_with_debugger, { desc = "Flutter: Run (debug)" })
 			vim.keymap.set("n", "<leader>Fs", "<cmd>FlutterRestart<CR>", { desc = "Flutter: Hot Restart" })
 			vim.keymap.set("n", "<leader>FR", "<cmd>FlutterReload<CR>", { desc = "Flutter: Hot Reload" })
 			vim.keymap.set("n", "<leader>Fq", "<cmd>FlutterQuit<CR>", { desc = "Flutter: Quit" })
-			vim.keymap.set("n", "<leader>Fl", open_flutter_log_window, { desc = "Flutter: Log in herdr tab" })
+			vim.keymap.set("n", "<leader>Fl", function()
+				open_flutter_log_window(true)
+			end, { desc = "Flutter: Log in herdr tab" })
 			vim.keymap.set("n", "<leader>FL", clear_flutter_log, { desc = "Flutter: Clear Log" })
 			vim.keymap.set("n", "<leader>Fd", function()
 				flutter_with_loading("Loading devices", "FlutterDevices")
@@ -479,17 +530,49 @@ return {
 				end
 			end
 
+			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
+				flutter_with_loading("Loading devices", "FlutterDevices")
+			end, {})
 			vim.api.nvim_create_user_command("FlutterBootIOS", boot_ios_simulator, {})
 			vim.api.nvim_create_user_command("FlutterBootAndroid", boot_android_emulator, {})
 			vim.keymap.set("n", "<leader>Fi", boot_ios_simulator, { desc = "Flutter: Boot iOS simulator" })
 			vim.keymap.set("n", "<leader>Fa", boot_android_emulator, { desc = "Flutter: Boot Android emulator" })
 
 			-- DAP controls (<leader>d)
-			vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "Debug: Continue" })
+			vim.keymap.set("n", "<leader>dc", function()
+				if dap.session() then
+					dap.continue()
+				else
+					run_with_debugger()
+				end
+			end, { desc = "Debug: Continue" })
 			vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "Debug: Step Over" })
 			vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "Debug: Step Into" })
 			vim.keymap.set("n", "<leader>dO", dap.step_out, { desc = "Debug: Step Out" })
 			vim.keymap.set("n", "<leader>dt", dap.terminate, { desc = "Debug: Terminate" })
+			vim.keymap.set("n", "<leader>dr", dap.run_to_cursor, { desc = "Debug: Run to Cursor" })
+			vim.keymap.set("n", "<leader>dk", dap_view.hover, { desc = "Debug: Hover Value" })
+			vim.keymap.set("n", "<leader>du", dap.up, { desc = "Debug: Stack Frame Up" })
+			vim.keymap.set("n", "<leader>dd", dap.down, { desc = "Debug: Stack Frame Down" })
+
+			local exception_modes = {
+				{ label = "Uncaught", filters = { "Unhandled" } },
+				{ label = "All", filters = { "All" } },
+				{ label = "Off", filters = {} },
+			}
+			local exception_mode_index = 1
+
+			local function cycle_exception_mode()
+				exception_mode_index = exception_mode_index % #exception_modes + 1
+				local mode = exception_modes[exception_mode_index]
+				dap.defaults.dart.exception_breakpoints = mode.filters
+				if dap.session() then
+					dap.set_exception_breakpoints(mode.filters)
+				end
+				vim.notify("Break on exceptions: " .. mode.label, vim.log.levels.INFO, { title = "Debug" })
+			end
+
+			vim.keymap.set("n", "<leader>dx", cycle_exception_mode, { desc = "Debug: Cycle Exception Breakpoints" })
 			vim.keymap.set("n", "<leader>dl", function()
 				local cmd = "botright " .. math.floor(vim.o.columns * 0.3) .. "vsplit"
 				dap.repl.toggle({}, cmd)
@@ -498,6 +581,7 @@ return {
 			local pb = require("persistent-breakpoints.api")
 			vim.keymap.set("n", "<leader>db", pb.toggle_breakpoint, { desc = "Debug: Toggle Breakpoint" })
 			vim.keymap.set("n", "<leader>dB", pb.set_conditional_breakpoint, { desc = "Debug: Conditional Breakpoint" })
+			vim.keymap.set("n", "<leader>dL", pb.set_log_point, { desc = "Debug: Log Point" })
 			vim.keymap.set("n", "<leader>dC", pb.clear_all_breakpoints, { desc = "Debug: Clear All Breakpoints" })
 		end,
 	},
