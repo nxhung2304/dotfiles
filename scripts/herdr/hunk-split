@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+current_pane=$(herdr pane current --current)
+pane_id=$(jq -r '.result.pane.pane_id' <<<"$current_pane")
+pane_cwd=$(jq -r '.result.pane.cwd' <<<"$current_pane")
+
+new_pane_id=$(herdr pane split "$pane_id" --direction right --cwd "$pane_cwd" | jq -r '.result.pane.pane_id')
+herdr pane run "$new_pane_id" "hunk diff --watch"

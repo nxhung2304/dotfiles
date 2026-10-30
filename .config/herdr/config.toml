@@ -117,7 +117,13 @@ type = "popup"
 width = "95%"
 height = "70%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/palette"
-description = "command palette: agents, worktree, github, theme, files, reload"
+description = "command palette: agents, worktree, github, hunk, theme, files, reload"
+
+[[keys.command]]
+key = "prefix+d"
+type = "shell"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/hunk-split"
+description = "hunk: live diff in split"
 
 [experimental]
 switch_ascii_input_source_in_prefix = true

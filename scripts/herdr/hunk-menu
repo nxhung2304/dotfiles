@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+readonly ACTION_DIFF="Diff"
+readonly ACTION_LAST_COMMIT="Last commit"
+readonly ACTION_CURRENT_PR="Current PR"
+readonly ACTION_SPLIT="Live diff in split"
+
+run_action() {
+    case $1 in
+        "$ACTION_DIFF") hunk diff ;;
+        "$ACTION_LAST_COMMIT") hunk show ;;
+        "$ACTION_CURRENT_PR") hunk gh pr ;;
+        "$ACTION_SPLIT") "$SCRIPT_DIR/hunk-split" ;;
+    esac
+}
+
+action_labels() {
+    printf '%s\n' "$ACTION_DIFF" "$ACTION_LAST_COMMIT" "$ACTION_CURRENT_PR" "$ACTION_SPLIT"
+}
+
+if [[ ${1:-} == --list ]]; then
+    action_labels
+    exit 0
+fi
+
+selected_action=${1:-$(action_labels | pick "hunk" || true)}
+[[ -n $selected_action ]] || exit 0
+
+cd "$(herdr pane current --current | jq -r '.result.pane.cwd')"
+run_action "$selected_action" || { pause_on_failure; exit 1; }

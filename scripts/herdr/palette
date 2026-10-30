@@ -21,6 +21,7 @@ build_entries() {
     single_entry "Agents" "Status" "agents-menu"
     group_entries "Worktree" "wt-menu"
     group_entries "GitHub" "github-menu"
+    group_entries "Hunk" "hunk-menu"
     single_entry "Theme" "Switch" "../theme-switch"
     single_entry "Files" "Drag and drop" "drag-drop"
     single_entry "Herdr" "Reload config" "reload-config"
