@@ -141,7 +141,7 @@ switch_ascii_input_source_in_prefix = true
 row_gap = 1
 rows = [
   ["state_icon", { token = "workspace", bold = true }],
-  [{ token = "branch", fg = "#a7c080", rules = [{ equals = "master", fg = "#859289", dim = true }, { equals = "main", fg = "#859289", dim = true }, { equals = "develop", fg = "#859289", dim = true }] }, { token = "git_status", dim = true }],
+  [{ token = "branch", rules = [{ equals = "master", dim = true }, { equals = "main", dim = true }, { equals = "develop", dim = true }] }, { token = "git_status", dim = true }],
 ]
 
 [ui.sidebar.agents.rows_by_agent]
