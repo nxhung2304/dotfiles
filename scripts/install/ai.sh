@@ -50,7 +50,7 @@ install_ai() {
     echo "🛡️ Setting up Claude Code config..."
     # (Claude binary is installed via Brewfile)
     mkdir -p "$HOME/.claude"
-    for item in settings.json CLAUDE.md commands agents skills code-rules statusline-command.sh; do
+    for item in settings.json CLAUDE.md commands agents skills code-rules statusline-command.sh file-suggestion.sh; do
         link_path "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
     done
 
@@ -60,6 +60,10 @@ install_ai() {
 
     mkdir -p "$HOME/.claude/hooks"
     ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
+
+    if [ -d "$HOME/Dev/rights" ]; then
+        ln -sf "$DOTFILES_DIR/.claude/specs.ignore" "$HOME/Dev/rights/.ignore"
+    fi
 
     echo "⏰ Scheduling weekly AI review (Monday 10:00)..."
     local review_plist="$HOME/Library/LaunchAgents/local.ai-metrics.review.plist"
