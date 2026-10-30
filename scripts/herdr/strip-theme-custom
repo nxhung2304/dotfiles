@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+awk '
+    /^\[/ { in_custom_colors = ($0 == "[theme.custom]") }
+    !in_custom_colors { lines[++line_count] = $0 }
+    END {
+        while (line_count > 0 && lines[line_count] == "") line_count--
+        for (line_index = 1; line_index <= line_count; line_index++) print lines[line_index]
+    }
+'
