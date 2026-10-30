@@ -4,7 +4,7 @@ set -euo pipefail
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source "$SCRIPT_DIR/popup-context.sh"
 
-readonly ACTION_CURRENT_PR="Current PR"
+readonly ACTION_CURRENT_PR="Open PR"
 readonly ACTION_PULLS="Pull requests"
 readonly ACTION_ISSUES="Issues"
 readonly ACTION_REPO="Open repository"
