@@ -61,10 +61,6 @@ install_ai() {
     mkdir -p "$HOME/.claude/hooks"
     ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
 
-    if [ -d "$HOME/Dev/rights" ]; then
-        ln -sf "$DOTFILES_DIR/.claude/specs.ignore" "$HOME/Dev/rights/.ignore"
-    fi
-
     echo "⏰ Scheduling weekly AI review (Monday 10:00)..."
     local review_plist="$HOME/Library/LaunchAgents/local.ai-metrics.review.plist"
     mkdir -p "$HOME/Library/LaunchAgents"
