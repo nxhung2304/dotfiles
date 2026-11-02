@@ -10,9 +10,6 @@ return {
 		image = {
 			enabled = true,
 			backend = "kitty",
-			max_width_window_percentage = 95,
-			max_height_window_percentage = 95,
-			scale = 1.2,
 		},
 		input = { enabled = true },
 		notifier = {
