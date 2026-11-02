@@ -8,6 +8,10 @@ readonly ACTION_NEW="New worktree"
 readonly ACTION_FINISH="Finish (merge + clean up)"
 readonly ACTION_REMOVE="Remove another worktree"
 
+readonly DIRTY_REMOVE_STASH="Stash changes, then remove"
+readonly DIRTY_REMOVE_FORCE="Discard changes and remove"
+readonly DIRTY_REMOVE_CANCEL="Cancel"
+
 readonly PREVIEW_WINDOW="right:65%"
 
 pick() {
@@ -89,10 +93,36 @@ other_worktree_branches() {
         '.items[] | select(.worktree.path != $current) | .branch'
 }
 
+has_uncommitted_changes() {
+    [[ -n $(git -C "$1" status --porcelain) ]]
+}
+
+remove_dirty_worktree() {
+    local branch_name=$1
+    local worktree_path=$2
+    local choice
+    choice=$(printf '%s\n' "$DIRTY_REMOVE_STASH" "$DIRTY_REMOVE_FORCE" "$DIRTY_REMOVE_CANCEL" \
+        | pick "'$branch_name' has uncommitted changes" \
+            --header "$(git -C "$worktree_path" status --short)") || return 0
+    case $choice in
+        "$DIRTY_REMOVE_STASH")
+            git -C "$worktree_path" stash push -u -m "wt-menu: $branch_name before remove" \
+                && wt remove "$branch_name" ;;
+        "$DIRTY_REMOVE_FORCE")
+            confirm "discard all changes in '$branch_name' and remove?" || return 0
+            wt remove --force "$branch_name" ;;
+    esac
+}
+
 remove_other_worktree() {
-    local branch_name
+    local branch_name worktree_path
     branch_name=$(other_worktree_branches | pick "remove") || return 0
     [[ -n $branch_name ]] || return 0
+    worktree_path=$(worktree_path_for "$branch_name")
+    if [[ -n $worktree_path ]] && has_uncommitted_changes "$worktree_path"; then
+        remove_dirty_worktree "$branch_name" "$worktree_path"
+        return
+    fi
     confirm "remove worktree '$branch_name'?" || return 0
     wt remove "$branch_name"
 }
