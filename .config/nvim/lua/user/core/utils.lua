@@ -117,7 +117,7 @@ M.hover_with_diagnostics = function()
 			return
 		end
 
-		local lines = {}
+		local lines = diagnostic_markdown_lines(bufnr, lnum)
 		for _, response in pairs(results) do
 			local contents = response.result and response.result.contents
 			if contents then
@@ -128,12 +128,6 @@ M.hover_with_diagnostics = function()
 				vim.list_extend(lines, hover_lines)
 			end
 		end
-
-		local diagnostic_lines = diagnostic_markdown_lines(bufnr, lnum)
-		if #lines > 0 and #diagnostic_lines > 0 then
-			table.insert(lines, "---")
-		end
-		vim.list_extend(lines, diagnostic_lines)
 
 		if #lines == 0 then
 			vim.notify("No information available", vim.log.levels.INFO)
