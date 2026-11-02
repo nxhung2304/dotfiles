@@ -134,6 +134,14 @@ height = "40%"
 command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/device-list"
 description = "list connected devices"
 
+[[keys.command]]
+key = "prefix+/"
+type = "popup"
+width = "95%"
+height = "90%"
+command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/log-search"
+description = "search focused pane output with fzf"
+
 [experimental]
 switch_ascii_input_source_in_prefix = true
 

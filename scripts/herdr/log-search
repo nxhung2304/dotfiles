@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/popup-context.sh"
+
+readonly MAX_LINES=${HERDR_LOG_SEARCH_LINES:-20000}
+readonly MAX_SEARCHABLE_CHARS=4000
+readonly MAX_FLUTTER_LABEL_CHARS=90
+readonly COPY_CONFIRMATION_SECONDS=1
+
+target_pane_id=${HERDR_PANE_ID:-$(herdr pane current | jq -r '.result.pane.pane_id')}
+
+work_dir=$(mktemp -d)
+trap 'rm -rf "$work_dir"' EXIT
+readonly EVENTS_DIR="$work_dir/events"
+readonly PANE_LINE_LIST="$work_dir/pane_lines.txt"
+readonly PANE_EVENT_LIST="$work_dir/pane_events.txt"
+mkdir "$EVENTS_DIR"
+
+extract_rails_events() {
+    awk -v prefix="$1" -v dir="$EVENTS_DIR" -v max_chars="$MAX_SEARCHABLE_CHARS" '
+        function flush_request(   id, file, label, flat) {
+            if (block_text != "" && (status_code ~ /^[45]/ || error_name != "")) {
+                count++
+                id = prefix count
+                file = dir "/" id ".txt"
+                printf "%s", block_text > file
+                close(file)
+                label = (status_code != "" ? status_code : "ERR") " " http_method " " request_path
+                if (error_name != "") label = label " " error_name
+                flat = block_text
+                gsub(/\t/, " ", flat)
+                gsub(/\n/, " | ", flat)
+                printf "%s\t%s %s\t%s\n", id, request_time, label, substr(flat, 1, max_chars)
+            }
+            block_text = ""
+            status_code = ""
+            error_name = ""
+        }
+        /^Started / {
+            flush_request()
+            started = 1
+            http_method = $2
+            request_path = $3
+            gsub(/"/, "", request_path)
+            request_time = ""
+            if (match($0, / at [0-9-]+ [0-9:]+/)) request_time = substr($0, RSTART + RLENGTH - 8, 8)
+        }
+        started { block_text = block_text $0 "\n" }
+        /^Completed [0-9]+/ { status_code = $2 }
+        /^[A-Z][A-Za-z0-9_:]*(Error|Exception) \(/ && error_name == "" { error_name = $1 }
+        END { flush_request() }
+    '
+}
+
+extract_flutter_events() {
+    awk -v prefix="$1" -v dir="$EVENTS_DIR" -v max_chars="$MAX_SEARCHABLE_CHARS" -v max_label="$MAX_FLUTTER_LABEL_CHARS" '
+        function flush_run(   id, file, label, flat) {
+            if (error_line != "") {
+                count++
+                id = prefix count
+                file = dir "/" id ".txt"
+                printf "%s", run_text > file
+                close(file)
+                label = substr(error_line, 1, max_label)
+                if (uri != "") label = label " " uri
+                flat = run_text
+                gsub(/\t/, " ", flat)
+                gsub(/\n/, " | ", flat)
+                printf "%s\t%s\t%s\n", id, label, substr(flat, 1, max_chars)
+            }
+            run_text = ""
+            error_line = ""
+            uri = ""
+        }
+        /^flutter:/ {
+            line = $0
+            sub(/^flutter: ?/, "", line)
+            run_text = run_text line "\n"
+            if (error_line == "" && line ~ /Exception|Error|Unhandled/) error_line = line
+            if (uri == "" && line ~ /^uri: /) uri = substr(line, 6)
+            next
+        }
+        { flush_run() }
+        END { flush_run() }
+    '
+}
+
+build_event_list() {
+    local prefix=$1
+    local source_file=$2
+    if grep -q '^Started ' "$source_file"; then
+        extract_rails_events "$prefix" < "$source_file"
+    else
+        extract_flutter_events "$prefix" < "$source_file"
+    fi
+}
+
+build_line_list() {
+    awk 'BEGIN { OFS = "\t" } { print "-", $0 }'
+}
+
+count_entries() {
+    wc -l < "$1" | tr -d ' '
+}
+
+view_binding() {
+    local key=$1
+    local list_file=$2
+    local prompt=$3
+    local preview_action=$4
+    echo "$key:reload(cat '$list_file')+change-prompt($prompt> )+$preview_action"
+}
+
+pane_snapshot="$work_dir/pane.txt"
+if ! herdr pane read "$target_pane_id" --source recent-unwrapped --lines "$MAX_LINES" > "$pane_snapshot"; then
+    pause_on_failure
+    exit 1
+fi
+build_line_list < "$pane_snapshot" > "$PANE_LINE_LIST"
+build_event_list p "$pane_snapshot" > "$PANE_EVENT_LIST"
+
+fzf_args=(
+    --multi --no-sort --tac --exact
+    --delimiter $'\t' --with-nth 2..
+    --preview "cat '$EVENTS_DIR'/{1}.txt"
+    --preview-window 'right,55%,wrap,hidden'
+    --bind "$(view_binding ctrl-p "$PANE_LINE_LIST" "pane" hide-preview)"
+    --bind "$(view_binding ctrl-e "$PANE_EVENT_LIST" "pane errors" show-preview)"
+)
+header="ctrl-p: pane | ctrl-e: pane errors ($(count_entries "$PANE_EVENT_LIST"))"
+
+selected_lines=$(pick "pane" "${fzf_args[@]}" --header "$header" < "$PANE_LINE_LIST") || exit 0
+
+selected_count=0
+copied_text=""
+while IFS=$'\t' read -r entry_id entry_text; do
+    if [[ $entry_id == - ]]; then
+        copied_text+="$entry_text"$'\n'
+    else
+        copied_text+="$(cat "$EVENTS_DIR/$entry_id.txt")"$'\n\n'
+    fi
+    selected_count=$((selected_count + 1))
+done <<< "$selected_lines"
+pbcopy <<< "$copied_text"
+
+printf 'copied %s item(s)\n' "$selected_count"
+sleep "$COPY_CONFIRMATION_SECONDS"
