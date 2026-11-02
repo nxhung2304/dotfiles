@@ -80,6 +80,44 @@ local function open_line_pr()
 	open_tab(url_cmd)
 end
 
+local HERDR_WORKTREE_WORKSPACE_SCRIPT = vim.fn.expand("~/dotfiles/scripts/herdr/worktree-workspace")
+
+local function find_other_worktree_for_branch(branch_name)
+	local current_root = vim.fn.systemlist({ "git", "rev-parse", "--show-toplevel" })[1]
+	local worktree_path
+	for _, line in ipairs(vim.fn.systemlist({ "git", "worktree", "list", "--porcelain" })) do
+		local path = line:match("^worktree (.+)$")
+		if path then
+			worktree_path = path
+		elseif line == "branch refs/heads/" .. branch_name and worktree_path ~= current_root then
+			return worktree_path
+		end
+	end
+end
+
+local function jump_to_branch_worktree(checkout)
+	if not vim.env.HERDR_ENV then
+		return
+	end
+	local worktree_path = find_other_worktree_for_branch(checkout.branch_name)
+	if not worktree_path then
+		return
+	end
+	vim.system({ HERDR_WORKTREE_WORKSPACE_SCRIPT, "open", worktree_path }, {}, function(result)
+		if result.code == 0 then
+			vim.system({ "herdr", "notification", "show", "Switched worktree", "--body", checkout.branch_name })
+			return
+		end
+		vim.schedule(function()
+			vim.notify(
+				"Cannot switch to worktree of " .. checkout.branch_name .. ":\n" .. vim.trim(result.stderr or ""),
+				vim.log.levels.ERROR,
+				{ title = "Neogit" }
+			)
+		end)
+	end)
+end
+
 return {
 	{
 		"lewis6991/gitsigns.nvim",
@@ -187,6 +225,11 @@ return {
 			"m00qek/baleia.nvim", -- optional
 		},
 		cmd = "Neogit",
+		opts = {
+			hooks = {
+				PreBranchCheckout = jump_to_branch_worktree,
+			},
+		},
 		keys = {
 			{ "<leader>go", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
 		},
