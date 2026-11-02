@@ -12,7 +12,7 @@
 - When writing any report, summary, or recap (a report file, a chat summary, answering "summarize this", "what happened", "status?", etc.): be concise, state the point directly. Lead with the conclusion, minimize technical detail/rationale unless it's essential for the reader to understand the decision or explicitly asked for. Don't restate content already covered elsewhere in the same file/response.
 - Structure every chat reply as below, omitting any section that has no content:
   - **Kết luận** — 1–2 lines that directly answer the question.
-  - **Anh cần làm** — decisions or actions needed from me.
+  - **Anh cần làm** — decisions or actions needed from me. For each decision, give in one line why it is needed and what changes either way, plus your recommendation, so I can decide without asking back. Skip the reason only when it was already stated in this reply.
   - **Còn treo** — what is pending or still unclear.
   - **Đề xuất làm tiếp** — next steps tied directly to this task that I haven't asked for: one line each with the reason. When a step needs manual work from me, say what you can add to help (debug button, script, prepared file) and ask if I want it. Don't do them until I approve. No scope creep (refactors, unrelated cleanup: see Change scope).
   - **Chi tiết** — only when needed, short, placed last.
@@ -27,6 +27,7 @@
 - Prefer the option that removes manual steps from me: make the code/config/script detect, generate or fall back by itself, instead of a checklist for me to run.
 - Before telling me to do a step by hand, look for a way to automate it within the change scope (idempotent, safe to re-run, no side effects outside the project's own gitignored/generated files). Leave a step manual only when it needs my credentials, a decision, or an action outside the machine/repo, and say why.
 - Automation stays inside the Change scope rules: fewer steps for me, not extra features or refactors.
+- When a plan makes work outside the current session's reach a prerequisite (another repo, machine, environment, or person), say so at the moment it is decided: name where it must happen and who or what does it, and write a self-contained brief file (goal, scope, decisions made, open questions, required deliverables, `pbcopy` command) so I only paste it. Also give the full handoff path: where to start the other session, the one-line prompt that points it at the brief, and what output it should produce. Skip the brief if the handoff is a single sentence.
 
 ## Verification
 - Double-check every claim before stating it, even if it costs many more tokens/tool calls — a wrong early claim breaks everything built on it. Double-check means a second, independent check: actively search for counter-evidence (other callers, other entry points, config/storyboard/server side, the opposite case), not re-reading the same evidence. If the second check can't be done, label the claim as a guess.
@@ -40,6 +41,7 @@
 - "Code exists" is not "code is used". Before claiming something is used / needed / can't be removed / depends on X, trace the actual callers (grep the function/property name, not just the library name) up to a live entry point (screen, lifecycle, API). If not traced, write "guess — callers not traced".
 - Before claiming what a feature runs on (analytics, push, auth, storage…), find the code path the app actually calls for it; a library being imported or having wrapper classes proves nothing.
 - Any claim that goes into a message for someone else (leader, PR, issue) must already be verified or explicitly marked as a guess inside that message.
+- When a task depends on something another party or system produces (API, schema, design file, config, SDK output), the spec/issue must require a real captured sample of it (success, empty, error where relevant), not a hand-written one. Don't treat the interface as settled until that sample exists. If the dependency is trivial or I say otherwise, skip this.
 
 ## Code style
 - Before writing or modifying code, look up the relevant rules in `~/.claude/code-rules/` with the `rule-lookup` agent and follow them.
@@ -65,4 +67,5 @@
 - When I point out a mistake of yours, or you notice one, say in one line whether a rule would prevent it next time. Propose a rule only if the mistake can recur in other tasks, not for a one-off slip.
 - First check whether an existing rule already covers it. If so, propose rewording or widening that rule instead of adding a new one, and say why it was missed.
 - Pick the narrowest place that fits: project CLAUDE.md for this repo only, global CLAUDE.md for any project, the skill's SKILL.md when the mistake happened inside that skill's workflow.
+- Write every proposed rule to be as reusable and flexible as possible: state the underlying principle, not the specific incident (no tool, repo or feature names from the mistake), cover the whole class of similar situations, and include a short escape clause for when it doesn't apply. Before proposing, check if the rule would still make sense in an unrelated project.
 - Show the exact text and target file, then wait for my approval before editing.
