@@ -34,7 +34,7 @@ return {
 				dev_log = {
 					enabled = true,
 					notify_errors = true,
-					-- Window is auto-closed by autocmd below; buffer stays alive for tmux sync
+					-- Window is auto-closed by autocmd below; buffer stays alive for herdr log sync
 					open_cmd = "botright 1split",
 					focus_on_open = false,
 				},
@@ -113,7 +113,7 @@ return {
 					},
 				},
 				windows = { size = 0.2, position = "left" },
-				auto_toggle = true,
+				auto_toggle = false,
 			})
 
 			local dap = require("dap")
@@ -123,6 +123,21 @@ return {
 				end
 			end
 			local dap_view = require("dap-view")
+
+			local debug_view_opened_for_session = false
+			dap.listeners.after.event_stopped["flutter_dap_view_open"] = function(_, body)
+				if debug_view_opened_for_session or (body and body.reason == "entry") then
+					return
+				end
+				debug_view_opened_for_session = true
+				dap_view.open()
+			end
+			local function close_debug_view()
+				debug_view_opened_for_session = false
+				dap_view.close(true)
+			end
+			dap.listeners.before.event_terminated["flutter_dap_view_close"] = close_debug_view
+			dap.listeners.before.disconnect["flutter_dap_view_close"] = close_debug_view
 
 			-- `debugPC` (the stopped-line highlight) is unstyled in most colorschemes,
 			-- so the sign shows but the line itself isn't highlighted. Use a fixed
@@ -140,7 +155,7 @@ return {
 			end
 
 			-- Keep the REPL for variable/expression evaluation only; stdout/stderr
-			-- (Flutter's print/log output) is already viewable in the tmux pane.
+			-- (Flutter's print/log output) is already viewable in the herdr log tab.
 			dap.defaults.fallback.on_output = function(_, body)
 				if body.category == "stdout" or body.category == "stderr" then
 					return
@@ -172,8 +187,8 @@ return {
 				pcall(vim.api.nvim_win_set_cursor, source_win, { line, column - 1 })
 			end
 
-			-- Flutter dev_log → tmux pane
-			-- Sync __FLUTTER_DEV_LOG__ buffer to a file so tmux can tail -f it
+			-- Flutter dev_log → herdr tab
+			-- Sync __FLUTTER_DEV_LOG__ buffer to a file so the herdr tab can tail -f it
 			local flutter_log_path = vim.fn.stdpath("cache") .. "/flutter_dev.log"
 			local flutter_log_attached = {} -- keyed by bufnr
 
@@ -216,8 +231,8 @@ return {
 				end,
 			})
 
-			-- Open (or focus) the tmux window that tails the flutter dev log.
-			-- Reuse existing window named flutter-log; open new one only if absent.
+			-- Open (or focus) the herdr tab that tails the flutter dev log.
+			-- Reuse existing tab labelled flutter-log; open new one only if absent.
 			local flutter_log_tab_label = "flutter-log"
 
 			local function herdr_json(args)
@@ -266,7 +281,7 @@ return {
 			end
 
 			-- Wipe flutter-tools' dev_log buffer, the mirrored log file, and (if the
-			-- tmux window already exists) the pane's scrollback, so leftover output
+			-- herdr log tab already exists) the pane's scrollback, so leftover output
 			-- from a previous session never bleeds into the next one.
 			local function clear_flutter_log()
 				vim.cmd("FlutterLogClear")
@@ -312,6 +327,9 @@ return {
 						args = { "devices" },
 					})
 					job:after_success(vim.schedule_wrap(function(j)
+						if preferred_device then
+							return
+						end
 						local entries = devices_mod.to_selection_entries(j:result())
 						local real, virtual
 						for _, entry in ipairs(entries) do
@@ -336,6 +354,18 @@ return {
 					job:start()
 				end)
 			end
+
+			vim.api.nvim_create_autocmd("User", {
+				pattern = "FlutterToolsDeviceChanged",
+				callback = function(event)
+					local selected_device = event.data
+					if type(selected_device) ~= "table" or not selected_device.name then
+						return
+					end
+					preferred_device = selected_device
+					vim.g.flutter_preferred_device = selected_device
+				end,
+			})
 
 			local function ensure_project_config()
 				local root = vim.fs.root(vim.fn.getcwd(), "pubspec.yaml")
@@ -463,15 +493,18 @@ return {
 
 			-- Show spinner notification while FlutterDevices / FlutterEmulators load.
 			-- Stops when the picker window opens (FileType autocmd) or after 8s fallback.
-			local function flutter_with_loading(label, cmd)
+			local function flutter_with_loading(label, cmd, wrap_on_choice)
 				local stop = start_spinner(label)
 
 				-- Hook vim.ui.select — flutter-tools always calls this regardless of UI backend
 				local orig_select = vim.ui.select
-				vim.ui.select = function(...)
+				vim.ui.select = function(items, opts, on_choice)
 					vim.ui.select = orig_select
 					stop()
-					return orig_select(...)
+					if wrap_on_choice then
+						on_choice = wrap_on_choice(on_choice)
+					end
+					return orig_select(items, opts, on_choice)
 				end
 
 				vim.defer_fn(function()
@@ -480,6 +513,57 @@ return {
 				end, 8000)
 
 				vim.cmd(cmd)
+			end
+
+			local function wait_until_flutter_stopped(on_stopped)
+				local commands = require("flutter-tools.commands")
+				local max_attempts = 50
+				local attempts = 0
+				local timer = vim.uv.new_timer()
+				timer:start(
+					200,
+					200,
+					vim.schedule_wrap(function()
+						if timer:is_closing() then
+							return
+						end
+						attempts = attempts + 1
+						local stopped = not commands.is_running() and dap.session() == nil
+						if not stopped and attempts < max_attempts then
+							return
+						end
+						timer:stop()
+						timer:close()
+						if stopped then
+							on_stopped()
+						else
+							vim.notify("Flutter did not stop in time", vim.log.levels.WARN, { title = "Flutter" })
+						end
+					end)
+				)
+			end
+
+			local function confirm_switch_device(on_choice)
+				return function(item, ...)
+					local commands = require("flutter-tools.commands")
+					if not item or not commands.is_running() then
+						return on_choice(item, ...)
+					end
+					local running_device_name = (commands.current_device() or {}).name or "current device"
+					local selected_device_name = item.data and item.data.name or "selected device"
+					local prompt = ("Quit app on %s and run on %s?"):format(running_device_name, selected_device_name)
+					vim.schedule(function()
+						vim.ui.select({ "Yes", "No" }, { prompt = prompt }, function(answer)
+							if answer ~= "Yes" then
+								return
+							end
+							commands.quit()
+							wait_until_flutter_stopped(function()
+								on_choice(item)
+							end)
+						end)
+					end)
+				end
 			end
 
 			-- which-key group labels
@@ -501,7 +585,7 @@ return {
 			end, { desc = "Flutter: Log in herdr tab" })
 			vim.keymap.set("n", "<leader>FL", clear_flutter_log, { desc = "Flutter: Clear Log" })
 			vim.keymap.set("n", "<leader>Fd", function()
-				flutter_with_loading("Loading devices", "FlutterDevices")
+				flutter_with_loading("Loading devices", "FlutterDevices", confirm_switch_device)
 			end, { desc = "Flutter: Devices" })
 			vim.keymap.set("n", "<leader>Fe", function()
 				flutter_with_loading("Loading emulators", "FlutterEmulators")
@@ -531,7 +615,7 @@ return {
 			end
 
 			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
-				flutter_with_loading("Loading devices", "FlutterDevices")
+				flutter_with_loading("Loading devices", "FlutterDevices", confirm_switch_device)
 			end, {})
 			vim.api.nvim_create_user_command("FlutterBootIOS", boot_ios_simulator, {})
 			vim.api.nvim_create_user_command("FlutterBootAndroid", boot_android_emulator, {})

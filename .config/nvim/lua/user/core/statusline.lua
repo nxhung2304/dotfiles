@@ -187,9 +187,9 @@ end
 
 function components.flutter_device()
   local decorations = vim.g.flutter_tools_decorations
-  -- flutter-tools stores the running device as a table ({name, id, platform, ...}).
-  -- Fall back to the auto-picked default device before any run session starts.
-  local device = (decorations and decorations.device) or vim.g.flutter_preferred_device
+  -- Prefer the last selected/running device (kept after the app quits).
+  -- Fall back to flutter-tools' own default device when nothing has been picked yet.
+  local device = vim.g.flutter_preferred_device or (decorations and decorations.device)
   if type(device) ~= "table" or not device.name or device.name == "" then
     return ""
   end
