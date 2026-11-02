@@ -87,6 +87,63 @@ M.get_filepath_with_navic = function()
 	return colored_filepath
 end
 
+local function diagnostic_markdown_lines(bufnr, lnum)
+	local diagnostics = vim.diagnostic.get(bufnr, { lnum = lnum })
+	table.sort(diagnostics, function(a, b)
+		return a.severity < b.severity
+	end)
+
+	local lines = {}
+	for _, diagnostic in ipairs(diagnostics) do
+		local source = diagnostic.source and (" (" .. diagnostic.source .. ")") or ""
+		local message_lines = vim.split(diagnostic.message, "\n")
+		message_lines[1] = "**" .. vim.diagnostic.severity[diagnostic.severity] .. "** " .. message_lines[1] .. source
+		vim.list_extend(lines, message_lines)
+	end
+	return lines
+end
+
+M.hover_with_diagnostics = function()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local winid = vim.api.nvim_get_current_win()
+	local lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1
+
+	local function position_params(client)
+		return vim.lsp.util.make_position_params(winid, client.offset_encoding)
+	end
+
+	vim.lsp.buf_request_all(bufnr, "textDocument/hover", position_params, function(results)
+		if vim.api.nvim_get_current_buf() ~= bufnr then
+			return
+		end
+
+		local lines = {}
+		for _, response in pairs(results) do
+			local contents = response.result and response.result.contents
+			if contents then
+				local hover_lines = vim.lsp.util.convert_input_to_markdown_lines(contents)
+				if #lines > 0 and #hover_lines > 0 then
+					table.insert(lines, "---")
+				end
+				vim.list_extend(lines, hover_lines)
+			end
+		end
+
+		local diagnostic_lines = diagnostic_markdown_lines(bufnr, lnum)
+		if #lines > 0 and #diagnostic_lines > 0 then
+			table.insert(lines, "---")
+		end
+		vim.list_extend(lines, diagnostic_lines)
+
+		if #lines == 0 then
+			vim.notify("No information available", vim.log.levels.INFO)
+			return
+		end
+
+		vim.lsp.util.open_floating_preview(lines, "markdown", { focus_id = "textDocument/hover" })
+	end)
+end
+
 M.lsp_on_attach = function(client, bufnr)
 	if vim.bo[bufnr].filetype == "markdown" then
 		client:stop()
@@ -102,7 +159,7 @@ M.lsp_on_attach = function(client, bufnr)
 
 	keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>", { buffer = bufnr, desc = "Go to Definition" })
 	keymap("n", "gr", "<cmd>lua vim.lsp.buf.references()<CR>", { buffer = bufnr, desc = "Go to References" })
-	keymap("n", "K", "<cmd>lua vim.lsp.buf.hover()<CR>", { buffer = bufnr, desc = "Hover Documentation" })
+	keymap("n", "K", M.hover_with_diagnostics, { buffer = bufnr, desc = "Hover Documentation and Diagnostics" })
 	keymap("n", "ga", "<cmd>lua vim.lsp.buf.code_action()<CR>", { buffer = bufnr, desc = "Code Action" })
 	keymap("n", "gl", "<cmd>lua vim.lsp.codelens.run()<CR>", { buffer = bufnr, desc = "Run Code Lens" })
 
