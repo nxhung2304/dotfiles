@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -u
+
+mason_ruby_lsp_dir="$HOME/.local/share/nvim/mason/packages/ruby-lsp"
+isolated_dir="$HOME/.cache/ruby-lsp-isolated"
+isolated_gemfile="$isolated_dir/Gemfile"
+isolated_gemfile_content=$'source "https://rubygems.org"\ngem "ruby-lsp"\ngem "rubocop"'
+
+mason_ruby_version=$(head -1 "$mason_ruby_lsp_dir/bin/ruby-lsp" | sed -n 's|.*/ruby/\([^/]*\)/bin/ruby.*|\1|p')
+project_ruby_version=$(asdf current ruby 2>/dev/null | awk 'NR==2 {print $2}')
+
+prepare_isolated_bundle() {
+  local ruby_bin_dir="$HOME/.asdf/installs/ruby/$mason_ruby_version/bin"
+  local bundler_version
+
+  mkdir -p "$isolated_dir"
+  [[ "$(cat "$isolated_gemfile" 2>/dev/null)" == "$isolated_gemfile_content" ]] || echo "$isolated_gemfile_content" > "$isolated_gemfile"
+
+  export GEM_PATH="$mason_ruby_lsp_dir:$("$ruby_bin_dir/ruby" -e 'puts Gem.path.join(":")')"
+  export BUNDLE_GEMFILE="$isolated_gemfile"
+
+  bundler_version=$("$ruby_bin_dir/ruby" -e 'puts Gem::Specification.stubs_for("bundler").select(&:default_gem?).map(&:version).max')
+  export BUNDLER_VERSION="$bundler_version"
+  if ! "$ruby_bin_dir/ruby" "$ruby_bin_dir/bundle" check >/dev/null 2>&1; then
+    rm -f "$isolated_gemfile.lock"
+    "$ruby_bin_dir/ruby" "$ruby_bin_dir/bundle" lock --local >/dev/null 2>&1 || return 1
+  fi
+  export RUBYOPT="${RUBYOPT:-} -rbundler/setup"
+}
+
+if [[ -n "$mason_ruby_version" && -n "$project_ruby_version" && "$mason_ruby_version" != "$project_ruby_version" ]]; then
+  prepare_isolated_bundle
+fi
+
+exec "$mason_ruby_lsp_dir/ruby-lsp" "$@"

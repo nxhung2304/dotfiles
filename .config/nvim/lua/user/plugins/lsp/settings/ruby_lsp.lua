@@ -1,4 +1,5 @@
 return {
+	cmd = { vim.fn.expand("~/dotfiles/scripts/nvim/ruby-lsp-wrapper") },
 	init_options = {
 		formatter = "auto",
 		linters = { "rubocop" },
