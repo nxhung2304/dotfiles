@@ -1,3 +1,5 @@
+local Configs = require("user.core.configs")
+
 local M = {}
 
 function M.keymap(mode, lhs, rhs, opts)
@@ -87,26 +89,65 @@ M.get_filepath_with_navic = function()
 	return colored_filepath
 end
 
-local function diagnostic_markdown_lines(bufnr, lnum)
-	local diagnostics = vim.diagnostic.get(bufnr, { lnum = lnum })
+local hover_diagnostics_namespace = vim.api.nvim_create_namespace("user.hover_diagnostics")
+
+local diagnostic_highlight_groups = {
+	[vim.diagnostic.severity.ERROR] = "DiagnosticError",
+	[vim.diagnostic.severity.WARN] = "DiagnosticWarn",
+	[vim.diagnostic.severity.INFO] = "DiagnosticInfo",
+	[vim.diagnostic.severity.HINT] = "DiagnosticHint",
+}
+
+local diagnostic_icons = {
+	[vim.diagnostic.severity.ERROR] = Configs.icons.diagnostics[1].text,
+	[vim.diagnostic.severity.WARN] = Configs.icons.diagnostics[2].text,
+	[vim.diagnostic.severity.HINT] = Configs.icons.diagnostics[3].text,
+	[vim.diagnostic.severity.INFO] = Configs.icons.diagnostics[4].text,
+}
+
+local function is_diagnostic_under_cursor(diagnostic, cursor_col)
+	local end_col = diagnostic.end_lnum == diagnostic.lnum and diagnostic.end_col or math.huge
+	return diagnostic.col <= cursor_col and cursor_col < math.max(end_col, diagnostic.col + 1)
+end
+
+local function sort_diagnostics_cursor_first(diagnostics, cursor_col)
+	local under_cursor = {}
+	for _, diagnostic in ipairs(diagnostics) do
+		under_cursor[diagnostic] = is_diagnostic_under_cursor(diagnostic, cursor_col)
+	end
 	table.sort(diagnostics, function(a, b)
+		if under_cursor[a] ~= under_cursor[b] then
+			return under_cursor[a]
+		end
 		return a.severity < b.severity
 	end)
+end
+
+local function diagnostic_markdown_lines(bufnr, lnum, cursor_col)
+	local diagnostics = vim.diagnostic.get(bufnr, { lnum = lnum })
+	sort_diagnostics_cursor_first(diagnostics, cursor_col)
 
 	local lines = {}
+	local line_highlight_groups = {}
 	for _, diagnostic in ipairs(diagnostics) do
 		local source = diagnostic.source and (" (" .. diagnostic.source .. ")") or ""
+		local code = diagnostic.code and (" [" .. diagnostic.code .. "]") or ""
 		local message_lines = vim.split(diagnostic.message, "\n")
-		message_lines[1] = "**" .. vim.diagnostic.severity[diagnostic.severity] .. "** " .. message_lines[1] .. source
-		vim.list_extend(lines, message_lines)
+		message_lines[1] = diagnostic_icons[diagnostic.severity] .. " " .. message_lines[1] .. source .. code
+		for _, message_line in ipairs(message_lines) do
+			table.insert(lines, message_line)
+			table.insert(line_highlight_groups, diagnostic_highlight_groups[diagnostic.severity])
+		end
 	end
-	return lines
+	return lines, line_highlight_groups
 end
 
 M.hover_with_diagnostics = function()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local winid = vim.api.nvim_get_current_win()
-	local lnum = vim.api.nvim_win_get_cursor(winid)[1] - 1
+	local cursor = vim.api.nvim_win_get_cursor(winid)
+	local lnum = cursor[1] - 1
+	local cursor_col = cursor[2]
 
 	local function position_params(client)
 		return vim.lsp.util.make_position_params(winid, client.offset_encoding)
@@ -117,7 +158,7 @@ M.hover_with_diagnostics = function()
 			return
 		end
 
-		local lines = diagnostic_markdown_lines(bufnr, lnum)
+		local lines, diagnostic_line_highlight_groups = diagnostic_markdown_lines(bufnr, lnum, cursor_col)
 		for _, response in pairs(results) do
 			local contents = response.result and response.result.contents
 			if contents then
@@ -134,7 +175,10 @@ M.hover_with_diagnostics = function()
 			return
 		end
 
-		vim.lsp.util.open_floating_preview(lines, "markdown", { focus_id = "textDocument/hover" })
+		local float_bufnr = vim.lsp.util.open_floating_preview(lines, "markdown", { focus_id = "textDocument/hover" })
+		for row, highlight_group in ipairs(diagnostic_line_highlight_groups) do
+			vim.hl.range(float_bufnr, hover_diagnostics_namespace, highlight_group, { row - 1, 0 }, { row - 1, -1 })
+		end
 	end)
 end
 
