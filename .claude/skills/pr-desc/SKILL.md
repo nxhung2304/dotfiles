@@ -25,9 +25,11 @@ Read the diff + commit log between the current branch and the base branch → su
 - Compare the commits in `git log <base>..HEAD` with the current PR body; keep only the commits whose change the body does not describe yet (e.g. fixes after review)
 - Nothing new and no accepted risk missing from the body → tell the user the PR body already covers every commit, stop
 - An accepted risk (see the accepted-risk rule) the body does not mention yet counts as new, even with no new commit
-- Otherwise write only one section to append at the end of the body (before the closing/issue section if the body has one):
-  - A `###` heading naming the change, 1 line on what now behaves differently
-  - Before/after table or bullets only when evidence exists (same source rules as "Bằng chứng")
+- Otherwise add as little as possible:
+  - Default: one short line (bullet or sub-bullet) for each new change, placed inside the existing section/bullet it belongs to; say exactly which line to paste it under
+  - A new `###` section (at the end of the body, before the closing/issue section) only when the change fits no existing bullet: heading + 1 line
+  - Leave out internal fixes the reviewer does not need in order to decide (rare edge cases already covered by a test)
+  - Before/after table only when the reviewer needs the numbers to decide; having evidence is not a reason on its own
   - A risk/trade-off line only when the change brings one the reviewer must know
 - Write it as part of the PR description, not as a reply to the reviewer: no "theo review", no "ご指摘", no commit hash
 - Match the language and section style of the existing body; no `closes` line
@@ -75,13 +77,15 @@ closes #[issue number]
 
 (The template above is the Vietnamese default — translate the headers and content to the requested language when one is given.)
 
-5. Print the content for the user (in a code block for easy copying). Do not run `gh pr create` or `gh pr edit` yourself. Below the code block, list every placeholder the user must fill in and every related issue suggested for `closes`.
+5. Print the content for the user in a code block, and also write it to a file in the scratchpad and give a `pbcopy < <path>` command. Do not run `gh pr create` or `gh pr edit` yourself. Below the code block, list every placeholder the user must fill in and every related issue suggested for `closes`.
 
 **Rules:**
 - Prioritize BREVITY — a leader/reviewer should understand what was done within 10-15 seconds of reading
 - Write from the "what was accomplished" angle, not "how the code changed"
-- Avoid detailed implementation jargon (function/variable names) unless truly necessary for context
+- No function, variable, class or API names in the text: say what the thing does instead (e.g. "app tự bật/tắt tính năng", not the method name)
+- Each bullet is one short sentence (about 20 words). Leave out numbers, internal mechanisms and reasons the reader does not need to decide
 - Vietnamese must read naturally for a non-developer: short simple sentences, describe what the user/app does instead of technical terms (e.g. "thông báo lỗi" not "alert", "app đang chạy nền" not "background", "chuyển sang màn tiếp theo" not "present"); keep a term only when there is no plain equivalent
+- Before printing, reread every sentence as a reader who does not know how the code works: if it only makes sense with internal knowledge (how data is stored, queued or rotated), rewrite it as the result the reader can see (e.g. "app không bị chậm" instead of "không chặn luồng chính")
 - One idea per bullet: when a bullet has several points, split them into sub-bullets — never chain them with `;`
 - No emoji/icons (✅ ❌ 🚀 …); write results in words (OK / NG, 停止 / 収集中)
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
@@ -97,7 +101,8 @@ closes #[issue number]
 - "Rủi ro merge": don't write filler lines that tell the reviewer nothing (e.g. "revert là về như cũ", "ảnh hưởng màn X"). If there is nothing to report, drop the whole section
 - Accepted risk (the user accepted it, listed in "Rủi ro merge"): keep only what the leader needs to decide
   - One line each, at most 3 lines in total; merge items with the same cause
-  - Say what can go wrong for the user/app and that it is a deliberate choice, plus how it will be handled if reported (e.g. "sẽ sửa khi có báo cáo")
+  - One plain sentence: what can go wrong for the user/app, then why it does not matter now (e.g. "Có thể mất vài dòng log nếu …. Hiện app … nên không ảnh hưởng."). Add how it will be handled only when the reader would otherwise ask
+  - No test figures or explanation of the cause
   - If it was never tested on a real device, say so in plain words; never present it as verified
   - No code/class names, no history of the discussion, no options list
 - Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one

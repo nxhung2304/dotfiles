@@ -57,6 +57,10 @@ Co-Authored-By: <current model> <noreply@anthropic.com>
 - `scope` given → subject is `type(scope): ...` in both `full` and `short`; no `scope` → drop the parentheses and use `type: ...`
 - Never put `closes #<issue>` in the subject; it only goes at the end of the bullets in `full` format. `short` has no `closes` line
 - `full`: bullets use `-`, no markdown; WHAT & WHY, not HOW
+- Keep the body short and plain: at most 3 bullets, each one short line a teammate understands without reading the code
+- No implementation detail (locks, threads, variable or function names); describe the effect instead
+- No references to other issues, PRs or commits (`#N`, hashes) anywhere in the message; the only allowed `#N` is the `closes` line for this branch's issue
+- These rules also apply to a message passed in ARGUMENTS: rewrite it to fit before committing
 - `short`: single line only, no body, no bullets; if there are multiple unrelated changes, summarize the most important one
 - No Co-Authored-By unless `footer=true`
 - **`auto=true`: ALWAYS commit directly, no confirmation prompt. `auto=false`: NEVER commit before the user approves the message.**
