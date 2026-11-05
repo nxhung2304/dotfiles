@@ -45,19 +45,23 @@ export PATH="/usr/local/opt/postgresql@17/bin:$PATH"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
 # ASDF
-export PATH="$HOME/.asdf/shims:$PATH"
-ASDF_DIR=""
-if [ -f "/opt/homebrew/opt/asdf/libexec/asdf.sh" ]; then
-    ASDF_DIR="/opt/homebrew/opt/asdf"
-elif [ -f "/usr/local/opt/asdf/libexec/asdf.sh" ]; then
-    ASDF_DIR="/usr/local/opt/asdf"
-fi
+# export PATH="$HOME/.asdf/shims:$PATH"
+# ASDF_DIR=""
+# if [ -f "/opt/homebrew/opt/asdf/libexec/asdf.sh" ]; then
+#     ASDF_DIR="/opt/homebrew/opt/asdf"
+# elif [ -f "/usr/local/opt/asdf/libexec/asdf.sh" ]; then
+#     ASDF_DIR="/usr/local/opt/asdf"
+# fi
+#
+# if [ -n "$ASDF_DIR" ]; then
+#     . "$ASDF_DIR/libexec/asdf.sh"
+#     # Hook for asdf-java to set JAVA_HOME
+#     [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
+# fi
 
-if [ -n "$ASDF_DIR" ]; then
-    . "$ASDF_DIR/libexec/asdf.sh"
-    # Hook for asdf-java to set JAVA_HOME
-    [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
-fi
+# mise
+export PATH="$HOME/.local/bin:$PATH"
+eval "$(mise activate zsh)"
 
 # Android
 
@@ -172,7 +176,7 @@ zstyle ':fzf-tab:complete:git-(add|diff|restore):*' fzf-preview 'git diff --colo
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza --color=always -1 -- $realpath'  # nếu bạn dùng eza
 
 # Golang
-. ${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/golang/set-env.zsh
+# . ${ASDF_DATA_DIR:-$HOME/.asdf}/plugins/golang/set-env.zsh
 
 
 export PATH="$PATH":"$HOME/.pub-cache/bin"
