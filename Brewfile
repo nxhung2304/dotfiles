@@ -1,5 +1,4 @@
 # CLI Tools
-brew "tmux"
 brew "herdr"
 brew "neovim"
 brew "tree-sitter-cli"

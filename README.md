@@ -1,6 +1,6 @@
 # dotfiles
 
-My macOS development environment: Neovim, Ghostty, Herdr/tmux, Zsh and AI coding assistants (Claude Code, Codex, Gemini) — one repo, one install command, one theme for everything.
+My macOS development environment: Neovim, Ghostty, Herdr, Zsh and AI coding assistants (Claude Code, Codex, Gemini) — one repo, one install command, one theme for everything.
 
 ![Hero](docs/images/hero.png)
 
@@ -42,7 +42,7 @@ export IPHONE_16_UDID="..."
 |------|------|-------|
 | Editor | `.config/nvim/`, `.vimrc` | Lazy.nvim, LSP, separate setups for VS Code and Xcode |
 | Terminal | `.config/ghostty/`, `wezterm/`, `alacritty/` | Ghostty is the daily driver |
-| Multiplexer | `.config/herdr/`, `.config/tmux/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
+| Multiplexer | `.config/herdr/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
 | Shell | `.zshrc`, `.config/starship.toml` | Oh My Zsh, zoxide, direnv, aliases |
 | CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/` | Modern `ls`, key remapping, global gitignore |
 | AI | `.claude/`, `.codex/`, `.gemini/` | Agents, skills, hooks and code rules |

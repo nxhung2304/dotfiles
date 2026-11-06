@@ -20,7 +20,7 @@ Personal Neovim config powered by [lazy.nvim](https://github.com/folke/lazy.nvim
 - Neovim >= **0.11** (LuaJIT build)
 - Git >= **2.19.0**
 - [Nerd Font](https://www.nerdfonts.com/)
-- tmux (for Claude Code integration and sessionizer)
+- herdr (for Claude Code integration)
 
 ## LSP Servers
 
@@ -94,7 +94,6 @@ go install golang.org/x/tools/cmd/goimports@latest
 |---|---|
 | `jk` | Exit insert mode |
 | `<C-s>` | Save file |
-| `<C-f>` | Open tmux-sessionizer |
 | `<C-h/j/k/l>` | Navigate splits |
 | `<C-u>` / `<C-d>` | Scroll and center |
 | `Q` | Replay macro `@q` |
@@ -166,8 +165,8 @@ go install golang.org/x/tools/cmd/goimports@latest
 
 | Key | Action |
 |---|---|
-| `<leader>ac` | Send current line ref to Claude Code (tmux) |
-| `<leader>ac` (visual) | Send selected range ref to Claude Code |
+| `<leader>cc` | Send current line ref to Claude Code (herdr) |
+| `<leader>cc` (visual) | Send selected range ref to Claude Code |
 
 ## Flutter Debug Workflow
 

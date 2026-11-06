@@ -8,7 +8,7 @@ install_stow() {
         BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
         mkdir -p "$BACKUP_DIR"
         echo "📦 Backup location: $BACKUP_DIR"
-        for path in ~/.config/nvim ~/.config/karabiner ~/.config/wezterm ~/.zshrc ~/.tmux.conf ~/.gitconfig ~/.vimrc; do
+        for path in ~/.config/nvim ~/.config/karabiner ~/.config/wezterm ~/.zshrc ~/.gitconfig ~/.vimrc; do
             [ -e "$path" ] && [ ! -L "$path" ] && cp -R "$path" "$BACKUP_DIR/"
         done
     fi

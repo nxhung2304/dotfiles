@@ -1,6 +1,5 @@
 *.log
 backups/
-.config/tmux/plugins/
 
 .claude/settings_z.json
 .claude/ide/
