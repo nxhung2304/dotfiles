@@ -386,22 +386,4 @@ return {
 		},
 		opts = {},
 	},
-	{
-		"nxhung2304/conflict.nvim",
-		config = function()
-			require("conflict").setup({
-				keymaps = { leader = "<leader>C" },
-				ui = { markers = false }, -- clickable action buttons
-				detect = { anywhere = true }, -- detect outside git merge
-				colors = {
-					current = "#56CC7A",
-					incoming = "#40A6FF",
-					base = "#FFCC66",
-				},
-			})
-			-- conflict.nvim maps <LeftMouse> even when ui.markers = false
-			-- the mapping does nothing then, but swallows statusline clicks
-			vim.keymap.del("n", "<LeftMouse>")
-		end,
-	},
 }
