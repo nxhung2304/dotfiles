@@ -97,23 +97,48 @@ local function read_git_output(root, args)
 	return vim.v.shell_error == 0 and output[1] or nil
 end
 
-local function find_default_branch(root)
-	local remote_head = read_git_output(root, { "rev-parse", "--abbrev-ref", "origin/HEAD" })
-	if remote_head and remote_head ~= "origin/HEAD" then
-		return remote_head
-	end
+local BASE_BRANCH_CANDIDATES = { "develop", "main", "master", "origin/develop", "origin/main", "origin/master" }
 
-	for _, branch in ipairs({ "main", "master" }) do
-		if read_git_output(root, { "rev-parse", "--verify", "--quiet", "refs/heads/" .. branch }) then
-			return branch
+local function count_commits_only_on_head(root, ref)
+	return tonumber(read_git_output(root, { "rev-list", "--count", ref .. "..HEAD" }))
+end
+
+local function find_base_branch(root)
+	local base_branch, fewest_commits
+	for _, ref in ipairs(BASE_BRANCH_CANDIDATES) do
+		local commit_count = count_commits_only_on_head(root, ref)
+		local is_existing_ref = commit_count ~= nil
+		local is_closer_base = not fewest_commits or (is_existing_ref and commit_count < fewest_commits)
+		if is_existing_ref and is_closer_base then
+			base_branch, fewest_commits = ref, commit_count
 		end
 	end
 
-	return "main"
+	return base_branch
 end
 
-local function review_branch_against_default(root)
-	run_diffbandit("git", { root = root, mode = "all", base = find_default_branch(root) })
+local function find_fork_point(root)
+	local base_branch = find_base_branch(root)
+	if not base_branch then
+		return nil
+	end
+
+	local fork_point = read_git_output(root, { "merge-base", base_branch, "HEAD" })
+	if not fork_point then
+		return nil
+	end
+
+	return read_git_output(root, { "rev-parse", "--short", fork_point })
+end
+
+local function review_branch_changes(root)
+	local fork_point = find_fork_point(root)
+	if not fork_point then
+		vim.notify("No develop, main or master branch found", vim.log.levels.WARN, { title = "DiffBandit" })
+		return
+	end
+
+	run_diffbandit("git", { root = root, mode = "all", base = fork_point })
 end
 
 local NEOGIT_FILE_SECTIONS = { untracked = true, unstaged = true, staged = true }
@@ -167,8 +192,8 @@ local function add_diffbandit_actions_to_neogit_diff_popup(builder)
 		:action("S", "staged", close_popup_then(function()
 			run_diffbandit("git", { root = get_neogit_root(), mode = "staged" })
 		end))
-		:action("B", "branch vs default", close_popup_then(function()
-			review_branch_against_default(get_neogit_root())
+		:action("B", "branch changes", close_popup_then(function()
+			review_branch_changes(get_neogit_root())
 		end))
 		:action("L", "log", close_popup_then(function()
 			run_diffbandit("git_log", { root = get_neogit_root() })
@@ -353,9 +378,9 @@ return {
 			{
 				"<leader>gB",
 				function()
-					review_branch_against_default()
+					review_branch_changes()
 				end,
-				desc = "Review branch vs default branch",
+				desc = "Review branch changes",
 			},
 			{ "<leader>gH", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
 		},
