@@ -13,7 +13,7 @@ function M.rails_guard(fn)
 	fn()
 end
 
-function M.tmux_named_window(name, cmd)
+function M.toggle_named_terminal(name, cmd)
 	Snacks.terminal.toggle(cmd, {
 		env = { NVIM_RAILS_TERM = name },
 		auto_close = false,

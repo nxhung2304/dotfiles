@@ -1,32 +1,44 @@
 #!/usr/bin/env bash
-# Setup Terminal & UI: Tmux, Herdr
+# Setup Terminal & UI: Herdr
+
+remove_tmux_leftovers() {
+    local leftover_link
+    for leftover_link in "$HOME/.config/tmux" "$HOME/.local/bin/scripts/tmux-sessionizer"; do
+        if [ -L "$leftover_link" ]; then
+            rm "$leftover_link"
+            log_info "Removed old tmux link $leftover_link"
+        fi
+    done
+
+    if [ -d "$HOME/.tmux" ] && ask "Remove old tmux plugins folder ~/.tmux?"; then
+        rm -rf "$HOME/.tmux"
+    fi
+
+    if ! command -v brew &>/dev/null; then
+        return
+    fi
+
+    if ! brew list tmux &>/dev/null; then
+        return
+    fi
+
+    if ask "Uninstall tmux with Homebrew?"; then
+        brew uninstall tmux
+    fi
+}
 
 install_terminal() {
     log_header "TERMINAL & UI"
-
-    # 1. Tmux & TPM
-    log_info "Setting up Tmux..."
-    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-        if ask "Install Tmux Plugin Manager (TPM)?"; then
-            log_info "Installing TPM..."
-            git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-            log_success "TPM installed"
-        fi
-    else
-        log_success "TPM already installed"
-    fi
-
-    log_info "Linking Tmux config..."
-    link_path "$DOTFILES_DIR/.config/tmux" "$HOME/.config/tmux"
-    
-    mkdir -p "$HOME/.local/bin/scripts"
-    ln -sf "$DOTFILES_DIR/scripts/tmux-sessionizer" "$HOME/.local/bin/scripts/tmux-sessionizer"
-    chmod +x "$DOTFILES_DIR/scripts/tmux-sessionizer"
 
     log_info "Setting up Herdr..."
     mkdir -p "$HOME/.config/herdr"
     ln -sf "$DOTFILES_DIR/.config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     chmod +x "$DOTFILES_DIR"/scripts/herdr-* "$DOTFILES_DIR"/scripts/herdr/*
+
+    mkdir -p "$HOME/.local/bin/scripts"
+    link_path "$DOTFILES_DIR/scripts/open-or-focus-tab" "$HOME/.local/bin/scripts/open-or-focus-tab"
+
+    remove_tmux_leftovers
 
     "$DOTFILES_DIR/scripts/theme-switch" gruvbox
 

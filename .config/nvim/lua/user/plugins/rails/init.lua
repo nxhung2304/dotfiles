@@ -33,7 +33,7 @@ return {
 							if args and args ~= "" then
 								cmd = cmd .. " " .. args
 							end
-							u.tmux_named_window("server", cmd)
+							u.toggle_named_terminal("server", cmd)
 						end)
 					end)
 				end,
@@ -43,7 +43,7 @@ return {
 				"<leader>Rl",
 				function()
 					u.rails_guard(function()
-						u.tmux_named_window("logs", "tail -f log/development.log")
+						u.toggle_named_terminal("logs", "tail -f log/development.log")
 					end)
 				end,
 				desc = "Rails Logs",

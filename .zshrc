@@ -75,9 +75,7 @@ fi
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
-if [ -z "$TMUX" ]; then
-    export TERM=xterm-256color
-fi
+export TERM=xterm-256color
 
 ulimit -n 8192
 

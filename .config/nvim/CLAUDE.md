@@ -44,10 +44,9 @@ Panels: Files (`<leader>1`), Search (`<leader>2` or `<leader>sg`). Toggle: `<lea
 |---|---|
 | `jk` | Exit insert mode |
 | `<C-s>` | Save file |
-| `<C-f>` | Open tmux-sessionizer |
 | `ga` | LSP code action |
 | `]e` / `[e` | Next/prev error diagnostic |
-| `<leader>cc` | Copy to clipboard (OSC52) |
+| `<leader>cc` | Send current line or selection ref to Claude Code (herdr) |
 | `<leader>ya` / `<leader>yr` | Copy absolute/relative path |
 
 ## LSP Setup Pattern

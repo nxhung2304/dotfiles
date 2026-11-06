@@ -2,4 +2,4 @@
 set -euo pipefail
 
 cd "$(herdr pane current --current | jq -r '.result.pane.cwd')"
-exec "$HOME/dotfiles/scripts/tmux/drag-drop.sh"
+exec "$HOME/dotfiles/scripts/herdr/drag-drop-prompt"
