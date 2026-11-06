@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "install.sh"
+      - ".config/nvim/**"
+      - "tests/**"
+      - ".github/workflows/tests.yml"
+  push:
+    branches: [master]
+    paths:
+      - "scripts/**"
+      - "install.sh"
+      - ".config/nvim/**"
+      - "tests/**"
+      - ".github/workflows/tests.yml"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      NVIM_VERSION: v0.11.4
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y stow
+      - name: Install Neovim
+        run: |
+          curl -sSfL "https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/nvim-linux-x86_64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+      - run: bash tests/run.sh
