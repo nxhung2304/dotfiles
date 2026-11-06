@@ -8,7 +8,7 @@ description: One-way sync of the current repo's issues (specs/issues status + Gi
 
 Repo → Obsidian, one way, on demand. The note is the user's hand-curated list; this skill only owns its own block.
 
-Target note: `/Users/rightsvn-hunga/vaults/personal/00-Inbox/My Tasks.md`
+Target note: `~/vaults/personal/00-Inbox/My Tasks.md`
 
 ## Step 1 — Identify the repo
 

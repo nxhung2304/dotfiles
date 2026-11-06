@@ -24,11 +24,6 @@ install_ai() {
         log_success "Gemini CLI already installed"
     fi
 
-    echo "🔗 Creating symlinks for Gemini config..."
-    mkdir -p "$HOME/.gemini"
-    ln -sf "$DOTFILES_DIR/.gemini/settings.json" "$HOME/.gemini/settings.json"
-    link_path "$DOTFILES_DIR/.gemini/skills" "$HOME/.gemini/skills"
-
     # --- Codex ---
     echo "💻 Setting up Codex CLI..."
     if ! command -v codex &>/dev/null; then
@@ -40,22 +35,12 @@ install_ai() {
         log_success "Codex CLI already installed"
     fi
 
-    echo "🔗 Creating symlinks for Codex config..."
-    mkdir -p "$HOME/.codex"
-    ln -sf "$DOTFILES_DIR/.codex/config.toml" "$HOME/.codex/config.toml"
-    link_path "$DOTFILES_DIR/.codex/rules" "$HOME/.codex/rules"
-    link_path "$DOTFILES_DIR/.codex/skills" "$HOME/.codex/skills"
-
     # --- Claude ---
     echo "🛡️ Setting up Claude Code config..."
     # (Claude binary is installed via Brewfile)
     mkdir -p "$HOME/.claude"
-    for item in settings.json CLAUDE.md commands agents skills code-rules statusline-command.sh file-suggestion.sh; do
-        link_path "$DOTFILES_DIR/.claude/$item" "$HOME/.claude/$item"
-    done
 
     mkdir -p "$HOME/.claude/hooks"
-    ln -sf "$DOTFILES_DIR/.claude/hooks/ai_track.py" "$HOME/.claude/hooks/ai_track.py"
 
     echo "⏰ Scheduling weekly AI review (Monday 10:00)..."
     local review_plist="$HOME/Library/LaunchAgents/local.ai-metrics.review.plist"

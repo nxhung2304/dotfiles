@@ -31,12 +31,7 @@ install_terminal() {
     log_header "TERMINAL & UI"
 
     log_info "Setting up Herdr..."
-    mkdir -p "$HOME/.config/herdr"
-    ln -sf "$DOTFILES_DIR/.config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     chmod +x "$DOTFILES_DIR"/scripts/herdr-* "$DOTFILES_DIR"/scripts/herdr/*
-
-    mkdir -p "$HOME/.local/bin/scripts"
-    link_path "$DOTFILES_DIR/scripts/open-or-focus-tab" "$HOME/.local/bin/scripts/open-or-focus-tab"
 
     remove_tmux_leftovers
 
