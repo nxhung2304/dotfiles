@@ -32,6 +32,6 @@ Link file trong report dùng `ai-reveal://`: bấm vào thì Finder mở thư m�
 - `first_pass`: ✓ nếu không có prompt sửa và không bị Esc lần nào
 - `correction_rate`: tỉ lệ prompt chứa từ sửa sai (sai, sửa lại, làm lại, wrong, revert…) — heuristic, chỉnh `CORRECTION_RE` theo cách bạn hay nói
 - `interrupt_rate`: tỉ lệ turn bị ngắt (có prompt mới mà turn trước chưa có Stop)
-- `claude_min`: thời gian Claude thực sự chạy; `you_min`: thời gian bạn review giữa các turn (mỗi khoảng tối đa 10 phút, tmux treo không bị tính)
+- `claude_min`: thời gian Claude thực sự chạy; `you_min`: thời gian bạn review giữa các turn (mỗi khoảng tối đa 10 phút, session herdr treo không bị tính)
 - `commits`: số commit có `#<issue>` trong message
 - Lỗi của hook (nếu có) ghi ở `~/.ai-metrics/errors.log`, không bao giờ làm hỏng phiên Claude Code

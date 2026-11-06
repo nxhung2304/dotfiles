@@ -78,7 +78,13 @@ open_directory() {
     created=$(herdr workspace create --cwd "$selected" --label "$(workspace_name_for "$selected")" --focus)
     root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
 
-    for hydrate_file in "$selected/.tmux-sessionizer" "$HOME/.tmux-sessionizer"; do
+    local hydrate_candidates=(
+        "$selected/.herdr-sessionizer"
+        "$selected/.tmux-sessionizer"
+        "$HOME/.herdr-sessionizer"
+        "$HOME/.tmux-sessionizer"
+    )
+    for hydrate_file in "${hydrate_candidates[@]}"; do
         if [[ -f $hydrate_file ]]; then
             herdr pane send-text "$root_pane" "source $hydrate_file" >/dev/null
             herdr pane send-keys "$root_pane" enter >/dev/null

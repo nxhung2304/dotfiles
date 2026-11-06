@@ -5,7 +5,7 @@ decorations = "full"  # Hoặc "None" nếu muốn minimal; "Buttonless" tương
 opacity = 1.0
 dynamic_padding = false
 
-# Inactive pane: Alacritty không hỗ trợ trực tiếp; dùng Tmux cho dimming (e.g., tmux set -g window-style 'bg=#3c3836' cho inactive).
+# Inactive pane: Alacritty không hỗ trợ trực tiếp dimming.
 
 # Font
 [font]

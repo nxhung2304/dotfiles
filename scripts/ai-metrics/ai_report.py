@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 DB = os.path.expanduser(os.environ.get("AI_METRICS_DB", "~/.ai-metrics/metrics.db"))
 REVIEW_DIR = os.path.expanduser(os.environ.get("AI_METRICS_REVIEW_DIR", "~/.ai-metrics/reviews"))
 TRANSCRIPT_GLOB = os.path.expanduser("~/.claude/projects/*/{session_id}.jsonl")
-IDLE_CAP = 600  # giây: khoảng nghỉ dài hơn coi là idle (tmux treo), không tính
+IDLE_CAP = 600  # giây: khoảng nghỉ dài hơn coi là idle (session herdr treo), không tính
 MIN_TASKS_PER_SKILL = 5
 TREND_WEEKS = 8
 WEEK_SECONDS = 7 * 86400

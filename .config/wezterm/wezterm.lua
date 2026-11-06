@@ -93,7 +93,7 @@ config.keys = {
 		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
 	},
 
-	-- Clear screen (also clears tmux's own history when inside tmux)
+	-- Clear screen (also sends ctrl+alt+shift+l, herdr's clear pane binding)
 	{
 		key = "k",
 		mods = "CMD",

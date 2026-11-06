@@ -12,7 +12,7 @@ Nguyên tắc: đo theo **kết quả**, không theo số dòng code hay thời 
 
 ## 2. Quy ước làm việc hiện tại
 
-- Dùng **Claude Code CLI**, thường chạy trong **tmux** (session có thể treo nhiều ngày).
+- Dùng **Claude Code CLI**, thường chạy trong **herdr** (session có thể treo nhiều ngày).
 - Mỗi dự án có thư mục `specs/`. **Mỗi GitHub issue = 1 folder** `specs/<issue>/` chứa các file .md cho task đó.
 - Đã có một số skills riêng cho công việc.
 - Commit message nên có `#<issue>`.
@@ -26,7 +26,7 @@ Nguyên tắc: đo theo **kết quả**, không theo số dòng code hay thời 
 
 **Thiết kế đã chốt:**
 - Đơn vị đo là **turn** và **task**, không phải session.
-- Thời gian Claude chạy = Stop − UserPromptSubmit. Thời gian của tôi = Stop → prompt kế, **mỗi khoảng tối đa 10 phút** (bỏ idle của tmux).
+- Thời gian Claude chạy = Stop − UserPromptSubmit. Thời gian của tôi = Stop → prompt kế, **mỗi khoảng tối đa 10 phút** (bỏ idle của herdr).
 - Bị ngắt (Esc) = có prompt mới mà turn trước không có Stop.
 - Nhận diện task theo thứ tự ưu tiên: Claude đụng file trong `specs/<folder>/` → prompt nhắc `specs/42` / `#42` → số trong tên branch → kế thừa turn trước cùng session. Folder `42-login` được chuẩn hoá thành `42`.
 - Nhận diện skill: tool `Skill` hoặc đọc file `skills/<tên>/SKILL.md`.
