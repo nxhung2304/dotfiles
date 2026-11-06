@@ -18,7 +18,6 @@ single_entry() {
 }
 
 build_entries() {
-    group_entries "Hunk" "hunk-menu"
     group_entries "GitHub" "github-menu"
     group_entries "Worktree" "wt-menu"
     single_entry "Theme" "Switch" "../theme-switch"
