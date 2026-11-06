@@ -24,8 +24,8 @@ pane_scrollbars = false
 
 status_indicators = "symbols"
 tab_bar_right = [
-  { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
-  { type = "command", command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/device-status", interval_seconds = 10, timeout_seconds = 5 },
+  { type = "command", command = "~/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
+  { type = "command", command = "~/dotfiles/scripts/herdr/device-status", interval_seconds = 10, timeout_seconds = 5 },
 ]
 [ui.toast]
 delivery = "off"
@@ -95,7 +95,7 @@ navigate_pane_right = "l"
 [[keys.command]]
 key = "ctrl+alt+shift+l"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
+command = "~/dotfiles/scripts/herdr-clear-pane"
 description = "clear pane screen (wezterm cmd+k)"
 
 [[keys.command]]
@@ -103,13 +103,13 @@ key = "prefix+f"
 type = "popup"
 width = "80%"
 height = "80%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-sessionizer"
+command = "~/dotfiles/scripts/herdr-sessionizer"
 description = "sessionizer"
 
 [[keys.command]]
 key = "prefix+shift+l"
 type = "shell"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr-clear-pane"
+command = "~/dotfiles/scripts/herdr-clear-pane"
 description = "clear pane screen"
 
 [[keys.command]]
@@ -117,7 +117,7 @@ key = "prefix+m"
 type = "popup"
 width = "95%"
 height = "70%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/palette"
+command = "~/dotfiles/scripts/herdr/palette"
 description = "command palette: agents, worktree, github, hunk, theme, files, reload"
 
 [[keys.command]]
@@ -131,7 +131,7 @@ key = "prefix+shift+m"
 type = "popup"
 width = "60%"
 height = "40%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/device-list"
+command = "~/dotfiles/scripts/herdr/device-list"
 description = "list connected devices"
 
 [[keys.command]]
@@ -139,7 +139,7 @@ key = "prefix+/"
 type = "popup"
 width = "95%"
 height = "90%"
-command = "/Users/rightsvn-hunga/dotfiles/scripts/herdr/log-search"
+command = "~/dotfiles/scripts/herdr/log-search"
 description = "search focused pane output with fzf"
 
 [experimental]

@@ -27,18 +27,49 @@ source scripts/install/ai.sh
 source scripts/install/vim.sh
 
 # ====================== INSTALLATION FLOW ======================
-install_editors
-install_homebrew
-install_brewfile
-install_asdf
-install_mobile
-install_database
-install_stow
-install_git_filters
-install_shell
-install_terminal
-install_ai
-install_vim
+INSTALL_STEPS=(editors homebrew brewfile asdf mobile database stow git_filters shell terminal ai vim)
+
+print_usage() {
+    echo "Usage: ./install.sh [step...]"
+    echo "Runs every step when no step is given."
+    echo "Steps: ${INSTALL_STEPS[*]}"
+}
+
+is_known_step() {
+    [[ " ${INSTALL_STEPS[*]} " == *" $1 "* ]]
+}
+
+run_steps() {
+    local step
+    for step in "$@"; do
+        "install_$step"
+    done
+}
+
+case ${1:-} in
+    -h | --help)
+        print_usage
+
+        exit 0
+        ;;
+esac
+
+for requested_step in "$@"; do
+    if ! is_known_step "$requested_step"; then
+        log_error "Unknown step: $requested_step"
+        print_usage
+
+        exit 1
+    fi
+done
+
+if [[ $# -gt 0 ]]; then
+    run_steps "$@"
+
+    exit 0
+fi
+
+run_steps "${INSTALL_STEPS[@]}"
 
 # ====================== FINAL ======================
 log_header "INSTALLATION COMPLETE"
