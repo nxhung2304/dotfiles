@@ -8,6 +8,7 @@ work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 mkdir -p "$work_dir/bin" "$work_dir/home/.local/bin/scripts"
 repo_url="https://github.com/org/repo"
+fzf_cancel_exit_code=130
 
 cat >"$work_dir/bin/herdr" <<STUB
 #!/usr/bin/env bash
@@ -31,7 +32,7 @@ esac
 STUB
 cat >"$work_dir/bin/fzf" <<STUB
 #!/usr/bin/env bash
-[[ -f "$work_dir/fzf-cancel" ]] && exit 130
+[[ -f "$work_dir/fzf-cancel" ]] && exit $fzf_cancel_exit_code
 grep -x work
 STUB
 cat >"$work_dir/home/.local/bin/scripts/open-or-focus-tab" <<STUB

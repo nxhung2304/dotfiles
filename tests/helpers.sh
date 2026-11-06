@@ -21,7 +21,7 @@ copy_repo_to() {
     local repo_dir
     repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
     mkdir -p "$destination"
-    (cd "$repo_dir" && tar --exclude=.git -cf - .) | (cd "$destination" && tar -xf -)
+    tar -C "$repo_dir" --exclude=.git -cf - . | tar -C "$destination" -xf -
 }
 
 describe_path() {

@@ -45,9 +45,9 @@ local function check(description, is_ok, detail)
 	end
 end
 
-local function key_rhs(lhs)
+local function find_key_action(key_sequence)
 	for _, key in ipairs(diffbandit_spec.keys) do
-		if key[1] == lhs then
+		if key[1] == key_sequence then
 			return key[2]
 		end
 	end
@@ -77,8 +77,8 @@ local function buffer_contains(buffers, name, text)
 	return buffers[name] ~= nil and buffers[name]:find(text) ~= nil
 end
 
-local function command_from_rhs(rhs)
-	local command = rhs:gsub("^<cmd>", "")
+local function command_from_key_action(key_action)
+	local command = key_action:gsub("^<cmd>", "")
 	command = command:gsub("<cr>$", "")
 
 	return command
@@ -141,7 +141,7 @@ function cases.neogit_popup()
 end
 
 function cases.review_branch()
-	key_rhs("<leader>gB")()
+	find_key_action("<leader>gB")()
 	wait_for_new_tab()
 	local buffers = collect_visible_buffers()
 	local fork_point_side
@@ -159,7 +159,7 @@ function cases.review_branch()
 end
 
 function cases.no_base_branch()
-	key_rhs("<leader>gB")()
+	find_key_action("<leader>gB")()
 	vim.wait(NOTIFY_SETTLE_MS)
 	local has_warning = error_messages[1] == "No develop, main or master branch found"
 	check("warns when no base branch exists", has_warning, error_messages[1])
@@ -167,7 +167,7 @@ end
 
 function cases.merge_conflict()
 	vim.cmd("edit f")
-	vim.cmd(command_from_rhs(key_rhs("<leader>gm")))
+	vim.cmd(command_from_key_action(find_key_action("<leader>gm")))
 	wait_for_new_tab()
 	local buffers = collect_visible_buffers()
 	check("merge view shows our side", buffer_contains(buffers, "f (local)", "OURS"), vim.inspect(buffers))
