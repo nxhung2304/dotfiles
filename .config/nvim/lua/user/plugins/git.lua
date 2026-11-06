@@ -80,6 +80,126 @@ local function open_line_pr()
 	open_tab(url_cmd)
 end
 
+local function run_diffbandit(fn_name, ...)
+	local ok, err = require("diffbandit")[fn_name](...)
+	if not ok and err then
+		vim.notify(tostring(err), vim.log.levels.ERROR, { title = "DiffBandit" })
+	end
+end
+
+local function read_git_output(root, args)
+	local cmd = { "git" }
+	if root then
+		vim.list_extend(cmd, { "-C", root })
+	end
+
+	local output = vim.fn.systemlist(vim.list_extend(cmd, args))
+	return vim.v.shell_error == 0 and output[1] or nil
+end
+
+local BASE_BRANCH_CANDIDATES = { "develop", "main", "master", "origin/develop", "origin/main", "origin/master" }
+
+local function count_commits_only_on_head(root, ref)
+	return tonumber(read_git_output(root, { "rev-list", "--count", ref .. "..HEAD" }))
+end
+
+local function find_base_branch(root)
+	local base_branch, fewest_commits
+	for _, ref in ipairs(BASE_BRANCH_CANDIDATES) do
+		local commit_count = count_commits_only_on_head(root, ref)
+		local is_existing_ref = commit_count ~= nil
+		local is_closer_base = not fewest_commits or (is_existing_ref and commit_count < fewest_commits)
+		if is_existing_ref and is_closer_base then
+			base_branch, fewest_commits = ref, commit_count
+		end
+	end
+
+	return base_branch
+end
+
+local function find_fork_point(root)
+	local base_branch = find_base_branch(root)
+	if not base_branch then
+		return nil
+	end
+
+	local fork_point = read_git_output(root, { "merge-base", base_branch, "HEAD" })
+	if not fork_point then
+		return nil
+	end
+
+	return read_git_output(root, { "rev-parse", "--short", fork_point })
+end
+
+local function review_branch_changes(root)
+	local fork_point = find_fork_point(root)
+	if not fork_point then
+		vim.notify("No develop, main or master branch found", vim.log.levels.WARN, { title = "DiffBandit" })
+		return
+	end
+
+	run_diffbandit("git", { root = root, mode = "all", base = fork_point })
+end
+
+local NEOGIT_FILE_SECTIONS = { untracked = true, unstaged = true, staged = true }
+
+local function get_neogit_root()
+	return require("neogit.lib.git").repo.worktree_root
+end
+
+local function get_popup_target(popup)
+	local item_name = (popup:get_env("item") or {}).name
+	if type(item_name) == "table" then
+		item_name = item_name[2] or item_name[1]
+	end
+
+	local section_name = (popup:get_env("section") or {}).name
+	return section_name, item_name
+end
+
+local function open_diffbandit_for_popup_target(popup)
+	local section_name, item_name = get_popup_target(popup)
+	local root = get_neogit_root()
+	local has_item_name = type(item_name) == "string" and item_name ~= ""
+	local is_file_section = NEOGIT_FILE_SECTIONS[section_name]
+	local mode = section_name == "staged" and "staged" or nil
+
+	if is_file_section and has_item_name then
+		run_diffbandit("git_file", root .. "/" .. item_name, { root = root, mode = mode })
+	elseif is_file_section then
+		run_diffbandit("git", { root = root, mode = mode })
+	elseif has_item_name then
+		run_diffbandit("git_commit", item_name, { root = root })
+	else
+		run_diffbandit("git", { root = root })
+	end
+end
+
+local function close_popup_then(action)
+	return function(popup)
+		popup:close()
+		action(popup)
+	end
+end
+
+local function add_diffbandit_actions_to_neogit_diff_popup(builder)
+	builder
+		:new_action_group("DiffBandit")
+		:action("D", "this", close_popup_then(open_diffbandit_for_popup_target))
+		:action("W", "worktree", close_popup_then(function()
+			run_diffbandit("git", { root = get_neogit_root() })
+		end))
+		:action("S", "staged", close_popup_then(function()
+			run_diffbandit("git", { root = get_neogit_root(), mode = "staged" })
+		end))
+		:action("B", "branch changes", close_popup_then(function()
+			review_branch_changes(get_neogit_root())
+		end))
+		:action("L", "log", close_popup_then(function()
+			run_diffbandit("git_log", { root = get_neogit_root() })
+		end))
+end
+
 local HERDR_WORKTREE_WORKSPACE_SCRIPT = vim.fn.expand("~/dotfiles/scripts/herdr/worktree-workspace")
 
 local function find_other_worktree_for_branch(branch_name)
@@ -148,15 +268,6 @@ return {
 				map("n", "<leader>gb", gs.toggle_current_line_blame, { desc = "Toggle line blame" })
 				map("n", "<leader>gc", "<cmd>GitBlameCopyGitHubURL<cr>", { desc = "Copy file URL Remote" })
 				map("n", "<leader>gl", open_line_pr, { desc = "Open PR of current line's commit" })
-				map("n", "<leader>gh", function()
-					open_tab("gh pr view --json url -q .url")
-				end, { desc = "Open PR in browser" })
-				map("n", "<leader>gP", function()
-					open_tab("gh repo view --json url -q .url | xargs -I{} echo {}/pulls")
-				end, { desc = "Open PRs list in browser" })
-				map("n", "<leader>gi", function()
-					open_tab("gh repo view --json url -q .url | xargs -I{} echo {}/issues")
-				end, { desc = "Open Issues list in browser" })
 				map("n", "<leader>gD", function()
 					Snacks.picker.git_branches({
 						format = function(item)
@@ -229,27 +340,42 @@ return {
 			hooks = {
 				PreBranchCheckout = jump_to_branch_worktree,
 			},
+			builders = {
+				NeogitDiffPopup = add_diffbandit_actions_to_neogit_diff_popup,
+			},
 		},
 		keys = {
 			{ "<leader>go", "<cmd>Neogit<cr>", desc = "Show Neogit UI" },
 		},
 	},
 	{
-		"nxhung2304/conflict.nvim",
-		config = function()
-			require("conflict").setup({
-				keymaps = { leader = "<leader>C" },
-				ui = { markers = false }, -- clickable action buttons
-				detect = { anywhere = true }, -- detect outside git merge
-				colors = {
-					current = "#56CC7A",
-					incoming = "#40A6FF",
-					base = "#FFCC66",
-				},
-			})
-			-- conflict.nvim maps <LeftMouse> even when ui.markers = false
-			-- the mapping does nothing then, but swallows statusline clicks
-			vim.keymap.del("n", "<LeftMouse>")
-		end,
+		"CoreyKaylor/diffbandit.nvim",
+		cmd = {
+			"DiffBandit",
+			"DiffBanditBuffers",
+			"DiffBanditFolderDiff",
+			"DiffBanditGit",
+			"DiffBanditGitCurrent",
+			"DiffBanditGitMenu",
+			"DiffBanditGitLog",
+			"DiffBanditGitCommit",
+			"DiffBanditGitCompare",
+			"DiffBanditCommitPanel",
+			"DiffBanditMerge",
+		},
+		keys = {
+			{ "<leader>gd", "<cmd>DiffBanditGit<cr>", desc = "Diff working tree" },
+			{ "<leader>gf", "<cmd>DiffBanditGitCurrent<cr>", desc = "Diff current file" },
+			{
+				"<leader>gB",
+				function()
+					review_branch_changes()
+				end,
+				desc = "Review branch changes",
+			},
+			{ "<leader>gH", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
+			{ "<leader>gm", "<cmd>DiffBanditMerge<cr>", desc = "Resolve merge conflict" },
+		},
+		opts = {},
 	},
 }

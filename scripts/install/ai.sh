@@ -40,10 +40,6 @@ install_ai() {
     # (Claude binary is installed via Brewfile)
     mkdir -p "$HOME/.claude"
 
-    if command -v hunk &>/dev/null; then
-        ln -sfn "$(brew --prefix hunk)/libexec/skills/hunk-review" "$DOTFILES_DIR/.claude/skills/hunk-review"
-    fi
-
     mkdir -p "$HOME/.claude/hooks"
 
     echo "⏰ Scheduling weekly AI review (Monday 10:00)..."
