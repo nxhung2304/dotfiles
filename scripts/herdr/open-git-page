@@ -5,17 +5,42 @@ page=$1
 
 cd "$(herdr pane current --current | jq -r '.result.pane.cwd')"
 
-case $page in
-    current)
-        url=$(gh pr view --json url -q .url 2>/dev/null || true)
-        [[ -z $url ]] && url=$(gh repo view --json url -q .url)/pulls
-        ;;
-    repo)
-        url=$(gh repo view --json url -q .url)
-        ;;
-    pulls | issues)
-        url=$(gh repo view --json url -q .url)/$page
-        ;;
-esac
+build_url() {
+    local repo_url pr_url
+    repo_url=$(gh repo view --json url -q .url) || return 1
+
+    case $page in
+        current)
+            pr_url=$(gh pr view --json url -q .url 2>/dev/null || true)
+            echo "${pr_url:-$repo_url/pulls}"
+            ;;
+        repo)
+            echo "$repo_url"
+            ;;
+        pulls | issues)
+            echo "$repo_url/$page"
+            ;;
+    esac
+}
+
+list_gh_accounts() {
+    gh auth status 2>&1 | sed -n 's/.*account \([^ ]*\).*/\1/p'
+}
+
+switch_gh_account() {
+    [[ -t 0 && -t 1 ]] || return 1
+
+    local account
+    if ! account=$(list_gh_accounts | fzf --prompt="switch GitHub account> " --height=100% --reverse); then
+        return 1
+    fi
+
+    gh auth switch --user "$account" >/dev/null
+}
+
+if ! url=$(build_url); then
+    switch_gh_account || exit 1
+    url=$(build_url)
+fi
 
 ~/.local/bin/scripts/open-or-focus-tab "$url"
