@@ -30,7 +30,8 @@ mkdir -p "$work_dir/both" "$work_dir/old-only" "$work_dir/none"
 touch "$work_dir/both/.herdr-sessionizer" "$work_dir/both/.tmux-sessionizer" "$work_dir/old-only/.tmux-sessionizer"
 
 check "new hydrate file wins" "source $work_dir/both/.herdr-sessionizer" "$(open_project "$work_dir/both")"
-check "old hydrate file still works" "source $work_dir/old-only/.tmux-sessionizer" "$(open_project "$work_dir/old-only")"
+check "old hydrate file still works" "source $work_dir/old-only/.tmux-sessionizer" \
+    "$(open_project "$work_dir/old-only")"
 check "no hydrate file sends nothing" "nothing" "$(open_project "$work_dir/none")"
 touch "$work_dir/home/.herdr-sessionizer"
 check "home hydrate file is the fallback" "source $work_dir/home/.herdr-sessionizer" "$(open_project "$work_dir/none")"
