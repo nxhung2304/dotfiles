@@ -357,7 +357,7 @@ return {
 				end,
 				desc = "Review branch vs default branch",
 			},
-			{ "<leader>gL", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
+			{ "<leader>gH", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
 		},
 		opts = {},
 	},
