@@ -80,99 +80,99 @@ local function open_line_pr()
 	open_tab(url_cmd)
 end
 
--- ---------------------------------------------------------------------------
--- diffbandit.nvim helpers (also used from Neogit's diff popup)
--- ---------------------------------------------------------------------------
-
--- Run a diffbandit API call; its functions return `nil, err` on failure.
-local function diffbandit(fn_name, ...)
+local function run_diffbandit(fn_name, ...)
 	local ok, err = require("diffbandit")[fn_name](...)
 	if not ok and err then
 		vim.notify(tostring(err), vim.log.levels.ERROR, { title = "DiffBandit" })
 	end
 end
 
--- Default branch of the repo (origin/HEAD), falling back to main/master.
-local function default_branch(root)
+local function read_git_output(root, args)
 	local cmd = { "git" }
 	if root then
 		vim.list_extend(cmd, { "-C", root })
 	end
-	local function git(args)
-		local out = vim.fn.systemlist(vim.list_extend(vim.deepcopy(cmd), args))
-		return vim.v.shell_error == 0 and out[1] or nil
+
+	local output = vim.fn.systemlist(vim.list_extend(cmd, args))
+	return vim.v.shell_error == 0 and output[1] or nil
+end
+
+local function find_default_branch(root)
+	local remote_head = read_git_output(root, { "rev-parse", "--abbrev-ref", "origin/HEAD" })
+	if remote_head and remote_head ~= "origin/HEAD" then
+		return remote_head
 	end
-	local ref = git({ "rev-parse", "--abbrev-ref", "origin/HEAD" })
-	if ref and ref ~= "origin/HEAD" then
-		return ref
-	end
-	for _, name in ipairs({ "main", "master" }) do
-		if git({ "rev-parse", "--verify", "--quiet", "refs/heads/" .. name }) then
-			return name
+
+	for _, branch in ipairs({ "main", "master" }) do
+		if read_git_output(root, { "rev-parse", "--verify", "--quiet", "refs/heads/" .. branch }) then
+			return branch
 		end
 	end
+
 	return "main"
 end
 
-local function review_branch(root)
-	diffbandit("git", { root = root, mode = "all", base = default_branch(root) })
+local function review_branch_against_default(root)
+	run_diffbandit("git", { root = root, mode = "all", base = find_default_branch(root) })
 end
 
-local FILE_SECTIONS = { untracked = true, unstaged = true, staged = true }
+local NEOGIT_FILE_SECTIONS = { untracked = true, unstaged = true, staged = true }
 
--- Extra "DiffBandit" column in Neogit's diff popup (`d`).
--- Uppercase keys so nothing collides with Neogit's own d/h/r/p/u/s/w/c/t.
-local function neogit_diff_popup(builder)
-	local function root()
-		return require("neogit.lib.git").repo.worktree_root
+local function get_neogit_root()
+	return require("neogit.lib.git").repo.worktree_root
+end
+
+local function get_popup_target(popup)
+	local item_name = (popup:get_env("item") or {}).name
+	if type(item_name) == "table" then
+		item_name = item_name[2] or item_name[1]
 	end
 
-	-- "do what I mean" on the thing under the cursor:
-	-- file in status -> that file, commit (status/log/commit view) -> that commit
-	local function this(popup)
+	local section_name = (popup:get_env("section") or {}).name
+	return section_name, item_name
+end
+
+local function open_diffbandit_for_popup_target(popup)
+	local section_name, item_name = get_popup_target(popup)
+	local root = get_neogit_root()
+	local has_item_name = type(item_name) == "string" and item_name ~= ""
+	local is_file_section = NEOGIT_FILE_SECTIONS[section_name]
+	local mode = section_name == "staged" and "staged" or nil
+
+	if is_file_section and has_item_name then
+		run_diffbandit("git_file", root .. "/" .. item_name, { root = root, mode = mode })
+	elseif is_file_section then
+		run_diffbandit("git", { root = root, mode = mode })
+	elseif has_item_name then
+		run_diffbandit("git_commit", item_name, { root = root })
+	else
+		run_diffbandit("git", { root = root })
+	end
+end
+
+local function close_popup_then(action)
+	return function(popup)
 		popup:close()
-		local item = popup:get_env("item") or {}
-		local section = (popup:get_env("section") or {}).name
-		local name = item.name
-
-		if type(name) == "table" then
-			-- log view: { "<first>~1", "<first>", ... }
-			name = name[2] or name[1]
-		end
-
-		if FILE_SECTIONS[section] then
-			local mode = section == "staged" and "staged" or nil
-			if type(name) == "string" and name ~= "" then
-				diffbandit("git_file", root() .. "/" .. name, { root = root(), mode = mode })
-			else
-				diffbandit("git", { root = root(), mode = mode })
-			end
-		elseif type(name) == "string" and name ~= "" then
-			diffbandit("git_commit", name, { root = root() })
-		else
-			diffbandit("git", { root = root() })
-		end
+		action(popup)
 	end
+end
 
+local function add_diffbandit_actions_to_neogit_diff_popup(builder)
 	builder
 		:new_action_group("DiffBandit")
-		:action("D", "this", this)
-		:action("W", "worktree", function(popup)
-			popup:close()
-			diffbandit("git", { root = root() })
-		end)
-		:action("S", "staged", function(popup)
-			popup:close()
-			diffbandit("git", { root = root(), mode = "staged" })
-		end)
-		:action("B", "branch vs default", function(popup)
-			popup:close()
-			review_branch(root())
-		end)
-		:action("L", "log", function(popup)
-			popup:close()
-			diffbandit("git_log", { root = root() })
-		end)
+		:action("D", "this", close_popup_then(open_diffbandit_for_popup_target))
+		:action("W", "worktree", close_popup_then(function()
+			run_diffbandit("git", { root = get_neogit_root() })
+		end))
+		:action("S", "staged", close_popup_then(function()
+			run_diffbandit("git", { root = get_neogit_root(), mode = "staged" })
+		end))
+		:action("B", "branch vs default", close_popup_then(function()
+			review_branch_against_default(get_neogit_root())
+		end))
+		:action("L", "log", close_popup_then(function()
+			run_diffbandit("git_log", { root = get_neogit_root() })
+		end))
 end
 
 local HERDR_WORKTREE_WORKSPACE_SCRIPT = vim.fn.expand("~/dotfiles/scripts/herdr/worktree-workspace")
@@ -324,10 +324,8 @@ return {
 			hooks = {
 				PreBranchCheckout = jump_to_branch_worktree,
 			},
-			-- No diffview/codediff installed: Neogit hides its own diff actions,
-			-- so diffbandit is wired in through the popup builder instead.
 			builders = {
-				NeogitDiffPopup = neogit_diff_popup,
+				NeogitDiffPopup = add_diffbandit_actions_to_neogit_diff_popup,
 			},
 		},
 		keys = {
@@ -335,7 +333,6 @@ return {
 		},
 	},
 	{
-		-- Side-by-side diff viewer (branch/PR review, commits, hunk staging)
 		"CoreyKaylor/diffbandit.nvim",
 		cmd = {
 			"DiffBandit",
@@ -356,7 +353,7 @@ return {
 			{
 				"<leader>gB",
 				function()
-					review_branch()
+					review_branch_against_default()
 				end,
 				desc = "Review branch vs default branch",
 			},
