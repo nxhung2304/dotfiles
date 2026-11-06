@@ -16,7 +16,7 @@ source scripts/install/common.sh
 source scripts/install/editors.sh
 source scripts/install/homebrew.sh
 source scripts/install/brewfile.sh
-source scripts/install/asdf.sh
+source scripts/install/mise.sh
 source scripts/install/mobile.sh
 source scripts/install/database.sh
 source scripts/install/stow.sh
@@ -27,7 +27,7 @@ source scripts/install/ai.sh
 source scripts/install/vim.sh
 
 # ====================== INSTALLATION FLOW ======================
-INSTALL_STEPS=(editors homebrew brewfile asdf mobile database stow git_filters shell terminal ai vim)
+INSTALL_STEPS=(editors homebrew brewfile mise mobile database stow git_filters shell terminal ai vim)
 
 print_usage() {
     echo "Usage: ./install.sh [step...]"
