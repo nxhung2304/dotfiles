@@ -383,6 +383,7 @@ return {
 				desc = "Review branch changes",
 			},
 			{ "<leader>gH", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
+			{ "<leader>gm", "<cmd>DiffBanditMerge<cr>", desc = "Resolve merge conflict" },
 		},
 		opts = {},
 	},
