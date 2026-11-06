@@ -235,6 +235,30 @@ return {
 		},
 	},
 	{
+		-- Side-by-side diff viewer (branch/PR review, commits, hunk staging)
+		"CoreyKaylor/diffbandit.nvim",
+		cmd = {
+			"DiffBandit",
+			"DiffBanditBuffers",
+			"DiffBanditFolderDiff",
+			"DiffBanditGit",
+			"DiffBanditGitCurrent",
+			"DiffBanditGitMenu",
+			"DiffBanditGitLog",
+			"DiffBanditGitCommit",
+			"DiffBanditGitCompare",
+			"DiffBanditCommitPanel",
+			"DiffBanditMerge",
+		},
+		keys = {
+			{ "<leader>gd", "<cmd>DiffBanditGit<cr>", desc = "Diff working tree" },
+			{ "<leader>gf", "<cmd>DiffBanditGitCurrent<cr>", desc = "Diff current file" },
+			{ "<leader>gB", "<cmd>DiffBanditGit --base main<cr>", desc = "Review branch vs main" },
+			{ "<leader>gL", "<cmd>DiffBanditGitLog<cr>", desc = "Git log review" },
+		},
+		opts = {},
+	},
+	{
 		"nxhung2304/conflict.nvim",
 		config = function()
 			require("conflict").setup({

@@ -22,7 +22,6 @@ brew "direnv"
 
 # Git & Productivity
 brew "delta"
-brew "hunk"
 brew "gh"
 
 # Utils
