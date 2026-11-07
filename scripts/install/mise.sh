@@ -39,14 +39,26 @@ warn_about_versions_linked_to_asdf() {
     printf '  %s\n' "${linked_versions[@]}"
 }
 
-install_mise() {
-    log_header "MISE"
+install_mise_binary() {
+    if command -v mise &>/dev/null; then
+        return 0
+    fi
 
-    if ! command -v mise &>/dev/null; then
-        log_error "mise is not installed. Run the brewfile step first."
+    if ! ask "Install mise with the official script (to ~/.local/bin)?"; then
+        log_error "mise is required for this step"
 
         return 1
     fi
+
+    curl -fsSL https://mise.run | sh
+
+    export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_mise() {
+    log_header "MISE"
+
+    install_mise_binary
 
     if ask "Install Node.js $NODE_VERSION (LTS)?"; then
         log_info "Installing Node.js $NODE_VERSION..."
