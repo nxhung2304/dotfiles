@@ -15,7 +15,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 ## Architecture and Structure
 
 ### Configuration Management Strategy
-- **Dotfiles**: Stored in repository root (`.zshrc`, `.vimrc`); git config lives in `.config/git/`
+- **Dotfiles**: Stored in repository root (`.zshrc`); git config lives in `.config/git/`
 - **App configs**: Organized in `.config/` directory by application
 - **Scripts**: Located in `scripts/` directory
 - **Symlink approach**: Files are symlinked from home directory to repository for centralized management
@@ -45,14 +45,14 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 - **Required**: nvim 0.11+, Ghostty
 - **Package managers**: mise (runtime version management), brew (macOS)
 - **Runtime support**: Ruby, Node.js, Python, Java via mise
-- **Tools**: direnv for environment management, vim-plug for Vim plugins
+- **Tools**: direnv for environment management
 - **Zsh plugins**: zsh-autosuggestions, zsh-syntax-highlighting (auto-installed via install.sh)
 
 ### Script Utilities
 - **Dotfile management**: `install.sh` runs the modular steps in `scripts/install/` (Oh My Zsh, plugins, package managers, stow symlinks)
 
 ### Managed Configuration Files
-- **Dotfiles**: `.zshrc`, `.vimrc`
+- **Dotfiles**: `.zshrc`
 - **Config directories**: `nvim`, `ghostty`, `herdr`, `wezterm`, `alacritty`, `karabiner`, `eza`, `git`, `gh`, `ripgrep` (in `.config/`), plus `starship.toml`
 - **AI tool configs**: `.claude/`, `.codex/`, `.gemini/` (skills are shared; `.codex/skills` and `.gemini/skills` link to `.claude/skills`)
 

@@ -24,10 +24,10 @@ source scripts/install/git.sh
 source scripts/install/shell.sh
 source scripts/install/terminal.sh
 source scripts/install/ai.sh
-source scripts/install/vim.sh
+source scripts/install/vim-cleanup.sh
 
 # ====================== INSTALLATION FLOW ======================
-INSTALL_STEPS=(editors homebrew brewfile mise mobile database stow git_filters shell terminal ai vim)
+INSTALL_STEPS=(editors homebrew brewfile mise mobile database stow git_filters shell terminal ai vim_cleanup)
 
 print_usage() {
     echo "Usage: ./install.sh [step...]"
