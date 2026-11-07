@@ -81,8 +81,6 @@ fi
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
-export TERM=xterm-256color
-
 ulimit -n 8192
 
 # export NVM_DIR="$HOME/.nvm"
