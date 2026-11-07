@@ -1,8 +1,25 @@
 #!/usr/bin/env bash
-# Setup Mobile Development: Flutter and SDKMAN!
+# Setup Mobile Development: Flutter and CocoaPods
+
+remove_sdkman_leftovers() {
+    [ -d "$HOME/.sdkman" ] || return 0
+
+    if ! mise which gradle &>/dev/null; then
+        log_info "Kept ~/.sdkman: install Gradle with mise first (./install.sh mise), then run this step again"
+
+        return
+    fi
+
+    if ask "Gradle now comes from mise. Remove SDKMAN (~/.sdkman)?"; then
+        rm -rf "$HOME/.sdkman"
+        log_success "Removed ~/.sdkman"
+    fi
+}
 
 install_mobile() {
     log_header "MOBILE DEVELOPMENT"
+
+    remove_sdkman_leftovers
 
     # 1. Flutter (via FVM)
     echo "🐦 Setting up Flutter (FVM)..."
@@ -27,37 +44,7 @@ install_mobile() {
         fi
     fi
 
-    # 2. SDKMAN!
-    echo "☕ Setting up SDKMAN!..."
-    log_info "Checking for SDKMAN!..."
-    if [ ! -d "$HOME/.sdkman" ]; then
-        if ask "Install SDKMAN! (Software Development Kit Manager)?"; then
-            log_info "Installing SDKMAN!..."
-            curl -s "https://get.sdkman.io" | bash
-            log_success "SDKMAN! installed"
-            log_info "Note: You may need to restart your terminal or source ~/.zshrc"
-        fi
-    else
-        log_success "SDKMAN! already installed"
-    fi
-
-    # 3. Gradle (via SDKMAN!)
-    log_info "Checking for Gradle..."
-    if [ -d "$HOME/.sdkman" ]; then
-        # shellcheck source=/dev/null
-        export SDKMAN_DIR="$HOME/.sdkman"
-        [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
-
-        if command -v sdk &>/dev/null; then
-            if ask "Install latest Gradle via SDKMAN!?"; then
-                log_info "Installing Gradle via SDKMAN!..."
-                sdk install gradle
-                log_success "Gradle installed"
-            fi
-        fi
-    fi
-
-    # 4. CocoaPods
+    # 2. CocoaPods
     log_info "Checking for CocoaPods..."
     if ! command -v pod &>/dev/null; then
         if ask "Install CocoaPods?"; then

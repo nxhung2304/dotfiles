@@ -43,7 +43,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 ### Development Environment Dependencies
 - **Required**: nvim 0.11+, Ghostty
 - **Package managers**: mise (runtime version management), brew (macOS)
-- **Runtime support**: Ruby, Node.js, Python, Java via mise
+- **Runtime support**: Ruby, Node.js, Python, Java, Gradle via mise
 - **Tools**: direnv for environment management
 - **Zsh plugins**: zsh-autosuggestions, zsh-syntax-highlighting (auto-installed via install.sh)
 
