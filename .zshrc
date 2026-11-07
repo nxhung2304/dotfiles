@@ -1,5 +1,11 @@
 typeset -U path PATH
 
+if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 # Faster compinit caching
 autoload -Uz compinit
 _comp_path="${ZDOTDIR:-$HOME}/.zcompdump-${HOST%%.*}-${ZSH_VERSION}"
@@ -47,7 +53,7 @@ eval "$(zoxide init zsh)"
 export EDITOR="nvim"
 export VISUAL="nvim"
 export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH="/usr/local/opt/postgresql@17/bin:$PATH"
+export PATH="$HOMEBREW_PREFIX/opt/postgresql@17/bin:$PATH"
 export PATH="$HOME/fvm/default/bin:$PATH"
 
 # ASDF
@@ -70,13 +76,6 @@ export PATH="$HOME/.local/bin:$PATH"
 eval "$(mise activate zsh)"
 
 # Android
-
-if [ -d "/usr/local/opt/tcl-tk" ]; then
-    export LDFLAGS="-L/usr/local/opt/tcl-tk/lib"
-    export CPPFLAGS="-I/usr/local/opt/tcl-tk/include"
-    export PKG_CONFIG_PATH="/usr/local/opt/tcl-tk/lib/pkgconfig"
-    export PATH="/usr/local/opt/tcl-tk/bin:$PATH"
-fi
 
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
@@ -160,8 +159,6 @@ andr_run() {
   emulator -avd "$1" &
 }
 
-export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
-export PATH="$JAVA_HOME/bin:$PATH"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator"
@@ -202,7 +199,7 @@ autoload -Uz add-zsh-hook
 add-zsh-hook preexec herdr_auto_rename_tab
 
 if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi
-export PATH=/opt/homebrew/opt/ffmpeg-full/bin:$PATH
+export PATH="$HOMEBREW_PREFIX/opt/ffmpeg-full/bin:$PATH"
 
 claude() {
   case "$PWD/" in
