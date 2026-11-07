@@ -1,6 +1,6 @@
 # dotfiles
 
-My macOS development environment: Neovim, Ghostty, Herdr, Zsh and AI coding assistants (Claude Code, Codex, Gemini) — one repo, one install command, one theme for everything.
+My macOS development environment: Neovim, Ghostty, Herdr, Zsh and Claude Code — one repo, one install command, one theme for everything.
 
 ![Hero](docs/images/hero.png)
 
@@ -9,7 +9,6 @@ My macOS development environment: Neovim, Ghostty, Herdr, Zsh and AI coding assi
 - **One command setup** — `./install.sh` walks through each component and asks before installing it.
 - **Symlinks via GNU Stow** — edit files in the repo, changes apply instantly.
 - **One theme everywhere** — switch Ghostty, Herdr, Neovim, Claude Code and fzf together with `scripts/theme-switch <name>`.
-- **Shared AI setup** — Claude Code, Codex and Gemini use the same skills, rules and hooks.
 - **Safe by default** — existing configs are backed up to `~/.dotfiles-backup/`, never deleted.
 
 ## Install
@@ -45,7 +44,7 @@ export IPHONE_16_UDID="..."
 | Multiplexer | `.config/herdr/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
 | Shell | `.zshrc`, `.config/starship.toml` | Oh My Zsh, zoxide, direnv, aliases |
 | CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/`, `ripgrep/` | Modern `ls`, key remapping, git config (delta, zdiff3) and global gitignore, ripgrep defaults |
-| AI | `.claude/`, `.codex/`, `.gemini/` | Agents, skills, hooks and code rules |
+| AI | `.claude/` | Agents, skills, hooks and code rules |
 | Packages | `Brewfile` | Declarative Homebrew list |
 | Scripts | `scripts/` | Installers, sessionizers, theme switcher |
 

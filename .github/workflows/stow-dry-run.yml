@@ -5,8 +5,6 @@ on:
     paths:
       - ".config/**"
       - ".claude/**"
-      - ".codex/**"
-      - ".gemini/**"
       - "scripts/**"
       - ".github/workflows/stow-dry-run.yml"
   push:
@@ -14,8 +12,6 @@ on:
     paths:
       - ".config/**"
       - ".claude/**"
-      - ".codex/**"
-      - ".gemini/**"
       - "scripts/**"
       - ".github/workflows/stow-dry-run.yml"
 
@@ -28,6 +24,6 @@ jobs:
       - name: Simulate symlinks
         run: |
           mkdir -p "$RUNNER_TEMP/home"
-          for dir in .config .claude .codex .gemini scripts; do
+          for dir in .config .claude scripts; do
             stow -n --target="$RUNNER_TEMP/home" "$dir"
           done

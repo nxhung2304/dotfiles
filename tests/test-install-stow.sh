@@ -37,12 +37,12 @@ check "fresh home: scripts linked" "link" "$(describe_path "$fresh_home/.local/b
 check "fresh home: no stray links in home" "" "$(list_home_clutter "$fresh_home")"
 
 old_home="$work_dir/old-home"
-mkdir -p "$old_home/.claude/hooks" "$old_home/.claude/projects/demo" "$old_home/.codex"
+mkdir -p "$old_home/.claude/hooks" "$old_home/.claude/projects/demo"
 ln -s "$dotfiles_dir/.config" "$old_home/.config"
 ln -s "$dotfiles_dir/.claude/settings.json" "$old_home/.claude/settings.json"
 ln -s "$dotfiles_dir/.claude/hooks/ai_track.py" "$old_home/.claude/hooks/ai_track.py"
 echo "user data" > "$old_home/.claude/projects/demo/notes"
-echo "user codex config" > "$old_home/.codex/config.toml"
+echo "user statusline" > "$old_home/.claude/statusline-command.sh"
 (cd "$dotfiles_dir" && stow --target="$old_home" scripts)
 rm "$dotfiles_dir/scripts/tmux-sessionizer"
 
@@ -53,9 +53,9 @@ check "old home: absolute link replaced by relative link" "../../dotfiles/.claud
 check "old home: hook link replaced" "../../../dotfiles/.claude/hooks/ai_track.py" \
     "$(readlink "$old_home/.claude/hooks/ai_track.py")"
 check "old home: stray links removed from home" "" "$(list_home_clutter "$old_home")"
-check "old home: real user file backed up" "user codex config" \
-    "$(cat "$old_home"/.dotfiles-backup/*/.codex/config.toml)"
-check "old home: codex config now linked" "link" "$(describe_path "$old_home/.codex/config.toml")"
+check "old home: real user file backed up" "user statusline" \
+    "$(cat "$old_home"/.dotfiles-backup/*/.claude/statusline-command.sh)"
+check "old home: statusline script now linked" "link" "$(describe_path "$old_home/.claude/statusline-command.sh")"
 check "old home: other claude data untouched" "user data" "$(cat "$old_home/.claude/projects/demo/notes")"
 
 run_stow_step "$old_home"

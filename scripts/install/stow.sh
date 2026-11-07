@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Setup symlinks with stow
 
-STOW_PACKAGES=(".config" ".claude" ".codex" ".gemini" "scripts")
+STOW_PACKAGES=(".config" ".claude" "scripts")
 
 stow_target_for() {
     case $1 in

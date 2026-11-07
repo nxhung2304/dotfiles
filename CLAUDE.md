@@ -53,7 +53,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 ### Managed Configuration Files
 - **Dotfiles**: `.zshrc`
 - **Config directories**: `nvim`, `ghostty`, `herdr`, `karabiner`, `eza`, `git`, `gh`, `ripgrep` (in `.config/`), plus `starship.toml`
-- **AI tool configs**: `.claude/`, `.codex/`, `.gemini/` (skills are shared; `.codex/skills` and `.gemini/skills` link to `.claude/skills`)
+- **AI tool configs**: `.claude/`
 
 ## Environment Configuration
 - Put environment-specific variables in `~/.env`
