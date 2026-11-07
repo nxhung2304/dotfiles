@@ -96,7 +96,7 @@ navigate_pane_right = "l"
 key = "ctrl+alt+shift+l"
 type = "shell"
 command = "~/dotfiles/scripts/herdr-clear-pane"
-description = "clear pane screen (wezterm cmd+k)"
+description = "clear pane screen (cmd+k)"
 
 [[keys.command]]
 key = "prefix+f"

@@ -41,7 +41,7 @@ export IPHONE_16_UDID="..."
 | Area | Path | Notes |
 |------|------|-------|
 | Editor | `.config/nvim/` | Lazy.nvim, LSP, separate setups for VS Code and Xcode |
-| Terminal | `.config/ghostty/`, `wezterm/`, `alacritty/` | Ghostty is the daily driver |
+| Terminal | `.config/ghostty/` | Ghostty |
 | Multiplexer | `.config/herdr/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
 | Shell | `.zshrc`, `.config/starship.toml` | Oh My Zsh, zoxide, direnv, aliases |
 | CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/`, `ripgrep/` | Modern `ls`, key remapping, git config (delta, zdiff3) and global gitignore, ripgrep defaults |

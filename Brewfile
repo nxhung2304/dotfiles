@@ -55,7 +55,6 @@ cask "postman"
 # ========================
 # CASKS
 # ========================
-cask "wezterm"
 cask "karabiner-elements"
 cask "font-meslo-lg-nerd-font"
 cask "font-fira-code-nerd-font"

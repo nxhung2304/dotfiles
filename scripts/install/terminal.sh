@@ -27,6 +27,28 @@ remove_tmux_leftovers() {
     fi
 }
 
+remove_old_terminal_leftovers() {
+    local leftover_link
+    for leftover_link in "$HOME/.config/wezterm" "$HOME/.config/alacritty"; do
+        if [ -L "$leftover_link" ]; then
+            rm "$leftover_link"
+            log_info "Removed old terminal link $leftover_link"
+        fi
+    done
+
+    if ! command -v brew &>/dev/null; then
+        return
+    fi
+
+    if ! brew list --cask wezterm &>/dev/null; then
+        return
+    fi
+
+    if ask "Uninstall WezTerm with Homebrew?"; then
+        brew uninstall --cask wezterm
+    fi
+}
+
 install_terminal() {
     log_header "TERMINAL & UI"
 
@@ -34,6 +56,7 @@ install_terminal() {
     chmod +x "$DOTFILES_DIR"/scripts/herdr-* "$DOTFILES_DIR"/scripts/herdr/*
 
     remove_tmux_leftovers
+    remove_old_terminal_leftovers
 
     "$DOTFILES_DIR/scripts/theme-switch" gruvbox
 

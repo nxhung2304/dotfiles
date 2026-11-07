@@ -11,8 +11,8 @@ mkdir -p "$work_dir/bin"
 cat >"$work_dir/bin/brew" <<EOF
 #!/usr/bin/env bash
 case "\$1" in
-    list) [ -f "$work_dir/tmux-installed" ] ;;
-    uninstall) rm -f "$work_dir/tmux-installed" ;;
+    list) [ -f "$work_dir/\${!#}-installed" ] ;;
+    uninstall) rm -f "$work_dir/\${!#}-installed" ;;
 esac
 EOF
 chmod +x "$work_dir/bin/brew"
@@ -46,5 +46,32 @@ remove_leftovers "$kept_home" 'n\nn\n'
 check "real tmux config folder kept" "dir" "$(describe_path "$kept_home/.config/tmux")"
 check "tmux plugins folder kept after no" "dir" "$(describe_path "$kept_home/.tmux")"
 check "tmux kept after no" "file" "$(describe_path "$work_dir/tmux-installed")"
+
+remove_old_terminals() {
+    local home_dir=$1 answers=$2
+    (
+        export HOME=$home_dir PATH="$work_dir/bin:$PATH"
+        source "$repo_dir/scripts/install/common.sh"
+        source "$repo_dir/scripts/install/terminal.sh"
+        printf '%b' "$answers" | remove_old_terminal_leftovers >/dev/null 2>&1
+    )
+}
+
+terminal_home="$work_dir/terminal-home"
+mkdir -p "$terminal_home/.config"
+ln -s /nowhere "$terminal_home/.config/wezterm"
+ln -s /nowhere "$terminal_home/.config/alacritty"
+touch "$work_dir/wezterm-installed"
+remove_old_terminals "$terminal_home" 'y\n'
+check "old wezterm config link removed" "missing" "$(describe_path "$terminal_home/.config/wezterm")"
+check "old alacritty config link removed" "missing" "$(describe_path "$terminal_home/.config/alacritty")"
+check "wezterm uninstalled after yes" "missing" "$(describe_path "$work_dir/wezterm-installed")"
+
+kept_terminal_home="$work_dir/kept-terminal-home"
+mkdir -p "$kept_terminal_home/.config/wezterm"
+touch "$work_dir/wezterm-installed"
+remove_old_terminals "$kept_terminal_home" 'n\n'
+check "real wezterm config folder kept" "dir" "$(describe_path "$kept_terminal_home/.config/wezterm")"
+check "wezterm kept after no" "file" "$(describe_path "$work_dir/wezterm-installed")"
 
 finish_tests

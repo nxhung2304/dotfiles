@@ -6,8 +6,6 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 terminal_bundle_id() {
     if pgrep -xq ghostty; then
         echo com.mitchellh.ghostty
-    elif pgrep -xq wezterm-gui; then
-        echo com.github.wez.wezterm
     fi
 }
 
