@@ -7,7 +7,7 @@ description: Step 3 of the plan-* flow. Chooses the techstack and architecture f
 
 # Plan Stack
 
-Flow: plan-idea → plan-prd → **plan-stack** → plan-story → generate-issues
+Flow: plan-idea → plan-prd → **plan-stack** → plan-design → plan-story → generate-issues
 
 Answers "what to build it with". Choices follow the MVP scope in the PRD, not habit.
 
@@ -36,4 +36,4 @@ Answers "what to build it with". Choices follow the MVP scope in the PRD, not ha
 
 ## Done
 
-Report the file(s) written and any PRD conflict found. Last line: `Next: /plan-story`
+Report the file(s) written and any PRD conflict found. Last line: `Next: /plan-design`

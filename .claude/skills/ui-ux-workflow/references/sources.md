@@ -16,7 +16,7 @@
   - styles: "developer tool website minimal dark"
   - screens: "pricing page monthly annual toggle web"
   - flows: "subscription cancellation with retention offer"
-- **Mẹo:** dùng lớp styles để gợi ý token ở Bước 3.
+- **Mẹo:** dùng lớp styles để gợi ý hướng style ở `plan-design`.
 
 ## Land-book
 - **Mạnh nhất:** landing page, marketing site.

@@ -2,12 +2,12 @@
 name: plan-story
 model: claude-sonnet-5-5
 allowed-tools: Read, Grep, Glob, Bash(ls:*), Bash(mkdir -p *), Bash(grep:*), Write, Skill
-description: Step 4 of the plan-* flow. Breaks the MVP features in specs/prd.md into numbered tasks and writes specs/story.md in the format generate-issues reads (`- [ ] [number]. [title]`), with a coverage check that every MVP feature has a task. Use when the user says "plan-story", "tạo story.md", "chia PRD thành task", "prd to story".
+description: Step 5 of the plan-* flow. Breaks the MVP features in specs/prd.md into numbered tasks and writes specs/story.md in the format generate-issues reads (`- [ ] [number]. [title]`), with a coverage check that every MVP feature has a task. Use when the user says "plan-story", "tạo story.md", "chia PRD thành task", "prd to story".
 ---
 
 # Plan Story
 
-Flow: plan-idea → plan-prd → plan-stack → **plan-story** → generate-issues
+Flow: plan-idea → plan-prd → plan-stack → plan-design → **plan-story** → generate-issues
 
 ## Steps
 

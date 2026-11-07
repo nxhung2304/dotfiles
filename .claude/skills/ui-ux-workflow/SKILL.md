@@ -1,7 +1,7 @@
 ---
 name: ui-ux-workflow
 model: claude-opus-5-5
-description: Quy trình thiết kế UI/UX có nghiên cứu cho vibe coding — hiểu vấn đề, tra cứu tham khảo thật (Mobbin, Refero, Land-book, Dribbble), chốt design token, dựng prototype bằng Claude Design, xuất HTML, review và lặp feedback. Dùng skill này bất cứ khi nào người dùng muốn thiết kế, dựng, mockup, prototype hoặc làm lại giao diện/màn hình/landing page/app/web/dashboard, hỏi "làm UI cho…", "thiết kế màn hình…", "UI trông generic quá", hoặc cần tham khảo thiết kế — kể cả khi họ không nhắc chữ "UI/UX". Also use for English requests to design, mock up, prototype or redesign any app or web interface.
+description: Quy trình thiết kế UI/UX có nghiên cứu cho vibe coding — hiểu vấn đề, tra cứu tham khảo thật (Mobbin, Refero, Land-book, Dribbble), dựng prototype HTML tương tác được theo bộ design chung của dự án (do plan-design tạo), review và lặp feedback. Dùng skill này bất cứ khi nào người dùng muốn thiết kế, dựng, mockup, prototype hoặc làm lại giao diện/màn hình/landing page/app/web/dashboard, hỏi "làm UI cho…", "thiết kế màn hình…", "UI trông generic quá", hoặc cần tham khảo thiết kế — kể cả khi họ không nhắc chữ "UI/UX". Also use for English requests to design, mock up, prototype or redesign any app or web interface.
 ---
 
 # UI/UX Workflow
@@ -14,25 +14,29 @@ Quy trình gồm 7 bước. Bước 0 quyết định chạy những bước nà
 
 | Nội dung | Đặt ở |
 |---|---|
-| Prototype HTML và **token** (CSS variables ở `:root`) — nguồn sự thật của token | `specs/designs/<tên-màn-hình>.html` |
-| Luật thiết kế ("Luôn làm" / "Không làm"), tham khảo đã dùng, nhật ký quyết định | `specs/rules/design.md` (mẫu: `assets/design.template.md`) |
+| Bộ design chung của dự án (do skill `plan-design` tạo): token, class component, mẫu component, luật | `specs/designs/tokens.css`, `specs/designs/components.css`, `specs/designs/components.html`, `specs/rules/design.md` |
+| Prototype từng màn hình | `specs/designs/<tên-màn-hình>.html` |
 | Context sản phẩm (người dùng, việc chính, nền tảng, ràng buộc) | `CLAUDE.md` của dự án hoặc `specs/story.md` nếu đã có; chỉ khi chưa có chỗ nào chứa mới tạo `specs/project.md` (mẫu: `assets/project.template.md`) |
 
-Không lưu token ở hai nơi: token nằm trong HTML, `specs/rules/design.md` chỉ liệt kê luật và trỏ tới file HTML. Dự án Flutter: sau khi chốt token, nhờ agent `design-checker` so HTML với `AppColors` và đề xuất cập nhật (nó chỉ đề xuất, không tự sửa).
+Không đặt giá trị mới trong file màn hình: mọi màu, cỡ chữ, khoảng cách lấy từ `tokens.css`, mọi component lấy từ `components.css`. Dự án Flutter: nhờ agent `design-checker` so `tokens.css` với `AppColors` và đề xuất cập nhật (nó chỉ đề xuất, không tự sửa).
 
 Mọi lần ghi vào các file trên: đề nghị với người dùng trước, không tự ghi.
 
 ---
 
-## Bước 0 — Chọn chế độ
+## Bước 0 — Kiểm tra bộ design, rồi chọn chế độ
 
-Hỏi một câu (nếu chưa rõ từ ngữ cảnh), rồi chọn:
+Trước tiên xem dự án đã có `specs/rules/design.md` và `specs/designs/tokens.css` chưa:
+- **Đã có** → luôn chạy chế độ **Mở rộng**, không hỏi.
+- **Chưa có** và đây là dự án có nhiều màn hình → dừng, báo cần chạy `/plan-design` trước để các màn đồng nhất. Chỉ đi tiếp không có bộ design khi người dùng xác nhận đây là trang lẻ (thử ý tưởng, 1 màn hình); khi đó token đặt trong `:root` của chính file HTML.
+
+Nếu chưa có bộ design và người dùng chọn đi tiếp, hỏi một câu (nếu chưa rõ từ ngữ cảnh), rồi chọn:
 
 | Chế độ | Khi nào | Chạy các bước |
 |---|---|---|
 | **Nhanh** | Landing page, tool nội bộ, thử ý tưởng, 1 màn hình | 1 (rút gọn) → 3 → 4 → 5 |
 | **Chuẩn** | Sản phẩm mới, nhiều màn hình chính | 1 → 2 → 3 → 4 → 5 → 6 |
-| **Mở rộng** | Sản phẩm đã có brand/design system | 1 → 2 (chỉ cho pattern mới) → 3 (chỉ đọc token có sẵn) → 4 → 5 → 6 |
+| **Mở rộng** | Dự án đã có bộ design (`specs/rules/design.md`) hoặc brand/design system | 1 → 2 (chỉ cho pattern mới) → 3 (chỉ đọc bộ design có sẵn) → 4 → 5 → 6 |
 
 Nếu người dùng chỉ nói một câu ngắn và không trả lời, mặc định **Nhanh**, ghi rõ giả định.
 
@@ -102,19 +106,20 @@ Tạo (hoặc đọc, nếu chế độ Mở rộng) bộ token tối thiểu:
 - Khoảng cách: thang 4 hoặc 8
 - Bo góc, đổ bóng
 
-Token là biến CSS ở `:root` của file `specs/designs/<tên-màn-hình>.html` (khung sẵn: `assets/tokens.template.css`). Ghi vào `specs/rules/design.md` mục **"Không làm"** để chống UI generic, ví dụ: không gradient tím mặc định, không lạm dụng card bo góc lớn, không emoji làm icon.
+Trang lẻ (không có bộ design): token là biến CSS ở `:root` của chính file HTML (khung sẵn: `~/.claude/skills/plan-design/assets/tokens.template.css`). Tránh UI generic: không gradient tím mặc định, không lạm dụng card bo góc lớn, không emoji làm icon.
 
-Chế độ Mở rộng: không tự đặt token mới; đọc hệ thống có sẵn (HTML hiện có, `specs/rules/design.md`, `AppColors`), chỉ đề xuất bổ sung khi thật cần và nói rõ.
+Chế độ Mở rộng: không tự đặt token hay component mới. Đọc `specs/rules/design.md`, `tokens.css`, `components.css`, `components.html` (và `AppColors` nếu Flutter). Màn hình cần component chưa có → đề xuất, người dùng duyệt thì thêm vào `components.css` + `components.html` và ghi vào `design.md`, rồi mới dùng.
 
 ---
 
 ## Bước 4 — Dựng prototype
 
-Thứ tự công cụ:
-1. **Claude Design** (hoặc Design artifact type nếu môi trường có) — tốt nhất vì người dùng sửa trực tiếp trên canvas.
-2. Nếu không có: một file HTML tự chứa (CSS/JS inline), dùng token ở Bước 3.
+Dựng bằng file HTML `specs/designs/<tên-màn-hình>.html`:
+- Có bộ design: link `tokens.css` và `components.css` (`<link rel="stylesheet" href="tokens.css">`), CSS riêng của màn chỉ lo bố cục và chỉ dùng `var(--...)`.
+- Trang lẻ: tự chứa (CSS/JS inline), dùng token ở Bước 3.
 
 Nguyên tắc khi dựng:
+- Tương tác được nếu có thể, bằng JS inline đơn giản: click chuyển màn (các màn của một flow nằm chung file hoặc link sang file màn khác), tab/menu/modal mở đóng được, form hiện lỗi khi nhập sai, có nút đổi trạng thái loading/rỗng/lỗi.
 - Làm **màn hình quan trọng nhất trước** (việc chính ở Bước 1), không dựng hết một lúc.
 - Mỗi màn hình có đủ trạng thái: mặc định, loading, rỗng, lỗi.
 - Responsive từ đầu; mobile app thì khung ~390px.
@@ -125,7 +130,9 @@ Nguyên tắc khi dựng:
 
 ## Bước 5 — Xuất HTML và review
 
-Xuất HTML từ prototype vào `specs/designs/<tên-màn-hình>.html`, rồi tự review theo `references/review-checklist.md` **trước** khi đưa người dùng. Sửa các lỗi tìm được, rồi báo ngắn gọn những gì đã kiểm tra.
+Mở file HTML (`open specs/designs/<tên-màn-hình>.html`), rồi tự review theo `references/review-checklist.md` **trước** khi đưa người dùng. Sửa các lỗi tìm được, rồi báo ngắn gọn những gì đã kiểm tra.
+
+Đưa giao diện để duyệt luôn bằng file HTML và lệnh `open`, không chụp ảnh hay PNG. Cần xem nhiều màn cùng lúc: tạo `index.html` trong thư mục nhóm màn, mỗi màn một iframe (rộng ~390px nếu mobile) có tên màn và vẫn bấm thử được, rồi mở trang này.
 
 Khi xin feedback, hỏi có định hướng thay vì "thấy sao?":
 - Việc chính có làm được trong ít bước nhất chưa?
@@ -143,7 +150,7 @@ Khi xin feedback, hỏi có định hướng thay vì "thấy sao?":
 
 HTML prototype thường không dùng thẳng được trong dự án. Khi người dùng sẵn sàng code:
 1. Xác nhận tech stack (React/Next, Vue, Flutter, SwiftUI…) và thư viện component (shadcn/ui, MUI…).
-2. Chuyển token từ `:root` của HTML sang định dạng của stack (Tailwind config, CSS variables, theme file; Flutter: `AppColors` — dùng agent `design-checker` để so khớp).
+2. Chuyển token từ `tokens.css` (hoặc `:root` của HTML nếu là trang lẻ) sang định dạng của stack (Tailwind config, CSS variables, theme file; Flutter: `AppColors` — dùng agent `design-checker` để so khớp).
 3. Liệt kê component cần có, map sang component có sẵn của thư viện; chỉ tự viết cái thiếu.
 4. Ghi các quyết định UX (trạng thái, luồng, edge case) vào `specs/rules/design.md` hoặc file spec của issue để không bị mất khi code.
 
@@ -152,8 +159,8 @@ HTML prototype thường không dùng thẳng được trong dự án. Khi ngư�
 ## Bước 7 — Ghi nhận bài học
 
 Kết thúc dự án (hoặc một đợt lớn), đề nghị cập nhật:
-- `specs/rules/design.md`: mục "Không làm" mới, nhật ký quyết định
-- Token đã chỉnh: sửa trong file HTML, không chép sang chỗ khác
+- `specs/rules/design.md`: mục "Không làm" mới, component mới, nhật ký quyết định
+- Token đã chỉnh: sửa trong `tokens.css`, không chép sang chỗ khác
 - Context mới phát sinh: vào `CLAUDE.md` / `specs/story.md` / `specs/project.md` (nơi đang chứa context)
 
 Đây là cách workflow tốt dần theo thời gian.
@@ -162,7 +169,6 @@ Kết thúc dự án (hoặc một đợt lớn), đề nghị cập nhật:
 
 ## File đi kèm
 - `assets/project.template.md` — mẫu context dự án, chỉ dùng khi dự án chưa có chỗ chứa context.
-- `assets/design.template.md` — mẫu `specs/rules/design.md` (luật, tham khảo, nhật ký).
-- `assets/tokens.template.css` — khung token để dán vào `:root` của HTML prototype.
+- Mẫu `design.md` và khung token: nằm ở skill `plan-design` (`~/.claude/skills/plan-design/assets/`).
 - `references/sources.md` — cách dùng từng nguồn tham khảo, truy vấn mẫu, phương án dự phòng. Đọc ở Bước 2.
 - `references/review-checklist.md` — checklist review. Đọc ở Bước 5.
