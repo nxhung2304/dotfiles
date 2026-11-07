@@ -18,6 +18,10 @@ RUBY_VERSION="3.3.11"
 # Release: https://github.com/adoptium/temurin17-binaries/releases/tag/jdk-17.0.19+10
 JAVA_VERSION="openjdk-17"
 
+# Gradle 9.5.0 - Released: 2026-04-28
+# Release: https://github.com/gradle/gradle/releases/tag/v9.5.0
+GRADLE_VERSION="9.5.0"
+
 warn_about_versions_linked_to_asdf() {
     local installs_dir="${MISE_DATA_DIR:-$HOME/.local/share/mise}/installs"
     [ -d "$installs_dir" ] || return 0
@@ -88,6 +92,12 @@ install_mise() {
         log_info "Installing Java ($JAVA_VERSION)..."
         mise use -g "java@$JAVA_VERSION"
         log_success "Java $JAVA_VERSION installed"
+    fi
+
+    if ask "Install Gradle $GRADLE_VERSION?"; then
+        log_info "Installing Gradle $GRADLE_VERSION..."
+        mise use -g "gradle@$GRADLE_VERSION"
+        log_success "Gradle $GRADLE_VERSION installed"
     fi
 
     warn_about_versions_linked_to_asdf

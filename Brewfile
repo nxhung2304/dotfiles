@@ -26,6 +26,7 @@ brew "gh"
 brew "coreutils"
 brew "gnu-sed"
 brew "jq"
+brew "ffmpeg-full"
 
 # Databases
 brew "postgresql@17"
