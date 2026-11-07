@@ -1,4 +1,5 @@
 local JDTLS_JAVA_CANDIDATES = {
+	"~/.local/share/mise/installs/java/temurin-25*/bin/java",
 	"~/.asdf/installs/java/temurin-25*/bin/java",
 	"/opt/homebrew/opt/openjdk/bin/java",
 	"/opt/homebrew/opt/openjdk@25/bin/java",

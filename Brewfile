@@ -4,7 +4,6 @@ brew "neovim"
 brew "tree-sitter-cli"
 brew "git"
 brew "stow"
-brew "asdf"
 brew "starship"
 
 tap "leoafarias/fvm"

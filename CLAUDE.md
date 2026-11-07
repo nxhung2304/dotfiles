@@ -8,7 +8,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ## Setup Commands
 
-- **Initial setup (full installation)**: `./install.sh` - Sets up Oh My Zsh, installs Zsh plugins, asdf runtime manager, direnv, and creates symlinks
+- **Initial setup (full installation)**: `./install.sh` - Sets up Oh My Zsh, installs Zsh plugins, mise runtime manager, direnv, and creates symlinks
 - **Make scripts executable**: `chmod +x install.sh`
 - **Environment setup**: Create `~/.env` for machine-specific secrets and values (e.g. `IPHONE_16_UDID`, `DATABASE_PASSWORD`); it is sourced by `.zshrc` and never committed
 
@@ -43,8 +43,8 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ### Development Environment Dependencies
 - **Required**: nvim 0.11+, wezterm
-- **Package managers**: asdf (runtime version management), brew (macOS)
-- **Runtime support**: Ruby, Node.js via asdf plugins
+- **Package managers**: mise (runtime version management), brew (macOS)
+- **Runtime support**: Ruby, Node.js, Python, Java via mise
 - **Tools**: direnv for environment management, vim-plug for Vim plugins
 - **Zsh plugins**: zsh-autosuggestions, zsh-syntax-highlighting (auto-installed via install.sh)
 
@@ -58,6 +58,6 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ## Environment Configuration
 - Put environment-specific variables in `~/.env`
-- Asdf integration for managing Ruby, Node.js versions
+- mise for managing Ruby, Node.js versions (reads existing `.tool-versions` files)
 - Docker command aliases for common operations
 - Flutter development path configured

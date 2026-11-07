@@ -64,7 +64,6 @@ install_mobile() {
             log_info "Installing CocoaPods..."
             if command -v gem &>/dev/null; then
                 gem install cocoapods
-                [ -d "$HOME/.asdf" ] && command -v asdf &>/dev/null && asdf reshim ruby
                 log_success "CocoaPods installed via gem"
             elif command -v brew &>/dev/null; then
                 brew install cocoapods

@@ -5,7 +5,6 @@ return {
 		event = { "InsertEnter" }, -- hoặc giữ "InsertEnter", "CmdlineEnter" nếu bạn muốn
 		config = function()
 			require("copilot").setup({
-				copilot_node_command = vim.fn.expand("~/.asdf/shims/node"),
 				suggestion = {
 					enabled = true,
 					auto_trigger = true, -- giống auto_trigger cũ của bạn

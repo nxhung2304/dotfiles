@@ -55,9 +55,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
 		if client and client.name == "ruby_lsp" then
 			vim.defer_fn(function()
-				if vim.fn.filereadable(vim.fn.expand("~/.asdf/shims/ruby-lsp")) == 0 then
+				if vim.fn.executable("ruby-lsp") == 0 then
 					vim.notify("Installing ruby-lsp...", vim.log.levels.INFO)
-					vim.fn.system("gem install ruby-lsp && asdf reshim ruby")
+					vim.fn.system("gem install ruby-lsp")
 					vim.cmd("LspRestart")
 				end
 			end, 1000)

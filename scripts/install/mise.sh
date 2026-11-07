@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Setup ASDF and install runtime versions
+# Setup mise and install runtime versions
 
 # Version Pinnings
 # Node.js 22.22.2 (LTS) - Released: 2026-03-24
@@ -18,32 +18,59 @@ RUBY_VERSION="3.3.11"
 # Release: https://github.com/adoptium/temurin17-binaries/releases/tag/jdk-17.0.19+10
 JAVA_VERSION="openjdk-17"
 
-install_asdf() {
-    log_header "ASDF"
+warn_about_versions_linked_to_asdf() {
+    local installs_dir="${MISE_DATA_DIR:-$HOME/.local/share/mise}/installs"
+    [ -d "$installs_dir" ] || return 0
 
-    echo "🔌 Setting up ASDF plugins..."
-    log_info "Adding Node.js plugin..."
-    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git || true
-    log_info "Adding Python plugin..."
-    asdf plugin add python || true
-    log_info "Adding Ruby plugin..."
-    asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git || true
-    log_info "Adding Java plugin..."
-    asdf plugin add java https://github.com/halcyon/asdf-java.git || true
+    local version_dir linked_versions=()
+    for version_dir in "$installs_dir"/*/*; do
+        [ -L "$version_dir" ] || continue
+
+        if [[ $(readlink "$version_dir") == */.asdf/* ]]; then
+            linked_versions+=("$version_dir")
+        fi
+    done
+
+    if [ ${#linked_versions[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    log_info "These mise versions still link into ~/.asdf, so do not delete ~/.asdf yet:"
+    printf '  %s\n' "${linked_versions[@]}"
+}
+
+install_mise_binary() {
+    if command -v mise &>/dev/null; then
+        return 0
+    fi
+
+    if ! ask "Install mise with the official script (to ~/.local/bin)?"; then
+        log_error "mise is required for this step"
+
+        return 1
+    fi
+
+    curl -fsSL https://mise.run | sh
+
+    export PATH="$HOME/.local/bin:$PATH"
+}
+
+install_mise() {
+    log_header "MISE"
+
+    install_mise_binary
 
     if ask "Install Node.js $NODE_VERSION (LTS)?"; then
         log_info "Installing Node.js $NODE_VERSION..."
-        asdf install nodejs "$NODE_VERSION"
-        asdf set -u nodejs "$NODE_VERSION"
+        mise use -g "node@$NODE_VERSION"
         # Enable corepack for yarn and pnpm (standard in modern Node.js)
-        corepack enable
+        mise exec "node@$NODE_VERSION" -- corepack enable
         log_success "Node.js $NODE_VERSION installed (Yarn and PNPM enabled via Corepack)"
     fi
 
     if ask "Install Python $PYTHON_VERSION?"; then
         log_info "Installing Python $PYTHON_VERSION..."
-        asdf install python "$PYTHON_VERSION"
-        asdf set -u python "$PYTHON_VERSION"
+        mise use -g "python@$PYTHON_VERSION"
         log_success "Python $PYTHON_VERSION installed"
     fi
 
@@ -53,15 +80,15 @@ install_asdf() {
             brew list libyaml &>/dev/null || brew install libyaml
             export RUBY_CONFIGURE_OPTS="--with-libyaml-dir=$(brew --prefix libyaml)"
         fi
-        asdf install ruby "$RUBY_VERSION"
-        asdf set -u ruby "$RUBY_VERSION"
+        mise use -g "ruby@$RUBY_VERSION"
         log_success "Ruby $RUBY_VERSION installed"
     fi
 
     if ask "Install Java ($JAVA_VERSION)?"; then
         log_info "Installing Java ($JAVA_VERSION)..."
-        asdf install java "$JAVA_VERSION"
-        asdf set -u java "$JAVA_VERSION"
+        mise use -g "java@$JAVA_VERSION"
         log_success "Java $JAVA_VERSION installed"
     fi
+
+    warn_about_versions_linked_to_asdf
 }
