@@ -1,3 +1,0 @@
-prefix_rule(pattern=["fvm", "flutter", "test"], decision="allow")
-prefix_rule(pattern=["mkdir", "-p"], decision="allow")
-prefix_rule(pattern=["git", "checkout", "-b", "feature/hung-#15-rails-integration-routes-cache"], decision="allow")

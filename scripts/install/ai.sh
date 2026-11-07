@@ -1,39 +1,35 @@
 #!/usr/bin/env bash
-# Setup AI CLI Tools: Gemini, Claude, and Codex
+# Setup AI CLI Tools: Claude
 
-# Version Pinnings
-# Gemini CLI 0.41.0 - Released: 2026-05-05
-# Release: https://github.com/google-gemini/gemini-cli/releases/tag/v0.41.0
-GEMINI_VERSION="0.41.0"
+remove_codex_gemini_leftovers() {
+    local dotfiles_name tool_dir leftover_link
+    dotfiles_name=$(basename "$DOTFILES_DIR")
+    for tool_dir in .codex .gemini; do
+        [ -d "$HOME/$tool_dir" ] || continue
+        while IFS= read -r -d '' leftover_link; do
+            if [[ $(readlink "$leftover_link") == *"$dotfiles_name/$tool_dir/"* ]]; then
+                rm "$leftover_link"
+                log_info "Removed old link $leftover_link"
+            fi
+        done < <(find "$HOME/$tool_dir" -maxdepth 3 -type l -print0)
+    done
 
-# Codex CLI 0.130.0 - Released: 2026-05-08
-# Release: https://github.com/openai/codex/releases/tag/v0.130.0
-CODEX_VERSION="0.130.0"
+    if ! command -v npm &>/dev/null; then
+        return
+    fi
+
+    local package
+    for package in @google/gemini-cli @openai/codex; do
+        if npm list -g "$package" &>/dev/null && ask "Uninstall $package with npm?"; then
+            npm uninstall -g "$package"
+        fi
+    done
+}
 
 install_ai() {
     log_header "AI TOOLS"
 
-    # --- Gemini ---
-    echo "🤖 Setting up Gemini CLI..."
-    if ! command -v gemini &>/dev/null; then
-        if ask "Install Gemini CLI v$GEMINI_VERSION (requires Node.js)?"; then
-            npm install -g "@google/gemini-cli@$GEMINI_VERSION"
-            log_success "Gemini CLI installed"
-        fi
-    else
-        log_success "Gemini CLI already installed"
-    fi
-
-    # --- Codex ---
-    echo "💻 Setting up Codex CLI..."
-    if ! command -v codex &>/dev/null; then
-        if ask "Install Codex CLI v$CODEX_VERSION (requires Node.js)?"; then
-            npm install -g "@openai/codex@$CODEX_VERSION"
-            log_success "Codex CLI installed"
-        fi
-    else
-        log_success "Codex CLI already installed"
-    fi
+    remove_codex_gemini_leftovers
 
     # --- Claude ---
     echo "🛡️ Setting up Claude Code config..."
