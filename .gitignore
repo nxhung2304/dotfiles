@@ -32,3 +32,4 @@ docs/images/*.mov
 
 .config/karabiner/automatic_backups/
 .DS_Store
+.config/git/config-rights

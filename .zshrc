@@ -1,3 +1,5 @@
+typeset -U path PATH
+
 # Faster compinit caching
 autoload -Uz compinit
 _comp_path="${ZDOTDIR:-$HOME}/.zcompdump-${HOST%%.*}-${ZSH_VERSION}"
@@ -20,9 +22,13 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 
 HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=100000
+SAVEHIST=100000
 setopt appendhistory
+setopt share_history
+setopt hist_ignore_all_dups
+setopt hist_ignore_space
+setopt hist_reduce_blanks
 
 # Hook direnv: https://direnv.net
 eval "$(direnv hook zsh)"
@@ -75,8 +81,6 @@ fi
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
-export TERM=xterm-256color
-
 ulimit -n 8192
 
 # export NVM_DIR="$HOME/.nvm"
@@ -111,11 +115,8 @@ export SDKMAN_DIR="$HOME/.sdkman"
 nv () { NVIM_APPNAME="minimal-nvim" nvim }
 
 
-export PATH="$HOME/.opencode/bin:$PATH"
-
 # Disable GSS encryption mode
 export PGGSSENCMODE=disable
-export PATH="$HOME/.local/bin:$PATH"
 
 # ALias
 alias n="nvim"
@@ -147,7 +148,7 @@ alias ip="ipconfig getifaddr en0"
 # Dev
 alias rnew="ruby ~/Dev/personal/rails-starter/bin/new"
 
-export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+export RIPGREP_CONFIG_PATH="$HOME/.config/ripgrep/config"
 
 alias ffd="fvm flutter devices"
 alias ffr="fvm flutter run"
@@ -161,7 +162,6 @@ andr_run() {
 
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 export PATH="$JAVA_HOME/bin:$PATH"
-export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator"

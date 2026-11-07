@@ -64,6 +64,6 @@ vim.o.updatetime = 250
 vim.o.statusline = table.concat(statusline, '')
 vim.opt.showtabline = 0
 
-vim.env.RIPGREP_CONFIG_PATH = vim.fn.expand("~/.ripgreprc")
+vim.env.RIPGREP_CONFIG_PATH = vim.fn.expand("~/.config/ripgrep/config")
 
 vim.o.exrc = true

@@ -44,7 +44,7 @@ export IPHONE_16_UDID="..."
 | Terminal | `.config/ghostty/`, `wezterm/`, `alacritty/` | Ghostty is the daily driver |
 | Multiplexer | `.config/herdr/` | Command palette on `prefix+m`, theme switcher on `prefix+t` |
 | Shell | `.zshrc`, `.config/starship.toml` | Oh My Zsh, zoxide, direnv, aliases |
-| CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/` | Modern `ls`, key remapping, global gitignore |
+| CLI | `.config/eza/`, `karabiner/`, `git/`, `gh/`, `ripgrep/` | Modern `ls`, key remapping, git config (delta, zdiff3) and global gitignore, ripgrep defaults |
 | AI | `.claude/`, `.codex/`, `.gemini/` | Agents, skills, hooks and code rules |
 | Packages | `Brewfile` | Declarative Homebrew list |
 | Scripts | `scripts/` | Installers, sessionizers, theme switcher |
