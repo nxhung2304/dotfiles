@@ -36,9 +36,9 @@ install_shell() {
                 git clone --depth=1 "https://github.com/zsh-users/$plugin" "$ZSH_CUSTOM/plugins/$plugin"
             fi
         done
-        if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ]; then
-            log_info "Cloning plugin: zsh-autocomplete..."
-            git clone --depth=1 "https://github.com/marlonrichert/zsh-autocomplete.git" "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+        if [ ! -d "$ZSH_CUSTOM/plugins/fzf-tab" ]; then
+            log_info "Cloning plugin: fzf-tab..."
+            git clone --depth=1 "https://github.com/Aloxaf/fzf-tab.git" "$ZSH_CUSTOM/plugins/fzf-tab"
         fi
         log_success "Zsh plugins installed"
     fi
