@@ -6,17 +6,17 @@ allowed-tools: ListAgents, SendMessage, ToolSearch, AskUserQuestion, Bash(git:*)
 
 Pick the target session → write a message the receiver can act on without asking back → send it → show the user what was sent.
 
-**Params (via ARGUMENTS, e.g. `/send-to @backend <what to ask>` or `/send-to @backend kind=reply`):**
-- `@<session>` (optional): the target session, as picked from the `@` typeahead or typed by hand. `to=<session>` is accepted the same way. Empty → choose in step 1
+**Params (via ARGUMENTS, e.g. `/send-to mobile <what to ask>`, `/send-to backend kind=reply`, or just `/send-to`):**
+- First word (optional): part of the target session's name or repo folder, e.g. `mobile` for `elearning-mobile-e5`. If it matches no session, it is part of the message instead. A `kind=...` word is never taken as the session word. Empty → choose in step 1
 - `kind` (default `request`): `request` = ask the other session to do or check something; `reply` = answer its message after doing the work; `info` = notify only, no reply expected
 - Free text after the params: what the user wants to say. Empty → derive it from the current conversation (the last change made, or the last incoming message being answered)
 
 **Steps:**
 1. Find the target:
    - Load the tools if deferred: `ToolSearch` with `select:ListAgents,SendMessage`
-   - The prompt already names the session through an `@` mention and Claude Code resolved it → use that name, skip `ListAgents`
-   - Otherwise `ListAgents`, keep only local sessions on this machine. Each row has the session name (set by `claude -n` / `/rename`, otherwise `<folder>-<2 chars>`) and its working directory
-   - Match the given name against the session name first, then the last folder of the working directory
+   - `ListAgents`, keep only local sessions on this machine. Each row has the session name (set by `claude -n` / `/rename`, otherwise `<folder>-<2 chars>`) and its working directory
+   - Match the first word, case-insensitive, as a substring of the session name, then of the last folder of the working directory
+   - No session matches the first word → treat the whole ARGUMENTS text as the message and pick the target from all sessions
    - `kind=reply` with no target → reply to the session that sent the last incoming message in this conversation (its `from` attribute)
    - Exactly one session matches → use it. Zero or several → `AskUserQuestion` listing each candidate as "session name — repo folder"
 2. Gather what the receiver cannot see:
