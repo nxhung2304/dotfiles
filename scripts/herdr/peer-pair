@@ -2,6 +2,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+readonly CLAUDE_AGENT_LABEL="claude"
 source "$SCRIPT_DIR/popup-context.sh"
 source "$SCRIPT_DIR/../herdr-sessionizer"
 
@@ -21,18 +22,21 @@ peer_candidates() {
         !is_current && !is_duplicate'
 }
 
-workspace_has_agent() {
+workspace_claude_agents() {
     local workspace_id=$1
-    herdr agent list | jq -e --arg id "$workspace_id" 'any(.result.agents[]; .workspace_id == $id)' >/dev/null
+    herdr agent list | jq -c --arg id "$workspace_id" --arg claude "$CLAUDE_AGENT_LABEL" '
+        [.result.agents[]
+            | (.workspace_id == $id) as $is_in_workspace
+            | (.agent == $claude) as $is_claude
+            | select($is_in_workspace and $is_claude)]'
 }
 
-waiting_agent_pane() {
-    local workspace_id=$1
-    herdr agent list | jq -r --arg id "$workspace_id" '
-        [.result.agents[] | select(.workspace_id == $id)] as $agents
-        | ($agents | length == 1) as $is_only_agent
-        | ($agents[0].agent_status | IN("idle", "done")) as $is_waiting_for_input
-        | if $is_only_agent and $is_waiting_for_input then $agents[0].pane_id else empty end'
+waiting_claude_pane() {
+    local claude_agents=$1
+    jq -r '
+        (length == 1) as $is_only_claude
+        | (.[0].agent_status | IN("idle", "done")) as $is_waiting_for_input
+        | if $is_only_claude and $is_waiting_for_input then .[0].pane_id else empty end' <<<"$claude_agents"
 }
 
 send_line() {
@@ -51,17 +55,18 @@ start_named_claude() {
 name_existing_claude() {
     local workspace_id=$1
     local session_name=$2
-    local pane_id
+    local claude_agents pane_id
 
-    if ! workspace_has_agent "$workspace_id"; then
+    claude_agents=$(workspace_claude_agents "$workspace_id")
+    if [[ $claude_agents == "[]" ]]; then
         pause_with_hint "No Claude in $session_name yet: run 'claude -n $session_name' there."
 
         return 0
     fi
 
-    pane_id=$(waiting_agent_pane "$workspace_id")
+    pane_id=$(waiting_claude_pane "$claude_agents")
     if [[ -z $pane_id ]]; then
-        pause_with_hint "Claude in $session_name is busy or not alone: run '/rename $session_name' there yourself."
+        pause_with_hint "Claude in $session_name is busy or runs twice: run '/rename $session_name' there yourself."
 
         return 0
     fi
