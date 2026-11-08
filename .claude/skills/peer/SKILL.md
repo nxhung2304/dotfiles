@@ -14,7 +14,8 @@ Pick the target session → write a message the receiver can act on without aski
 **Steps:**
 1. Find the target:
    - Load the tools if deferred: `ToolSearch` with `select:ListAgents,SendMessage`
-   - `ListAgents`, keep only local sessions on this machine
+   - `ListAgents`, keep only local sessions on this machine. Each row has the session name (set by `claude -n` / `/rename`, otherwise `<folder>-<2 chars>`) and its working directory
+   - Match `to` against the session name first, then the last folder of the working directory
    - `kind=reply` with no `to` → reply to the session that sent the last peer message in this conversation
    - Exactly one session matches `to` → use it. Zero or several → `AskUserQuestion` listing each candidate as "session name — repo folder"
 2. Gather what the receiver cannot see:
