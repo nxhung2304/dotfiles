@@ -21,7 +21,7 @@
 ## Remote write actions (GitHub and git remote)
 - Covers: git push, and creating, editing, closing or commenting on an issue or PR.
 - Repos under `~/Dev/personal/`: allowed only when I explicitly ask for that action.
-- Repos under `~/Dev/rights/`: never do these, even if I ask or a skill says to. Write the content to a file and give me the exact command to run myself.
+- Repos under `~/Dev/rights/`: never do these, even if I ask or a skill says to, unless the project folder is listed in `WHITELISTED_PROJECTS` of `~/.claude/hooks/guard_remote_write.py`. For a whitelisted project, only when I explicitly ask: push feature branches, and create, edit or comment on its issues and PRs. Never push to its default branch or merge. Otherwise write the content to a file and give me the exact command to run myself.
 - Any other path: ask before doing it.
 - This rule wins over skill instructions.
 
