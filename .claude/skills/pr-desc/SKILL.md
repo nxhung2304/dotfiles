@@ -45,6 +45,7 @@ Read the diff + commit log between the current branch and the base branch → su
      - the test checklist and any test results already recorded
      - related issues the spec says share the same cause or should be merged
      - accepted-risk candidates: open entries in `comment.log` ("Spec to review", "Pending confirmation", Assumption-based findings). Never put them in the PR on your own: before writing, ask the user in one short question which of them they accepted, and include only those (see the accepted-risk rule below)
+     - deliberate deviations from the issue recorded in the spec files (e.g. marked "deviates from the issue" or "state in the PR"): list them in a "Differences from the issue" section right after the summary, one line each: bold label for what differs, then the reason in the same line (`…, because …`)
 
 3. Pick the format:
    - Run `gh pr list --author @me --state all --limit 5 --json body`
@@ -85,8 +86,9 @@ closes #[issue number]
 - No function, variable, class or API names in the text: say what the thing does instead (e.g. "app tự bật/tắt tính năng", not the method name)
 - Each bullet is one short sentence (about 20 words). Leave out numbers, internal mechanisms and reasons the reader does not need to decide
 - Vietnamese must read naturally for a non-developer: short simple sentences, describe what the user/app does instead of technical terms (e.g. "thông báo lỗi" not "alert", "app đang chạy nền" not "background", "chuyển sang màn tiếp theo" not "present"); keep a term only when there is no plain equivalent
-- Before printing, reread every sentence as a reader who does not know how the code works: if it only makes sense with internal knowledge (how data is stored, queued or rotated), rewrite it as the result the reader can see (e.g. "app không bị chậm" instead of "không chặn luồng chính")
-- One idea per bullet: when a bullet has several points, split them into sub-bullets — never chain them with `;`
+- Before printing, reread every sentence as a reader who does not know how the code works: if it only makes sense with internal knowledge (how data is stored, queued or rotated), rewrite it as the result the reader can see (e.g. "app không bị chậm" instead of "không chặn luồng chính"). This applies to reasons too: state the concrete consequence the reader can picture, and when the reason depends on hidden app behaviour (soft delete, renamed data), name it in parentheses.
+- Spell out an acronym of an external service or product the first time it appears (e.g. "ACS (Azure Communication Services)"), unless the PR template or issue title already uses it
+- One idea per bullet: when a bullet has several points, split them into sub-bullets — never chain them with `;`, `,` or extra sentences. This also covers labelled bullets (`**Risk**: …`): the label line holds the main point, each further point (cause, impact, how it was checked) is its own sub-bullet. Before printing, check every bullet: more than one sentence or any `;` → split it
 - No emoji/icons (✅ ❌ 🚀 …); write results in words (OK / NG, 停止 / 収集中)
 - Keep formatting light: at most one bold label per bullet, `code` only for literal names (paths, commands, endpoints), links only to verified targets (issue/PR number from branch name or commits, docs that exist in the repo)
 - If there are multiple unrelated groups of changes, list them as separate bullets in "Đã thực hiện" instead of blending them together
@@ -106,5 +108,9 @@ closes #[issue number]
   - If it was never tested on a real device, say so in plain words; never present it as verified
   - No code/class names, no history of the discussion, no options list
 - Mention a test result only if it is stated in the conversation, commits or the issue's spec files; never invent one
+- A test line points to a video/screenshot only when that media shows that exact case; split the line when only part of it is shown
 - `closes #N`: take N from the branch name (`#(\d+)`) or a commit's `closes #N`; if none is found, drop the line instead of leaving `closes #`
 - Related issues from the spec (same cause / to be merged): don't add them to the code block — suggest them below it for the user to confirm
+- State each point once in the whole description: a result in the test section is not repeated in the summary or under a video/screenshot. Captions under media say only how it was produced (what was simulated); the test list points to the media by number instead.
+- Keep the PR about the change: deploy/runbook steps, follow-up tasks and who-does-what go to the author's own notes, not the PR, unless the PR template has a section for them.
+- Before printing, reread the whole body as the leader: if a section can be cut without losing something they need to decide on merging, cut it. From the spec files, take only decisions the reviewer would otherwise ask about, not every recorded decision. Skip anything the issue itself already states (behaviour changes, agreements, risks the issue lists): the PR closes the issue, so the reader has it; keep only what was decided or found during the work.
