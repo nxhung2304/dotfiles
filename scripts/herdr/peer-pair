@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+readonly CLAUDE_AGENT_LABEL="claude"
+source "$SCRIPT_DIR/popup-context.sh"
+source "$SCRIPT_DIR/../herdr-sessionizer"
+
+current_repo_dir() {
+    local pane_cwd
+    pane_cwd=$(herdr pane current --current | jq -r '.result.pane.cwd')
+    git -C "$pane_cwd" rev-parse --show-toplevel 2>/dev/null || echo "$pane_cwd"
+}
+
+peer_candidates() {
+    local current_dir=$1
+    {
+        recent_repo_dirs
+        find "${project_roots[@]}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort
+    } | awk -v current="$current_dir" '
+        { is_current = $0 == current; is_duplicate = seen[$0]++ }
+        !is_current && !is_duplicate'
+}
+
+workspace_claude_agents() {
+    local workspace_id=$1
+    herdr agent list | jq -c --arg id "$workspace_id" --arg claude "$CLAUDE_AGENT_LABEL" '
+        [.result.agents[]
+            | (.workspace_id == $id) as $is_in_workspace
+            | (.agent == $claude) as $is_claude
+            | select($is_in_workspace and $is_claude)]'
+}
+
+waiting_claude_pane() {
+    local claude_agents=$1
+    jq -r '
+        (length == 1) as $is_only_claude
+        | (.[0].agent_status | IN("idle", "done")) as $is_waiting_for_input
+        | if $is_only_claude and $is_waiting_for_input then .[0].pane_id else empty end' <<<"$claude_agents"
+}
+
+send_line() {
+    local pane_id=$1
+    local text=$2
+    herdr pane send-text "$pane_id" "$text" >/dev/null
+    herdr pane send-keys "$pane_id" enter >/dev/null
+}
+
+start_named_claude() {
+    local pane_id=$1
+    local session_name=$2
+    send_line "$pane_id" "claude -n $(printf '%q' "$session_name")"
+}
+
+name_existing_claude() {
+    local workspace_id=$1
+    local session_name=$2
+    local claude_agents pane_id
+
+    claude_agents=$(workspace_claude_agents "$workspace_id")
+    if [[ $claude_agents == "[]" ]]; then
+        pause_with_hint "No Claude in $session_name yet: run 'claude -n $session_name' there."
+
+        return 0
+    fi
+
+    pane_id=$(waiting_claude_pane "$claude_agents")
+    if [[ -z $pane_id ]]; then
+        pause_with_hint "Claude in $session_name is busy or runs twice: run '/rename $session_name' there yourself."
+
+        return 0
+    fi
+
+    send_line "$pane_id" "/rename $session_name"
+}
+
+open_peer() {
+    local peer_dir=$1
+    local session_name existing_id created root_pane
+
+    session_name=$(basename "$peer_dir")
+    existing_id=$(open_workspace_id_for_path "$peer_dir")
+    if [[ -n $existing_id ]]; then
+        herdr workspace focus "$existing_id" >/dev/null
+        name_existing_claude "$existing_id" "$session_name"
+
+        return 0
+    fi
+
+    zoxide add "$peer_dir"
+
+    created=$(herdr workspace create --cwd "$peer_dir" --label "$session_name" --focus)
+    root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
+
+    start_named_claude "$root_pane" "$session_name"
+}
+
+pause_with_hint() {
+    echo "$1"
+    read -r -p "press enter to close" _
+}
+
+current_dir=$(current_repo_dir)
+peer_dir=$(peer_candidates "$current_dir" | pick "pair $(basename "$current_dir") with" --tiebreak=index) || exit 0
+[[ -n $peer_dir ]] || exit 0
+
+open_peer "$peer_dir"

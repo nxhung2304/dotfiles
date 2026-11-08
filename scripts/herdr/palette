@@ -22,6 +22,7 @@ build_entries() {
     group_entries "Worktree" "wt-menu"
     single_entry "Theme" "Switch" "../theme-switch"
     single_entry "Agents" "Status" "agents-menu"
+    single_entry "Agents" "Pair with repo" "peer-pair"
     single_entry "Files" "Drag and drop" "drag-drop"
     single_entry "Herdr" "Reload config" "reload-config"
 }
