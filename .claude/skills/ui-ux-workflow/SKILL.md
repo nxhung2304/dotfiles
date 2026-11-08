@@ -108,7 +108,7 @@ Tạo (hoặc đọc, nếu chế độ Mở rộng) bộ token tối thiểu:
 
 Trang lẻ (không có bộ design): token là biến CSS ở `:root` của chính file HTML (khung sẵn: `~/.claude/skills/plan-design/assets/tokens.template.css`). Tránh UI generic: không gradient tím mặc định, không lạm dụng card bo góc lớn, không emoji làm icon.
 
-Chế độ Mở rộng: không tự đặt token hay component mới. Đọc `specs/rules/design.md`, `tokens.css`, `components.css`, `components.html` (và `AppColors` nếu Flutter). Màn hình cần component chưa có → đề xuất, người dùng duyệt thì thêm vào `components.css` + `components.html` và ghi vào `design.md`, rồi mới dùng.
+Chế độ Mở rộng: không tự đặt token hay component mới. Đọc `specs/rules/design.md`, `tokens.css`, `components.css`, `components.html` (và `AppColors` nếu Flutter). Màn hình cần component chưa có → đề xuất, người dùng duyệt thì thêm vào `components.css` + `components.html` và ghi vào `design.md`, rồi mới dùng. Cần một sắc màu chưa có (ví dụ sắc nhạt của màu sẵn có) → đề xuất token dẫn xuất bằng `color-mix()` từ token sẵn có, duyệt rồi mới thêm vào `tokens.css`, kèm công thức tương ứng cho code app trong `design.md` (Flutter: `Color.alphaBlend` cùng tỉ lệ); không thêm mã màu mới.
 
 ---
 
@@ -153,6 +153,7 @@ HTML prototype thường không dùng thẳng được trong dự án. Khi ngư�
 2. Chuyển token từ `tokens.css` (hoặc `:root` của HTML nếu là trang lẻ) sang định dạng của stack (Tailwind config, CSS variables, theme file; Flutter: `AppColors` — dùng agent `design-checker` để so khớp).
 3. Liệt kê component cần có, map sang component có sẵn của thư viện; chỉ tự viết cái thiếu.
 4. Ghi các quyết định UX (trạng thái, luồng, edge case) vào `specs/rules/design.md` hoặc file spec của issue để không bị mất khi code.
+5. Nhắc người dùng commit và push file thiết kế trước, rồi mới tạo issue có link tới file đó; làm ngược lại thì link trong issue bị chết. Không tự push khi chưa được bảo.
 
 ---
 

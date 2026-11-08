@@ -27,8 +27,12 @@ Decides how the whole project looks, once. Later screens (`ui-ux-workflow`) only
    - If `specs/rules/design.md` already exists, ask whether to update it or restart; never overwrite without asking.
    - If the app already has built screens styled by a theme in code (Tailwind config, CSS variables, `AppColors`, `ThemeData`, ...), use **Existing app** below instead of steps 2–7, unless the user asks for a new look.
    - If the repo has a theme but few or no built screens, read it; one of the 3 directions must be "keep the current look, cleaned up".
-2. **Ask only what is missing**, at most 2–3 questions: the feeling the product should give, existing brand (logo, color, font), display language, light/dark needs. Then restate the brief in 2–3 sentences and wait for the user to confirm.
-3. **Optional references.** For style direction only, 1–2 targeted queries (see `~/.claude/skills/ui-ux-workflow/references/sources.md`). Learn patterns, never copy another product's design.
+2. **Ask only what is missing**, at most 2–3 questions: the feeling the product should give, existing brand (logo, color, font), display language, light/dark needs, and apps whose look the user likes (to use as references). Then restate the brief in 2–3 sentences and wait for the user to confirm.
+3. **References.** For style direction only. Learn patterns, never copy another product's design.
+   - Ask whether the user uses Mobbin (MCP needs a Pro, Team or Enterprise plan).
+   - Uses Mobbin: check whether Mobbin tools (e.g. `search_screens`, `search_flows`) are in this session's tool list. Connected → 1–2 targeted searches, starting from the apps the user named. Not connected → give the connection steps from the Mobbin section of `~/.claude/skills/ui-ux-workflow/references/sources.md` and say the tools only appear in a new session; ask whether to continue now with the fallback or pause until it is connected.
+   - No Mobbin: use the fallback in that file (web search, screenshots the user sends).
+   - For each demo, say in one line what it takes from which reference.
 4. **Build 3 demos** in `specs/designs/explore/style-a.html`, `style-b.html`, `style-c.html`:
    - All 3 show the same content: the screen for the PRD's most important job, with real content in the display language (no lorem ipsum), plus a component strip (primary/secondary/disabled button, input with error, card, list item, empty state, error message).
    - Each is self-contained (its own `:root` tokens, inline CSS/JS) and has a light/dark toggle.
@@ -54,6 +58,7 @@ The running app is the source of truth; the design files mirror it. No demos, no
    - No font declared in code: `--font-family` is the platform's system font stack; `design.md` calls it "platform default font".
    - Values the app shows but code does not set (framework defaults such as Material 3 text styles or SnackBar/NavigationBar colors): put them in `tokens.css` so components stay on tokens, and list each under "Giả định" in `design.md` with where the value came from and how to confirm it (run the app, framework docs).
    - Features the app does not have (e.g. dark mode) are left out and listed as open questions, not invented.
+   - A screen needs a color the app does not have: derive it from existing tokens (see Rules), do not add a new color to the app code.
    - `components.css` + `components.html`: the app's shared widgets/components and their states, as interactive HTML.
    - `design.md`: in "File design của dự án", state that app code is the source and `tokens.css` must be updated in the same change when the app style changes.
    - Same self-check as step 6 of Steps, except that a one-off number copied literally from a widget's code (used once, not named in code) may stay as a raw value in `components.css`.
@@ -63,10 +68,12 @@ The running app is the source of truth; the design files mirror it. No demos, no
 
 - Style decisions only. No feature or screen-flow changes; if the brief conflicts with the PRD, report it and send the user back to `plan-prd`.
 - One source per value: tokens live only in `tokens.css`; `design.md` points to files and never repeats values.
+- Derived tokens: a shade the design needs but the source does not define (e.g. a light tint of an existing color) is written in `tokens.css` as `color-mix()` of existing tokens, never as a new hex. `design.md` records the same formula for the app code (Flutter: `Color.alphaBlend` with the same ratio), so code and wireframe stay equal.
+- After the files are written, propose adding one line to the project's `CLAUDE.md` (design section, or a new one) pointing to `specs/rules/design.md`, `tokens.css` and `components.html`, so sessions that do not run a design skill still find the rules. Write it only after approval.
 - Present UI for review only as HTML files opened with `open`, never as screenshots or PNG. To review several screens at once, create an `index.html` in that group's folder with one iframe per screen (about 390px wide for mobile), each labelled with the screen name and still clickable, and open that page.
 - Drafts live in the session's scratchpad directory until approved; only approved files are written under `specs/`. Demo files in `specs/designs/explore/` are the exception, since the user opens them during step 4–5.
 - Flutter project: after writing, ask the `design-checker` agent to compare `tokens.css` with `AppColors`. On a mismatch, the side that is not the source is the one to update (the agent only proposes): new design → `AppColors` follows `tokens.css`; existing app → `tokens.css` follows `AppColors`.
 
 ## Done
 
-Report the files written, the chosen direction (or "mirrored from the existing app"), the mismatches found and the open questions. Last line: `Next: /plan-story`
+Report the files written, the chosen direction (or "mirrored from the existing app"), the mismatches found and the open questions. Remind the user to commit and push the design files before creating issues that link to them, otherwise those links are dead (do not push without being asked). Last line: `Next: /plan-story`
