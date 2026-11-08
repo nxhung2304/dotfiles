@@ -591,6 +591,21 @@ return {
 				flutter_with_loading("Loading emulators", "FlutterEmulators")
 			end, { desc = "Flutter: Emulators" })
 			vim.keymap.set("n", "<leader>Fp", "<cmd>FlutterPubGet<CR>", { desc = "Flutter: Pub Get" })
+			vim.keymap.set("n", "<leader>Fn", function()
+				require("user.plugins.flutter.flutter_new").prompt_new_file()
+			end, { desc = "Flutter: New file from template" })
+
+			vim.keymap.set("n", "<leader>FN", function()
+				require("user.plugins.flutter.flutter_new").prompt_new_feature()
+			end, { desc = "Flutter: New feature from templates" })
+
+			vim.api.nvim_create_user_command("FlutterNew", function()
+				require("user.plugins.flutter.flutter_new").prompt_new_file()
+			end, {})
+
+			vim.api.nvim_create_user_command("FlutterNewFeature", function()
+				require("user.plugins.flutter.flutter_new").prompt_new_feature()
+			end, {})
 
 			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
 				flutter_with_loading("Loading devices", "FlutterDevices", confirm_switch_device)
