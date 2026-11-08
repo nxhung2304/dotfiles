@@ -1,7 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """
-$directory$git_branch$git_status$cmd_duration
+$directory$git_branch$nodejs$ruby$python$java$dart$cmd_duration${env_var.PROMPT_FINISH_TIME}
 $character"""
 add_newline = true
 
@@ -10,14 +10,14 @@ success_symbol = "[❯](bold purple)"
 error_symbol = "[❯](bold bright-red)"
 vimcmd_symbol = "[❮](bold bright-green)"
 
-[git_status]
-style = "bright-yellow"
-format = "([$all_status$ahead_behind]($style) )"
-
 [cmd_duration]
 min_time = 2000
+style = "yellow"
+format = "[took ](bright-black)[$duration]($style)"
+
+[env_var.PROMPT_FINISH_TIME]
 style = "bright-black"
-format = "[took $duration]($style)"
+format = "[ \\($env_value\\)]($style)"
 
 [aws]
 symbol = " "

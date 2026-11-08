@@ -171,6 +171,15 @@ alias ri="cd ~/Dev/rights"
 
 # Hook starship
 eval "$(starship init zsh)"
+export_finish_time_for_slow_commands() {
+  if (( ${STARSHIP_DURATION:-0} >= 2000 )); then
+    print -v PROMPT_FINISH_TIME -P '%D{%H:%M:%S}'
+    export PROMPT_FINISH_TIME
+  else
+    unset PROMPT_FINISH_TIME
+  fi
+}
+add-zsh-hook precmd export_finish_time_for_slow_commands
 
 # eza (modern ls)
 if command -v eza &>/dev/null; then
