@@ -22,27 +22,6 @@ JAVA_VERSION="openjdk-17"
 # Release: https://github.com/gradle/gradle/releases/tag/v9.5.0
 GRADLE_VERSION="9.5.0"
 
-warn_about_versions_linked_to_asdf() {
-    local installs_dir="${MISE_DATA_DIR:-$HOME/.local/share/mise}/installs"
-    [ -d "$installs_dir" ] || return 0
-
-    local version_dir linked_versions=()
-    for version_dir in "$installs_dir"/*/*; do
-        [ -L "$version_dir" ] || continue
-
-        if [[ $(readlink "$version_dir") == */.asdf/* ]]; then
-            linked_versions+=("$version_dir")
-        fi
-    done
-
-    if [ ${#linked_versions[@]} -eq 0 ]; then
-        return 0
-    fi
-
-    log_info "These mise versions still link into ~/.asdf, so do not delete ~/.asdf yet:"
-    printf '  %s\n' "${linked_versions[@]}"
-}
-
 install_mise_binary() {
     if command -v mise &>/dev/null; then
         return 0
@@ -99,6 +78,4 @@ install_mise() {
         mise use -g "gradle@$GRADLE_VERSION"
         log_success "Gradle $GRADLE_VERSION installed"
     fi
-
-    warn_about_versions_linked_to_asdf
 }
