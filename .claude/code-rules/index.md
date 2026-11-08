@@ -60,6 +60,8 @@ Line ranges are inclusive: from the section heading to the line before the next 
 ## Precedence
 - The user's global `~/.claude/CLAUDE.md` wins over these rules when they conflict.
 - Comments: CLAUDE.md is stricter than `code-style.md` Comments Style — no new comment without the user's approval, even for complex logic or business rules.
+- When a general style rule conflicts with the established style of the same file or its sibling files, follow the existing code and mention the deviation in one line.
+- Common language idioms and conventional literals (0/1 index steps, standard exit codes, well-known awk/jq patterns) are not violations of Magic Numbers or Named Condition Variables.
 
 ---
 

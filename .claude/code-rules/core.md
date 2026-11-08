@@ -1,10 +1,10 @@
 # Core Rules (Always Loaded - Critical)
 
 ## Universal Principles
-- Follow Clean Architecture layers strictly.
+- In app projects: follow Clean Architecture layers strictly.
 - No over-engineering: Không tạo abstract/interface khi chỉ có 1 implementation. Inject concrete class thẳng.
 - Single Responsibility Principle.
-- Thêm TODO cho mọi data placeholder.
+- In app projects: thêm TODO cho mọi data placeholder.
 - Không implement logic ngoài spec. Nếu không rõ → dừng và hỏi dev.
 - Không magic numbers → dùng named constants theo convention của project.
 
