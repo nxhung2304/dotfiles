@@ -1,0 +1,11 @@
+[tools]
+gradle = "9.5.0"
+java = "openjdk-17"
+node = "22.22.2"
+python = "3.13.3"
+ruby = "3.3.11"
+
+[settings]
+
+[settings.ruby]
+compile = false
