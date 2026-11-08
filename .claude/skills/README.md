@@ -69,7 +69,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
-| **[peer](./peer/SKILL.md)** | `/peer [to=<session>] [kind=request\|reply\|info] <text>` | Sends a self-contained message to a Claude Code session in another repo on the same machine (dotfiles ↔ project, mobile ↔ backend, app ↔ plugin) and replies in the same numbered OK/NG format. Picks the target via `ListAgents`, asks when it is ambiguous. |
+| **[send-to](./send-to/SKILL.md)** | `/send-to [@<session>] [kind=request\|reply\|info] <text>` | Sends a self-contained message to a Claude Code session in another repo on the same machine (dotfiles ↔ project, mobile ↔ backend, app ↔ plugin) and replies in the same numbered OK/NG format. Target comes from the `@` session mention (or `to=`); otherwise picked via `ListAgents`, asking when it is ambiguous. |
 
 ---
 
