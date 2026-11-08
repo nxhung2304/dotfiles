@@ -14,13 +14,13 @@ Line ranges are inclusive: from the section heading to the line before the next 
 |---------|------|---------|-------|
 | **layer, architecture, placeholder, todo** | core.md | Universal Principles | 3-9 |
 | **clarity, cleverness** | coding-rules.md | Core Principles | 10-24 |
-| **parser, grammar, language, existing, convention** | coding-rules.md | Follow Existing Codebase | 25-39 |
-| **pattern, predictable** | coding-rules.md | Prefer Predictable Patterns | 40-67 |
-| **small, function, generate** | coding-rules.md | Generate Small Functions | 68-101 |
-| **over-engineering, abstraction** | coding-rules.md | Avoid Over-Engineering | 253-268 |
-| **module, boundary, dependency** | coding-rules.md | Respect Module Boundaries | 294-318 |
-| **defensive, check, validate** | coding-rules.md | Add Defensive Checks | 357-371 |
-| **deterministic, side effect** | coding-rules.md | Prefer Deterministic Behavior | 372-392 |
+| **parser, grammar, language, existing, convention, test** | coding-rules.md | Follow Existing Codebase | 25-40 |
+| **pattern, predictable** | coding-rules.md | Prefer Predictable Patterns | 41-68 |
+| **small, function, generate** | coding-rules.md | Generate Small Functions | 69-102 |
+| **over-engineering, abstraction** | coding-rules.md | Avoid Over-Engineering | 254-269 |
+| **module, boundary, dependency** | coding-rules.md | Respect Module Boundaries | 295-319 |
+| **defensive, check, validate** | coding-rules.md | Add Defensive Checks | 358-372 |
+| **deterministic, side effect** | coding-rules.md | Prefer Deterministic Behavior | 373-393 |
 | **magic, number, constant** | clean-code.md | Magic Numbers | 31-60 |
 | **string, hardcoded, text** | clean-code.md | Hardcoded Strings | 61-89 |
 | **guard, early, return** | clean-code.md | Return Early (Guard Clauses) | 90-123 |
@@ -53,6 +53,10 @@ Line ranges are inclusive: from the section heading to the line before the next 
 | **refactor, extract, method** | refactoring.md | When to Refactor | 3-5 |
 | **reusable, extract, formatter** | refactoring.md | Reusable Logic — When to Extract | 6-34 |
 | **flutter, widget, state, const, constructor** | flutter/flutter.md | Widgets | 5-8 |
+| **bash, shell, script, setup, strict, readonly** | bash/bash.md | Script setup | 5-10 |
+| **bash, shell, local, quote, variable** | bash/bash.md | Functions and variables | 11-16 |
+| **bash, shell, jq, json, awk** | bash/bash.md | Data | 17-20 |
+| **bash, shell, shellcheck, test, stub** | bash/bash.md | Checks | 21-23 |
 | **auth, authorization, ownership, idor, access control** | security-authz.md | Broken Object-Level Authorization (IDOR) | 3-31 |
 
 ---
@@ -60,6 +64,8 @@ Line ranges are inclusive: from the section heading to the line before the next 
 ## Precedence
 - The user's global `~/.claude/CLAUDE.md` wins over these rules when they conflict.
 - Comments: CLAUDE.md is stricter than `code-style.md` Comments Style — no new comment without the user's approval, even for complex logic or business rules.
+- When a general style rule conflicts with the established style of the same file or its sibling files, follow the existing code and mention the deviation in one line.
+- Common language idioms and conventional literals (0/1 index steps, standard exit codes, well-known awk/jq patterns) are not violations of Magic Numbers or Named Condition Variables.
 
 ---
 
@@ -71,9 +77,9 @@ Line ranges are inclusive: from the section heading to the line before the next 
 - DRY → `clean-code.md:231-258`
 
 ### Functions & Methods
-- Size limits (20-30 lines) → `coding-rules.md:68-101`, `clean-code.md:259-293`
+- Size limits (20-30 lines) → `coding-rules.md:69-102`, `clean-code.md:259-293`
 - Guard clauses / return early → `clean-code.md:90-123`
-- Avoid deep nesting → `clean-code.md:124-154`, `coding-rules.md:102-132`
+- Avoid deep nesting → `clean-code.md:124-154`, `coding-rules.md:103-133`
 
 ### Naming & Constants
 - Magic numbers → `clean-code.md:31-60`
@@ -92,8 +98,8 @@ Line ranges are inclusive: from the section heading to the line before the next 
 - Extract formatters/constants → `flutter/flutter.md:9-88`
 
 ### AI Code Generation
-- Follow existing patterns → `coding-rules.md:25-39`
-- Prefer predictable patterns → `coding-rules.md:40-67`
+- Follow existing patterns → `coding-rules.md:25-40`
+- Prefer predictable patterns → `coding-rules.md:41-68`
 - Clarity over cleverness → `coding-rules.md:10-24`
 
 ### Refactoring
@@ -113,6 +119,7 @@ Line ranges are inclusive: from the section heading to the line before the next 
 - `general/refactoring.md`: ~75 lines
 - `general/security-authz.md`: ~60 lines
 - `flutter/flutter.md`: ~90 lines (chỉ load khi project là Flutter/Dart)
+- `bash/bash.md`: ~25 lines (chỉ load khi code đang sửa là shell script)
 
 ## Token Optimization
 - Reading full files: ~15k tokens
@@ -132,4 +139,4 @@ Flutter/Dart project rules được load từ `specs/rules/` trong project root:
 - **widgets.md** → Widget extraction, composition
 - **design.md** → Colors, design tokens sync
 
-> **Note:** `general/` chứa rule ngôn ngữ-agnostic (áp dụng mọi ngôn ngữ). `flutter/` chứa rule riêng cho Flutter/Dart, chỉ load khi project hiện tại dùng Flutter. Thêm folder tương tự (vd: `rails/`, `swift/`) khi cần rule riêng cho ngôn ngữ/framework khác. Hiện chưa có folder cho Swift/iOS.
+> **Note:** `general/` chứa rule ngôn ngữ-agnostic (áp dụng mọi ngôn ngữ). `flutter/` chứa rule riêng cho Flutter/Dart, chỉ load khi project hiện tại dùng Flutter. `bash/` chứa rule cho shell script, load khi code đang sửa là shell script. Thêm folder tương tự (vd: `rails/`, `swift/`) khi cần rule riêng cho ngôn ngữ/framework khác. Hiện chưa có folder cho Swift/iOS.

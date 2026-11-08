@@ -32,6 +32,7 @@ Rules:
 * Follow the same naming conventions
 * Follow the same coding style
 * Reuse existing utilities if possible
+* Follow the repo's test convention: when the repo already tests similar code (same folder, same kind of script or module), add or extend a test in the same style for new behaviour. Skip when the repo has no tests for that kind of code
 
 Never introduce a completely different coding style.
 
