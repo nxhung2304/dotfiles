@@ -592,35 +592,9 @@ return {
 			end, { desc = "Flutter: Emulators" })
 			vim.keymap.set("n", "<leader>Fp", "<cmd>FlutterPubGet<CR>", { desc = "Flutter: Pub Get" })
 
-			local function boot_ios_simulator()
-				vim.fn.jobstart({ "open", "-a", "Simulator" }, { detach = true })
-			end
-
-			local function boot_android_emulator()
-				local avds = vim.fn.systemlist({ "emulator", "-list-avds" })
-				if vim.v.shell_error ~= 0 or #avds == 0 then
-					vim.notify("No Android AVD found", vim.log.levels.WARN, { title = "Flutter" })
-					return
-				end
-				local function start(avd)
-					if avd then
-						vim.fn.jobstart({ "emulator", "-avd", avd }, { detach = true })
-					end
-				end
-				if #avds == 1 then
-					start(avds[1])
-				else
-					vim.ui.select(avds, { prompt = "Android emulator" }, start)
-				end
-			end
-
 			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
 				flutter_with_loading("Loading devices", "FlutterDevices", confirm_switch_device)
 			end, {})
-			vim.api.nvim_create_user_command("FlutterBootIOS", boot_ios_simulator, {})
-			vim.api.nvim_create_user_command("FlutterBootAndroid", boot_android_emulator, {})
-			vim.keymap.set("n", "<leader>Fi", boot_ios_simulator, { desc = "Flutter: Boot iOS simulator" })
-			vim.keymap.set("n", "<leader>Fa", boot_android_emulator, { desc = "Flutter: Boot Android emulator" })
 
 			-- DAP controls (<leader>d)
 			vim.keymap.set("n", "<leader>dc", function()
