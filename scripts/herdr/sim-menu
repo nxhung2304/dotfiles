@@ -1,0 +1,280 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/Library/Android/sdk/emulator:$HOME/Library/Android/sdk/platform-tools:$HOME/Library/Android/sdk/cmdline-tools/latest/bin"
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+readonly SCRIPT_PATH="$SCRIPT_DIR/${BASH_SOURCE[0]##*/}"
+
+readonly ACTION_BOOT="Boot device"
+readonly ACTION_CREATE="Create iOS simulator"
+readonly ACTION_DELETE="Delete device"
+readonly ACTION_DELETE_UNAVAILABLE="Delete unavailable simulators"
+readonly AFTER_CREATE_BOOT="Boot it now"
+readonly AFTER_CREATE_CLOSE="Close"
+readonly CONFIRM_NO="No"
+readonly CONFIRM_YES="Yes, delete"
+
+readonly STATE_BOOTED="Booted"
+readonly STATE_SHUTDOWN="Shutdown"
+readonly KIND_IOS="ios"
+readonly KIND_ANDROID="android"
+
+readonly COLOR_BOOTED=$'\033[32m'
+readonly COLOR_SHUTDOWN=$'\033[2m'
+readonly COLOR_RESET=$'\033[0m'
+
+readonly PREVIEW_WINDOW="right:50%"
+readonly NOTICE_SECONDS=1
+readonly EMULATOR_LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-sim"
+
+pick() {
+    fzf --prompt="$1> " --height=100% --reverse "${@:2}"
+}
+
+pause_on_failure() {
+    echo
+    read -r -p "failed - press enter to close" _
+}
+
+ios_entries() {
+    xcrun simctl list devices available -j | jq -r --arg kind "$KIND_IOS" '
+        .devices | to_entries[] | select(.key | test("iOS"))
+        | (.key | sub(".*iOS-"; "") | gsub("-"; ".")) as $version
+        | .value[]
+        | ["iOS \($version)  \(.name)  [\(.state)]", $kind, .udid, .name, .state]
+        | @tsv'
+}
+
+serial_of_running_avd() {
+    local avd_name=$1
+    local serial running_avd_name
+    while IFS= read -r serial; do
+        running_avd_name=$(adb -s "$serial" emu avd name | sed -n '1s/\r$//p')
+        if [[ $running_avd_name == "$avd_name" ]]; then
+            echo "$serial"
+            return
+        fi
+    done < <(adb devices | awk '/^emulator-/ {print $1}')
+}
+
+android_entries() {
+    command -v emulator >/dev/null || return 0
+    local avd_name state
+    while IFS= read -r avd_name; do
+        [[ -n $avd_name ]] || continue
+        state=$STATE_SHUTDOWN
+        if [[ -n $(serial_of_running_avd "$avd_name") ]]; then
+            state=$STATE_BOOTED
+        fi
+        printf 'Android  %s  [%s]\t%s\t%s\t%s\t%s\n' "$avd_name" "$state" "$KIND_ANDROID" "$avd_name" "$avd_name" "$state"
+    done < <(emulator -list-avds)
+}
+
+all_entries() {
+    ios_entries
+    android_entries
+}
+
+entries_grouped_by_state() {
+    all_entries | awk -F'\t' -v OFS='\t' -v booted="$STATE_BOOTED" \
+        -v booted_color="$COLOR_BOOTED" -v shutdown_color="$COLOR_SHUTDOWN" -v reset="$COLOR_RESET" '
+        {
+            sub(/  \[[^]]*\]$/, "", $1)
+            color = ($5 == booted) ? booted_color : shutdown_color
+            $1 = sprintf("%s%-9s%s %s", color, $5, reset, $1)
+            print ($5 == booted ? 0 : 1), $0
+        }' | sort -t$'\t' -s -k1,1n | cut -f2-
+}
+
+choose_entry() {
+    local prompt=$1
+    local entries
+    entries=$(entries_grouped_by_state)
+    if [[ -z $entries ]]; then
+        echo "No device available" >&2
+        return 1
+    fi
+    pick "$prompt" --ansi --delimiter=$'\t' --with-nth=1 \
+        --preview "'$SCRIPT_PATH' --preview {2} {3}" --preview-window="$PREVIEW_WINDOW" \
+        "${@:2}" <<<"$entries" || true
+}
+
+preview_device() {
+    local kind=$1
+    local id=$2
+    if [[ $kind == "$KIND_IOS" ]]; then
+        xcrun simctl list devices -j | jq -r --arg udid "$id" '
+            .devices[][] | select(.udid == $udid)
+            | "Name:   \(.name)",
+              "State:  \(.state)",
+              "UDID:   \(.udid)",
+              "Type:   \(.deviceTypeIdentifier | sub(".*SimDeviceType."; ""))",
+              "Data:   \(.dataPathSize / 1048576 | floor) MB",
+              "Path:   \(.dataPath)"'
+    else
+        avdmanager list avd | awk -v name="$id" '
+            /^ *Name: / { current = $0; sub(/^ *Name: /, "", current); printing = (current == name) }
+            /^-+$/ { printing = 0 }
+            printing'
+    fi
+}
+
+ios_simulator_state() {
+    local udid=$1
+    xcrun simctl list devices available -j | jq -r --arg udid "$udid" '.devices[][] | select(.udid == $udid) | .state'
+}
+
+boot_ios() {
+    local udid=$1
+    local simulator_name=$2
+    echo "Booting $simulator_name..."
+    if [[ $(ios_simulator_state "$udid") != "$STATE_BOOTED" ]]; then
+        xcrun simctl boot "$udid"
+    fi
+    open -a Simulator --args -CurrentDeviceUDID "$udid"
+    sleep "$NOTICE_SECONDS"
+}
+
+boot_android() {
+    local avd_name=$1
+    local log_file="$EMULATOR_LOG_DIR/$avd_name.log"
+    echo "Booting $avd_name... (log: $log_file)"
+    mkdir -p "$EMULATOR_LOG_DIR"
+    nohup emulator -avd "$avd_name" >"$log_file" 2>&1 </dev/null &
+    disown
+    sleep "$NOTICE_SECONDS"
+}
+
+boot_device() {
+    local entry kind id device_name
+    entry=$(choose_entry "$ACTION_BOOT") || return 1
+    [[ -n $entry ]] || return 0
+    IFS=$'\t' read -r _ kind id device_name _ <<<"$entry"
+    if [[ $kind == "$KIND_IOS" ]]; then
+        boot_ios "$id" "$device_name"
+    else
+        boot_android "$id"
+    fi
+}
+
+delete_one_device() {
+    local kind=$1
+    local id=$2
+    local state=$3
+    local device_name=$4
+    if [[ $kind == "$KIND_IOS" ]]; then
+        if [[ $state == "$STATE_BOOTED" ]]; then
+            xcrun simctl shutdown "$id"
+        fi
+        xcrun simctl delete "$id"
+    else
+        avdmanager delete avd -n "$id"
+    fi
+    echo "Deleted $device_name"
+}
+
+confirm_delete() {
+    local header=$1
+    local confirmation
+    confirmation=$(printf '%s\n' "$CONFIRM_NO" "$CONFIRM_YES" | pick "delete" --header "$header") || return 1
+    [[ $confirmation == "$CONFIRM_YES" ]]
+}
+
+delete_device() {
+    local entries kind id device_name state
+    local selected_names=()
+    entries=$(choose_entry "$ACTION_DELETE" --multi) || return 1
+    [[ -n $entries ]] || return 0
+    while IFS=$'\t' read -r _ kind id device_name state; do
+        if [[ $kind == "$KIND_ANDROID" && $state == "$STATE_BOOTED" ]]; then
+            echo "Close the running emulator $device_name first" >&2
+            return 1
+        fi
+        selected_names+=("$device_name")
+    done <<<"$entries"
+    confirm_delete "Delete $(printf '%s\n' "${selected_names[@]}" | paste -sd, -)?" || return 0
+    while IFS=$'\t' read -r _ kind id device_name state; do
+        delete_one_device "$kind" "$id" "$state" "$device_name"
+    done <<<"$entries"
+    sleep "$NOTICE_SECONDS"
+}
+
+unavailable_simulator_count() {
+    xcrun simctl list devices -j | jq '[.devices[][] | select(.isAvailable == false)] | length'
+}
+
+delete_unavailable_simulators() {
+    local count_before count_after
+    count_before=$(unavailable_simulator_count)
+    if [[ $count_before -eq 0 ]]; then
+        echo "No unavailable simulators"
+        sleep "$NOTICE_SECONDS"
+        return 0
+    fi
+    confirm_delete "Delete $count_before unavailable simulators?" || return 0
+    xcrun simctl delete unavailable
+    count_after=$(unavailable_simulator_count)
+    echo "Deleted $((count_before - count_after)) unavailable simulators"
+    if [[ $count_after -gt 0 ]]; then
+        echo "$count_after unavailable simulators still remain"
+    fi
+    sleep "$NOTICE_SECONDS"
+}
+
+ios_runtime_entries() {
+    xcrun simctl list runtimes -j | jq -r '
+        .runtimes[] | select(.isAvailable and .platform == "iOS") | [.name, .identifier] | @tsv'
+}
+
+device_type_entries() {
+    local runtime_id=$1
+    xcrun simctl list runtimes -j | jq -r --arg runtime_id "$runtime_id" '
+        .runtimes[] | select(.identifier == $runtime_id)
+        | .supportedDeviceTypes[] | [.name, .identifier] | @tsv'
+}
+
+create_ios_simulator() {
+    local runtimes runtime_entry runtime_id device_type_entry device_type_name device_type_id simulator_name udid after_create_choice
+    runtimes=$(ios_runtime_entries)
+    if [[ -z $runtimes ]]; then
+        echo "No iOS runtime installed" >&2
+        return 1
+    fi
+    runtime_entry=$(pick "runtime" --delimiter=$'\t' --with-nth=1 <<<"$runtimes") || return 0
+    IFS=$'\t' read -r _ runtime_id <<<"$runtime_entry"
+    device_type_entry=$(device_type_entries "$runtime_id" | pick "device type" --delimiter=$'\t' --with-nth=1) || return 0
+    IFS=$'\t' read -r device_type_name device_type_id <<<"$device_type_entry"
+    read -r -p "name [$device_type_name]> " simulator_name
+    simulator_name=${simulator_name:-$device_type_name}
+    udid=$(xcrun simctl create "$simulator_name" "$device_type_id" "$runtime_id")
+    after_create_choice=$(printf '%s\n' "$AFTER_CREATE_BOOT" "$AFTER_CREATE_CLOSE" \
+        | pick "next" --header "Created $simulator_name ($udid)") || return 0
+    if [[ $after_create_choice == "$AFTER_CREATE_BOOT" ]]; then
+        boot_ios "$udid" "$simulator_name"
+    fi
+}
+
+action_labels() {
+    printf '%s\n' "$ACTION_BOOT" "$ACTION_CREATE" "$ACTION_DELETE" "$ACTION_DELETE_UNAVAILABLE"
+}
+
+if [[ ${1:-} == --list ]]; then
+    action_labels
+    exit 0
+fi
+
+if [[ ${1:-} == --preview ]]; then
+    preview_device "$2" "$3"
+    exit 0
+fi
+
+selected_action=${1:-$(action_labels | pick "device" || true)}
+[[ -n $selected_action ]] || exit 0
+
+case $selected_action in
+    "$ACTION_BOOT") boot_device || { pause_on_failure; exit 1; } ;;
+    "$ACTION_CREATE") create_ios_simulator || { pause_on_failure; exit 1; } ;;
+    "$ACTION_DELETE") delete_device || { pause_on_failure; exit 1; } ;;
+    "$ACTION_DELETE_UNAVAILABLE") delete_unavailable_simulators || { pause_on_failure; exit 1; } ;;
+esac

@@ -20,6 +20,7 @@ single_entry() {
 build_entries() {
     group_entries "GitHub" "github-menu"
     group_entries "Worktree" "wt-menu"
+    group_entries "Device" "sim-menu"
     single_entry "Theme" "Switch" "../theme-switch"
     single_entry "Agents" "Status" "agents-menu"
     single_entry "Agents" "Pair with repo" "peer-pair"
