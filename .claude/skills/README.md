@@ -65,6 +65,12 @@ Complete automated workflow for implementing issues from spec to merged PR:
 | **[implement-code](./implement-code/SKILL.md)** | used internally | Reads the spec's Implementation Checklist, codes each item, calls `rule-lookup`/`design-checker`/`code-reviewer` as needed. |
 | **[implement-finalize](./implement-finalize/SKILL.md)** | used internally | Commits, updates spec status → `PR: Draft`, pushes, opens a Draft PR via GitHub MCP, notifies Slack. |
 
+### 🤝 Cross-Session
+
+| Skill | Usage | Description |
+| :--- | :--- | :--- |
+| **[peer](./peer/SKILL.md)** | `/peer [to=<session>] [kind=request\|reply\|info] <text>` | Sends a self-contained message to a Claude Code session in another repo on the same machine (dotfiles ↔ project, mobile ↔ backend, app ↔ plugin) and replies in the same numbered OK/NG format. Picks the target via `ListAgents`, asks when it is ambiguous. |
+
 ---
 
 ## Which skill should I use?
