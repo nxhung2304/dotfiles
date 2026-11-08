@@ -109,6 +109,50 @@ cordova_clean() {
 
 nv () { NVIM_APPNAME="minimal-nvim" nvim }
 
+nd_click_action() {
+  local focus_ghostty="open -b com.mitchellh.ghostty"
+  if [[ -z $HERDR_PANE_ID ]]; then
+    print -r -- "$focus_ghostty"
+    return
+  fi
+
+  local pane_json workspace_id tab_id herdr_command
+  pane_json=$(herdr pane get "$HERDR_PANE_ID" 2>/dev/null)
+  workspace_id=$(jq -r '.result.pane.workspace_id // empty' <<<"$pane_json")
+  tab_id=$(jq -r '.result.pane.tab_id // empty' <<<"$pane_json")
+  if [[ -z $workspace_id || -z $tab_id ]]; then
+    print -r -- "$focus_ghostty"
+    return
+  fi
+
+  herdr_command="${HERDR_SOCKET_PATH:+HERDR_SOCKET_PATH=${(q)HERDR_SOCKET_PATH} }${(q)commands[herdr]}"
+  print -r -- "$herdr_command workspace focus ${(q)workspace_id} >/dev/null; $herdr_command tab focus ${(q)tab_id} >/dev/null; $focus_ghostty"
+}
+
+nd() {
+  local exit_code=$?
+  local finished_command
+  finished_command=$(print -r -- "${history[$HISTCMD]}" | sed -E 's/[[:space:]]*(\||;|&&)[[:space:]]*nd[[:space:]]*$//')
+
+  local result
+  if [[ ! -t 0 ]]; then
+    cat
+    result="đã chạy xong"
+  elif (( exit_code == 0 )); then
+    result="đã thành công"
+  else
+    result="lỗi (exit $exit_code)"
+  fi
+
+  terminal-notifier \
+    -title "Ghostty" \
+    -message "$finished_command $result" \
+    -sound default \
+    -execute "$(nd_click_action)" \
+    >/dev/null
+  return "$exit_code"
+}
+
 
 # Disable GSS encryption mode
 export PGGSSENCMODE=disable
