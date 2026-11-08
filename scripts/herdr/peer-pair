@@ -26,11 +26,47 @@ workspace_has_agent() {
     herdr agent list | jq -e --arg id "$workspace_id" 'any(.result.agents[]; .workspace_id == $id)' >/dev/null
 }
 
+waiting_agent_pane() {
+    local workspace_id=$1
+    herdr agent list | jq -r --arg id "$workspace_id" '
+        [.result.agents[] | select(.workspace_id == $id)] as $agents
+        | ($agents | length == 1) as $is_only_agent
+        | ($agents[0].agent_status | IN("idle", "done")) as $is_waiting_for_input
+        | if $is_only_agent and $is_waiting_for_input then $agents[0].pane_id else empty end'
+}
+
+send_line() {
+    local pane_id=$1
+    local text=$2
+    herdr pane send-text "$pane_id" "$text" >/dev/null
+    herdr pane send-keys "$pane_id" enter >/dev/null
+}
+
 start_named_claude() {
     local pane_id=$1
     local session_name=$2
-    herdr pane send-text "$pane_id" "claude -n $(printf '%q' "$session_name")" >/dev/null
-    herdr pane send-keys "$pane_id" enter >/dev/null
+    send_line "$pane_id" "claude -n $(printf '%q' "$session_name")"
+}
+
+name_existing_claude() {
+    local workspace_id=$1
+    local session_name=$2
+    local pane_id
+
+    if ! workspace_has_agent "$workspace_id"; then
+        pause_with_hint "No Claude in $session_name yet: run 'claude -n $session_name' there."
+
+        return 0
+    fi
+
+    pane_id=$(waiting_agent_pane "$workspace_id")
+    if [[ -z $pane_id ]]; then
+        pause_with_hint "Claude in $session_name is busy or not alone: run '/rename $session_name' there yourself."
+
+        return 0
+    fi
+
+    send_line "$pane_id" "/rename $session_name"
 }
 
 open_peer() {
@@ -41,8 +77,7 @@ open_peer() {
     existing_id=$(open_workspace_id_for_path "$peer_dir")
     if [[ -n $existing_id ]]; then
         herdr workspace focus "$existing_id" >/dev/null
-        workspace_has_agent "$existing_id" ||
-            pause_with_hint "No Claude in $session_name yet: run 'claude -n $session_name' there."
+        name_existing_claude "$existing_id" "$session_name"
 
         return 0
     fi
