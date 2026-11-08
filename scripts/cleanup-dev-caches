@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+derived_data_dir="$HOME/Library/Developer/Xcode/DerivedData"
+device_support_dir="$HOME/Library/Developer/Xcode/iOS DeviceSupport"
+simulator_devices_dir="$HOME/Library/Developer/CoreSimulator/Devices"
+gradle_caches_dir="$HOME/.gradle/caches"
+android_studio_process="Android Studio.app/Contents/MacOS/studio"
+total_size_kb=0
+
+usage() {
+    echo "Usage: $(basename "$0") [--apply]"
+    echo "Without --apply, only prints what would be removed."
+}
+
+has_command() {
+    command -v "$1" >/dev/null
+}
+
+is_process_running() {
+    pgrep -f "$1" >/dev/null
+}
+
+folder_size() {
+    du -sh "$1" | cut -f1
+}
+
+add_folder_to_total() {
+    total_size_kb=$((total_size_kb + $(du -sk "$1" | cut -f1)))
+}
+
+brew_size_kb() {
+    awk 'match($0, /approximately [0-9.]+[KMG]?B/) {
+        amount = substr($0, RSTART + 14, RLENGTH - 14)
+        unit = amount
+        sub(/^[0-9.]+/, "", unit)
+        sub(/[KMG]?B$/, "", amount)
+        factor = (unit == "GB") ? 1048576 : (unit == "MB") ? 1024 : (unit == "KB") ? 1 : 1 / 1024
+        printf "%d", amount * factor
+    }' <<<"$1"
+}
+
+format_size_gb() {
+    awk -v size_kb="$1" 'BEGIN { printf "%.1f GB", size_kb / 1048576 }'
+}
+
+remove_folder() {
+    local is_apply_mode=$1 target_folder=$2
+    if [[ ! -e $target_folder ]]; then
+        echo "  skip (not found): $target_folder"
+        return
+    fi
+    echo "  $(folder_size "$target_folder")  $target_folder"
+    add_folder_to_total "$target_folder"
+    if $is_apply_mode; then
+        rm -rf "$target_folder"
+    fi
+}
+
+clean_derived_data() {
+    local is_apply_mode=$1
+    echo "Xcode DerivedData:"
+    if pgrep -x Xcode >/dev/null; then
+        echo "  skip (Xcode is open, quit it first)"
+        return
+    fi
+    remove_folder "$is_apply_mode" "$derived_data_dir"
+}
+
+list_outdated_device_support() {
+    find "$device_support_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; \
+        | awk '{ model = ($1 ~ /^[0-9]/) ? "-" : $1; version = (model == "-") ? $1 : $2; print model "\t" version "\t" $0 }' \
+        | sort -t $'\t' -k1,1 -k2,2Vr \
+        | awk -F '\t' 'seen[$1]++ { print $3 }'
+}
+
+clean_outdated_device_support() {
+    local is_apply_mode=$1 outdated_folders outdated_folder
+    echo "iOS DeviceSupport (keeps the newest iOS version of each device model):"
+    if [[ ! -d $device_support_dir ]]; then
+        echo "  skip (not found): $device_support_dir"
+        return
+    fi
+    outdated_folders=$(list_outdated_device_support)
+    if [[ -z $outdated_folders ]]; then
+        echo "  nothing to remove"
+        return
+    fi
+    while IFS= read -r outdated_folder; do
+        remove_folder "$is_apply_mode" "$device_support_dir/$outdated_folder"
+    done <<<"$outdated_folders"
+}
+
+clean_unavailable_simulators() {
+    local is_apply_mode=$1 simulator_list unavailable_devices device_line device_id
+    echo "Unavailable iOS simulators (their app data is deleted too):"
+    if ! has_command xcrun; then
+        echo "  skip (xcrun not installed)"
+        return
+    fi
+    simulator_list=$(xcrun simctl list devices unavailable)
+    unavailable_devices=$(grep -E '^ {4}' <<<"$simulator_list" || [[ $? -eq 1 ]])
+    if [[ -z $unavailable_devices ]]; then
+        echo "  nothing to remove"
+        return
+    fi
+    while IFS= read -r device_line; do
+        device_id=$(grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' <<<"$device_line")
+        echo "  $(folder_size "$simulator_devices_dir/$device_id")  $(sed -E 's/^ +//; s/ \(Shutdown\).*//' <<<"$device_line")"
+        add_folder_to_total "$simulator_devices_dir/$device_id"
+    done <<<"$unavailable_devices"
+    if $is_apply_mode; then
+        xcrun simctl delete unavailable
+    fi
+}
+
+clean_gradle_caches() {
+    local is_apply_mode=$1
+    echo "Gradle caches:"
+    if is_process_running "$android_studio_process"; then
+        echo "  skip (Android Studio is open, quit it first)"
+        return
+    fi
+    if is_process_running GradleDaemon || is_process_running KotlinCompileDaemon; then
+        echo "  skip (a Gradle or Kotlin daemon is running, stop it with: gradle --stop)"
+        return
+    fi
+    remove_folder "$is_apply_mode" "$gradle_caches_dir"
+}
+
+clean_homebrew() {
+    local is_apply_mode=$1 brew_summary brew_cleanup_size_kb
+    echo "Homebrew:"
+    if ! has_command brew; then
+        echo "  skip (brew not installed)"
+        return
+    fi
+    if $is_apply_mode; then
+        brew_summary=$(brew cleanup --prune=all 2>&1 | tail -n 1)
+    else
+        brew_summary=$(brew cleanup --prune=all --dry-run 2>&1 | tail -n 1)
+    fi
+    brew_cleanup_size_kb=$(brew_size_kb "$brew_summary")
+    echo "  $(format_size_gb "${brew_cleanup_size_kb:-0}")  old versions and downloads"
+    total_size_kb=$((total_size_kb + ${brew_cleanup_size_kb:-0}))
+}
+
+clean_tool_cache() {
+    local is_apply_mode=$1 tool_name=$2
+    shift 2
+    local cache_dir
+    echo "$tool_name cache:"
+    if ! has_command "$tool_name"; then
+        echo "  skip ($tool_name not installed)"
+        return
+    fi
+    case "$tool_name" in
+        yarn) cache_dir=$(yarn cache dir) ;;
+        npm) cache_dir=$(npm config get cache) ;;
+        pip3) cache_dir=$(pip3 cache dir) ;;
+    esac
+    if [[ ! -d $cache_dir ]]; then
+        echo "  skip (not found): $cache_dir"
+        return
+    fi
+    echo "  $(folder_size "$cache_dir")  $cache_dir"
+    add_folder_to_total "$cache_dir"
+    if $is_apply_mode; then
+        "$@"
+    fi
+}
+
+main() {
+    local is_apply_mode
+    if [[ $# -gt 1 ]]; then
+        usage >&2
+        exit 1
+    fi
+    case "${1:-}" in
+        "") is_apply_mode=false ;;
+        --apply) is_apply_mode=true ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+
+    clean_derived_data "$is_apply_mode"
+    clean_outdated_device_support "$is_apply_mode"
+    clean_unavailable_simulators "$is_apply_mode"
+    clean_gradle_caches "$is_apply_mode"
+    clean_homebrew "$is_apply_mode"
+    clean_tool_cache "$is_apply_mode" yarn yarn cache clean
+    clean_tool_cache "$is_apply_mode" npm npm cache clean --force
+    clean_tool_cache "$is_apply_mode" pip3 pip3 cache purge
+
+    echo
+    if $is_apply_mode; then
+        echo "Freed: ~$(format_size_gb "$total_size_kb")"
+        df -h /System/Volumes/Data
+    else
+        echo "Total: ~$(format_size_gb "$total_size_kb") (would free)"
+        echo "To actually delete, run: $0 --apply"
+    fi
+}
+
+main "$@"
