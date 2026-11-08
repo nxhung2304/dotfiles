@@ -7,7 +7,7 @@ description: Step 1 of the plan-* flow. Interactive discussion to turn a rough p
 
 # Plan Idea
 
-Flow: **plan-idea** → plan-prd → plan-stack → plan-story → generate-issues
+Flow: **plan-idea** → plan-prd → plan-stack → plan-design → plan-story → generate-issues
 
 Discussion only. Produces `specs/idea.md`; never writes the PRD, techstack or story.
 

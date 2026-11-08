@@ -25,7 +25,9 @@ Tự kiểm trước khi đưa người dùng. Ghi ngắn gọn mục nào đạ
 - [ ] Không truyền thông tin chỉ bằng màu
 
 ## Nhất quán
-- [ ] Chỉ dùng token ở `:root` của HTML, không giá trị lạc
+- [ ] Chỉ dùng token trong `specs/designs/tokens.css` (trang lẻ: `:root` của file), không mã màu hay px lạc
+- [ ] Chỉ dùng component trong `specs/designs/components.css`; component mới đã được duyệt và thêm vào bộ design
+- [ ] Tương tác được: click chuyển màn, modal/menu/tab hoạt động, đổi được trạng thái loading/rỗng/lỗi
 - [ ] Không vi phạm mục "Không làm" trong `specs/rules/design.md`
 - [ ] Cùng loại phần tử thì cùng kiểu
 

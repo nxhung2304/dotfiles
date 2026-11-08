@@ -12,13 +12,14 @@
 
 ### 🧭 Project Planning
 
-Flow: `plan-idea → plan-prd → plan-stack → plan-story → generate-issues`. Each step reads the previous step's file and ends with a `Next:` line.
+Flow: `plan-idea → plan-prd → plan-stack → plan-design → plan-story → generate-issues`. Each step reads the previous step's file and ends with a `Next:` line.
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
 | **[plan-idea](./plan-idea/SKILL.md)** | `/plan-idea` | Q&A that turns a rough project idea into problem/users/core job/constraints/non-goals; saves `specs/idea.md` after approval. |
 | **[plan-prd](./plan-prd/SKILL.md)** | `/plan-prd` | Reads `specs/idea.md`, writes `specs/prd.md`: MVP scope, features with stable IDs (`F1`...) and testable acceptance criteria. No tech decisions. |
 | **[plan-stack](./plan-stack/SKILL.md)** | `/plan-stack` | Reads `specs/prd.md`, compares options per area with trade-offs, writes `specs/techstack.md` (optionally `ERD.md`/`architecture.md`). Verifies library/version claims from docs. |
+| **[plan-design](./plan-design/SKILL.md)** | `/plan-design` | Shows 3 style directions as interactive HTML demos of a real PRD screen, iterates on feedback until one is settled, then writes the shared design every later screen must follow: `specs/designs/tokens.css`, `components.css`, `components.html`, `specs/rules/design.md`. For an app that already has screens and a theme, mirrors the style from code instead (no demos) and lists mismatches with old wireframes. Skips for products with no UI. |
 | **[plan-story](./plan-story/SKILL.md)** | `/plan-story` | Breaks MVP features into numbered tasks, writes `specs/story.md` in the `- [ ] [number]. [title]` format `generate-issues` reads, plus a mechanical feature→task coverage check. |
 
 ### 📝 Issue & Spec Management
@@ -46,7 +47,7 @@ Flow: `plan-idea → plan-prd → plan-stack → plan-story → generate-issues`
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
-| **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Researched UI/UX process: understand the problem → gather references (Mobbin/Refero/Land-book/Dribbble) → fix design tokens → build prototype → export HTML + review → iterate → handoff. Tokens live in `:root` of `specs/designs/*.html`; rules/decision log in `specs/rules/design.md`; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
+| **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Per-screen UI/UX process: understand the problem → gather references (Mobbin/Refero/Land-book/Dribbble) → build an interactive HTML prototype from the project design made by `plan-design` (tokens/components only, no new values) → review → iterate → handoff. Stops and asks for `plan-design` first when a multi-screen project has no design yet; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
 
 ### 🎬 YouTube Channel
 
@@ -77,7 +78,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 
 | I want to... | Use |
 | :--- | :--- |
-| Start a new project from a rough idea (idea → PRD → techstack → story) | `plan-idea` → `plan-prd` → `plan-stack` → `plan-story` |
+| Start a new project from a rough idea (idea → PRD → techstack → design → story) | `plan-idea` → `plan-prd` → `plan-stack` → `plan-design` → `plan-story` |
 | Turn a rough idea into a design decision before an issue exists | `feature-discuss` |
 | Investigate a reported bug and find the root cause | `fix-issue` |
 | Save a discussion/investigation into `specs/issues/` to continue later | `issue-docs` |
@@ -102,6 +103,7 @@ Complete automated workflow for implementing issues from spec to merged PR:
 plan-idea                        # idea → specs/idea.md
   → plan-prd                     # → specs/prd.md (MVP features F1..)
   → plan-stack                   # → specs/techstack.md
+  → plan-design                  # → specs/designs/tokens.css, components.css/.html, specs/rules/design.md
   → plan-story                   # → specs/story.md (+ coverage check)
   → generate-issues              # → specs/issues/*.md
 ```

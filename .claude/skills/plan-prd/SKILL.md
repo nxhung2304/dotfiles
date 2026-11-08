@@ -7,7 +7,7 @@ description: Step 2 of the plan-* flow. Writes specs/prd.md (goals, users, MVP s
 
 # Plan PRD
 
-Flow: plan-idea → **plan-prd** → plan-stack → plan-story → generate-issues
+Flow: plan-idea → **plan-prd** → plan-stack → plan-design → plan-story → generate-issues
 
 Answers "what to build and for whom". No technology decisions here — those belong to `plan-stack`.
 

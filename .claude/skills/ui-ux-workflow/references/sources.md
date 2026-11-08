@@ -2,7 +2,14 @@
 
 ## Mobbin
 - **Mạnh nhất:** màn hình và flow của app thật, cả mobile và web.
-- **Kết nối:** MCP chính thức, remote, đăng nhập OAuth: `https://api.mobbin.com/mcp`
+- **Kết nối:** MCP chính thức, remote, đăng nhập OAuth bằng tài khoản Mobbin (không cần API key): `https://api.mobbin.com/mcp`. Cần gói Pro, Team hoặc Enterprise.
+- **Kiểm tra đã kết nối:** trong danh sách tool của session có tool Mobbin (`search_screens`, `search_flows`, `search_sections`).
+- **Các bước kết nối cho Claude Code CLI** (nguồn: `https://docs.mobbin.com/mcp/clients/claude-code-cli`):
+  1. Ở terminal bất kỳ, chạy `claude mcp add mobbin --scope user --transport http https://api.mobbin.com/mcp` → kết quả: báo đã thêm server `mobbin`. Claude có thể chạy giúp lệnh này nếu người dùng đồng ý, vì nó sửa cấu hình Claude Code của người dùng.
+  2. Thoát session hiện tại và mở session Claude Code mới (tool MCP chỉ nạp khi bắt đầu session).
+  3. Trong session mới, gõ `/mcp`, chọn `mobbin`, chọn Authenticate → trình duyệt mở trang đăng nhập Mobbin; đăng nhập và cho phép.
+  4. Gõ lại `/mcp` → kết quả: `mobbin` ở trạng thái đã kết nối.
+  - Cách khác Mobbin khuyên dùng: thêm connector Mobbin trên Claude Desktop/Web, Claude Code CLI dùng chung connector đó (hướng dẫn: `https://docs.mobbin.com/mcp/clients/claude-desktop-web`).
 - **Truy vấn tốt:** cụ thể theo loại màn hình + ngành + nền tảng.
   - "onboarding flow fintech mobile"
   - "empty state task list iOS"
@@ -16,7 +23,7 @@
   - styles: "developer tool website minimal dark"
   - screens: "pricing page monthly annual toggle web"
   - flows: "subscription cancellation with retention offer"
-- **Mẹo:** dùng lớp styles để gợi ý token ở Bước 3.
+- **Mẹo:** dùng lớp styles để gợi ý hướng style ở `plan-design`.
 
 ## Land-book
 - **Mạnh nhất:** landing page, marketing site.
