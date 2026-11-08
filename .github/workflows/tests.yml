@@ -7,6 +7,7 @@ on:
       - "install.sh"
       - ".config/nvim/**"
       - "tests/**"
+      - ".claude/**"
       - ".github/workflows/tests.yml"
   push:
     branches: [master]
@@ -15,6 +16,7 @@ on:
       - "install.sh"
       - ".config/nvim/**"
       - "tests/**"
+      - ".claude/**"
       - ".github/workflows/tests.yml"
 
 jobs:
