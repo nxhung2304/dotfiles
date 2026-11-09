@@ -90,6 +90,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "~/dotfiles/scripts/herdr/tab-title",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "python3 ~/.claude/hooks/ai_track.py"
           }
         ]
