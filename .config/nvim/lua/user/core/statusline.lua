@@ -195,7 +195,28 @@ function components.flutter_device()
   end
   -- Strip the trailing "(mobile)"/"(desktop)"/"(web)" annotation flutter appends to the name
   local name = device.name:gsub(" %([^%(%)]-%)%s*$", "")
-  return clickable("flutter_device", "  " .. flutter_device_icon(device.platform) .. name .. " ")
+  local is_app_running = require("flutter-tools.commands").is_running()
+  local highlight_group = is_app_running and "DiagnosticOk" or "Comment"
+  local text = "  " .. flutter_device_icon(device.platform) .. name .. " "
+  return clickable("flutter_device", hi_pattern:format(highlight_group, text))
+end
+
+local function redraw_statusline_soon()
+  vim.defer_fn(function()
+    vim.cmd("redrawstatus")
+  end, 200)
+end
+
+vim.api.nvim_create_autocmd("User", {
+  pattern = "FlutterToolsAppStarted",
+  callback = redraw_statusline_soon,
+})
+
+local dap_ok, dap = pcall(require, "dap")
+if dap_ok then
+  for _, event in ipairs({ "event_terminated", "event_exited", "disconnect" }) do
+    dap.listeners.after[event]["statusline_flutter_state"] = redraw_statusline_soon
+  end
 end
 
 vim.api.nvim_create_autocmd({ "LspAttach", "LspDetach" }, {
@@ -215,12 +236,12 @@ end
 
 local statusline = {
 	'%{%v:lua._statusline_component("git_branch")%}',
+	'%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("diagnostic_status")%}',
 	'%{%v:lua._statusline_component("macro")%}',
 	"%r",
 	"%=",
 	'%{%v:lua._statusline_component("lsp_clients")%}',
-	'%{%v:lua._statusline_component("flutter_device")%}',
 	'%{%v:lua._statusline_component("position")%}',
 }
 

@@ -57,6 +57,10 @@ Line ranges are inclusive: from the section heading to the line before the next 
 | **bash, shell, local, quote, variable** | bash/bash.md | Functions and variables | 11-16 |
 | **bash, shell, jq, json, awk** | bash/bash.md | Data | 17-20 |
 | **bash, shell, shellcheck, test, stub** | bash/bash.md | Checks | 21-23 |
+| **lua, nvim, neovim, stylua, format, tab** | lua/lua.md | Format | 5-8 |
+| **lua, nvim, neovim, module, require, constant, local** | lua/lua.md | Modules | 9-14 |
+| **lua, nvim, neovim, keymap, autocmd, notify, api** | lua/lua.md | Neovim API | 15-20 |
+| **lua, nvim, neovim, headless, check, lua_ls** | lua/lua.md | Checks | 21-23 |
 | **auth, authorization, ownership, idor, access control** | security-authz.md | Broken Object-Level Authorization (IDOR) | 3-31 |
 
 ---
@@ -120,6 +124,7 @@ Line ranges are inclusive: from the section heading to the line before the next 
 - `general/security-authz.md`: ~60 lines
 - `flutter/flutter.md`: ~90 lines (chỉ load khi project là Flutter/Dart)
 - `bash/bash.md`: ~25 lines (chỉ load khi code đang sửa là shell script)
+- `lua/lua.md`: ~25 lines (chỉ load khi code đang sửa là Lua / Neovim config)
 
 ## Token Optimization
 - Reading full files: ~15k tokens
@@ -139,4 +144,4 @@ Flutter/Dart project rules được load từ `specs/rules/` trong project root:
 - **widgets.md** → Widget extraction, composition
 - **design.md** → Colors, design tokens sync
 
-> **Note:** `general/` chứa rule ngôn ngữ-agnostic (áp dụng mọi ngôn ngữ). `flutter/` chứa rule riêng cho Flutter/Dart, chỉ load khi project hiện tại dùng Flutter. `bash/` chứa rule cho shell script, load khi code đang sửa là shell script. Thêm folder tương tự (vd: `rails/`, `swift/`) khi cần rule riêng cho ngôn ngữ/framework khác. Hiện chưa có folder cho Swift/iOS.
+> **Note:** `general/` chứa rule ngôn ngữ-agnostic (áp dụng mọi ngôn ngữ). `flutter/` chứa rule riêng cho Flutter/Dart, chỉ load khi project hiện tại dùng Flutter. `bash/` chứa rule cho shell script, load khi code đang sửa là shell script. `lua/` chứa rule cho Lua (Neovim config), load khi code đang sửa là Lua. Thêm folder tương tự (vd: `rails/`, `swift/`) khi cần rule riêng cho ngôn ngữ/framework khác. Hiện chưa có folder cho Swift/iOS.

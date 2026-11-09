@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+export LC_ALL=en_US.UTF-8
+
+readonly UNNAMED_TAB_LABEL=c
+readonly TAB_LABEL_PREFIX="c-"
+readonly GENERIC_TITLE="Claude Code"
+readonly MAX_SLUG_WORDS=4
+readonly MAX_SLUG_CHARS=24
+readonly TRANSLATE_MODEL=haiku
+readonly TRANSLATE_PROMPT="Translate this session title to English and output ONLY a lowercase kebab-case slug of at most $MAX_SLUG_WORDS words, no punctuation, no explanation."
+
+to_slug() {
+    local slug
+    slug=$(tr '[:upper:]' '[:lower:]' <<<"$1" | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//' | cut -d- -f1-"$MAX_SLUG_WORDS")
+    if ((${#slug} > MAX_SLUG_CHARS)); then
+        local cut_slug=${slug:0:MAX_SLUG_CHARS}
+        [[ ${slug:MAX_SLUG_CHARS:1} == - ]] || cut_slug=${cut_slug%-*}
+        slug=$cut_slug
+    fi
+    echo "$slug"
+}
+
+has_non_ascii() {
+    LC_ALL=C grep -q '[^ -~]' <<<"$1"
+}
+
+translate_to_english() {
+    printf '%s' "$1" | claude -p --model "$TRANSLATE_MODEL" --settings '{"disableAllHooks":true}' "$TRANSLATE_PROMPT" 2>/dev/null
+}
+
+english_slug() {
+    local title=$1
+    if has_non_ascii "$title"; then
+        title=$(translate_to_english "$title") || return 1
+    fi
+    to_slug "$title"
+}
+
+main() {
+    cat >/dev/null || true
+    [[ ${HERDR_ENV:-} == 1 && -n ${HERDR_PANE_ID:-} ]] || exit 0
+
+    local pane_json tab_id title tab_label slug
+    pane_json=$(herdr pane get "$HERDR_PANE_ID" 2>/dev/null) || exit 0
+    tab_id=$(jq -r '.result.pane.tab_id // ""' <<<"$pane_json")
+    title=$(jq -r '.result.pane.terminal_title_stripped // ""' <<<"$pane_json")
+    [[ -n $tab_id && -n $title && $title != "$GENERIC_TITLE" ]] || exit 0
+
+    tab_label=$(herdr tab get "$tab_id" 2>/dev/null | jq -r '.result.tab.label // ""') || exit 0
+    [[ $tab_label == "$UNNAMED_TAB_LABEL" ]] || exit 0
+
+    slug=$(english_slug "$title") || exit 0
+    [[ -n $slug ]] || exit 0
+
+    herdr tab rename "$tab_id" "${TAB_LABEL_PREFIX}${slug}" >/dev/null 2>&1 || exit 0
+}
+
+main
