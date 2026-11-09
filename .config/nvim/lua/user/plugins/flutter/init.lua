@@ -23,6 +23,8 @@ return {
 			require("flutter-tools").setup({
 				ui = { border = "rounded" },
 
+				fvm = true,
+
 				decorations = {
 					statusline = {
 						app_version = true,
@@ -598,6 +600,16 @@ return {
 			vim.keymap.set("n", "<leader>FN", function()
 				require("user.plugins.flutter.flutter_new").prompt_new_feature()
 			end, { desc = "Flutter: New feature from templates" })
+
+			require("user.plugins.flutter.dart_define_scan").setup_config_autotrust()
+
+			vim.keymap.set("n", "<leader>FD", function()
+				require("user.plugins.flutter.dart_define_scan").update_project_config()
+			end, { desc = "Flutter: Scan dart-define into .nvim.lua" })
+
+			vim.api.nvim_create_user_command("FlutterScanDartDefine", function()
+				require("user.plugins.flutter.dart_define_scan").update_project_config()
+			end, {})
 
 			vim.api.nvim_create_user_command("FlutterNew", function()
 				require("user.plugins.flutter.flutter_new").prompt_new_file()
