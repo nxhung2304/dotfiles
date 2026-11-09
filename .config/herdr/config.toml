@@ -107,6 +107,14 @@ command = "~/dotfiles/scripts/herdr-sessionizer"
 description = "sessionizer"
 
 [[keys.command]]
+key = "ctrl+\\"
+type = "popup"
+width = "80%"
+height = "70%"
+command = "~/dotfiles/scripts/herdr/floating-terminal"
+description = "floating terminal for quick tasks"
+
+[[keys.command]]
 key = "prefix+shift+l"
 type = "shell"
 command = "~/dotfiles/scripts/herdr-clear-pane"

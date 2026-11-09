@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+readonly TMUX_CONFIG="$SCRIPT_DIR/floating-terminal.tmux.conf"
+readonly TMUX_SOCKET_NAME="herdr-floating"
+readonly SESSION_HASH_LENGTH=6
+
+focused_pane_cwd() {
+    [[ -n ${HERDR_ACTIVE_PANE_ID:-} ]] || return 0
+
+    herdr pane get "$HERDR_ACTIVE_PANE_ID" 2>/dev/null \
+        | jq -r '.result.pane.cwd // empty' 2>/dev/null \
+        || true
+}
+
+project_root_of() {
+    local directory=$1
+
+    git -C "$directory" rev-parse --show-toplevel 2>/dev/null || echo "$directory"
+}
+
+session_name_for() {
+    local project_root=$1
+    local project_name=${project_root##*/}
+    local path_hash
+
+    path_hash=$(printf '%s' "$project_root" | shasum | cut -c1-"$SESSION_HASH_LENGTH")
+    echo "${project_name//[.:]/_}-$path_hash"
+}
+
+pane_cwd=$(focused_pane_cwd)
+if [[ -d $pane_cwd ]]; then
+    cd "$pane_cwd"
+fi
+
+session_name=$(session_name_for "$(project_root_of "$PWD")")
+
+exec tmux -L "$TMUX_SOCKET_NAME" -f "$TMUX_CONFIG" new-session -A -s "$session_name"
