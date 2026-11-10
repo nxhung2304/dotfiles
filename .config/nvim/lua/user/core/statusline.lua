@@ -247,10 +247,18 @@ end
 set_flutter_paused_highlight()
 vim.api.nvim_create_autocmd("ColorScheme", { callback = set_flutter_paused_highlight })
 
+local function reset_flutter_app_started(session)
+  if session.config.type ~= "dart" then
+    return
+  end
+
+  has_flutter_app_started = false
+  redraw_statusline_soon()
+end
+
 if dap_ok then
-  dap.listeners.before.event_initialized["statusline_flutter_state"] = function()
-    has_flutter_app_started = false
-    redraw_statusline_soon()
+  for _, event in ipairs({ "event_initialized", "event_terminated", "event_exited" }) do
+    dap.listeners.before[event]["statusline_flutter_state"] = reset_flutter_app_started
   end
   for _, event in ipairs({
     "event_terminated",
@@ -262,6 +270,7 @@ if dap_ok then
     "next",
     "stepIn",
     "stepOut",
+    "threads",
   }) do
     dap.listeners.after[event]["statusline_flutter_state"] = redraw_statusline_soon
   end
