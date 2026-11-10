@@ -52,7 +52,7 @@ return {
 				"pyright",
 				"sourcekit",
 				"tailwindcss",
-				"volar",
+				"vue_ls",
 				"vtsls",
 				"kotlin_lsp",
 			}
