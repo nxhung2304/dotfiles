@@ -26,6 +26,13 @@ local click_actions = {
 		vim.cmd("checkhealth vim.lsp")
 	end,
 	flutter_device = function()
+		local commands_ok, flutter_commands = pcall(require, "flutter-tools.commands")
+		if commands_ok and flutter_commands.is_running() then
+			vim.cmd("FlutterLogTab")
+
+			return
+		end
+
 		vim.cmd("FlutterSelectDevice")
 	end,
 }
@@ -212,6 +219,16 @@ local function current_flutter_run_state()
   return has_flutter_app_started and "running" or "building"
 end
 
+local function flutter_flavor_label(decorations)
+  local project_config = decorations and decorations.project_config
+  if type(project_config) ~= "table" then
+    return ""
+  end
+
+  local flavor_name = project_config.name or project_config.flavor
+  return flavor_name and (" · " .. flavor_name) or ""
+end
+
 function components.flutter_device()
   local decorations = vim.g.flutter_tools_decorations
   -- Prefer the last selected/running device (kept after the app quits).
@@ -223,7 +240,8 @@ function components.flutter_device()
   -- Strip the trailing "(mobile)"/"(desktop)"/"(web)" annotation flutter appends to the name
   local name = device.name:gsub(" %([^%(%)]-%)%s*$", "")
   local run_state = FLUTTER_RUN_STATES[current_flutter_run_state()]
-  local text = "  " .. run_state.icon .. " " .. flutter_device_icon(device.platform) .. name .. " "
+  local device_label = flutter_device_icon(device.platform) .. name .. flutter_flavor_label(decorations)
+  local text = "  " .. run_state.icon .. " " .. device_label .. " "
   return clickable("flutter_device", hi_pattern:format(run_state.highlight_group, text))
 end
 
