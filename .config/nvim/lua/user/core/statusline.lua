@@ -1,6 +1,16 @@
 local components = {}
 local hi_pattern = "%%#%s#%s%%*"
 
+local STATUSLINE_REDRAW_DELAY_MS = 200
+local FLUTTER_PAUSED_HIGHLIGHT_GROUP = "StatuslineFlutterPaused"
+local FLUTTER_PAUSED_COLOR = "#ff9e3b"
+local FLUTTER_RUN_STATES = {
+	idle = { icon = "○", highlight_group = "Comment" },
+	building = { icon = "\u{f252}", highlight_group = "DiagnosticWarn" },
+	running = { icon = "●", highlight_group = "DiagnosticOk" },
+	paused = { icon = "\u{f04c}", highlight_group = FLUTTER_PAUSED_HIGHLIGHT_GROUP },
+}
+
 function _G._statusline_component(name)
 	return components[name]()
 end
@@ -185,6 +195,23 @@ local function flutter_device_icon(platform)
   return " "
 end
 
+local dap_ok, dap = pcall(require, "dap")
+local has_flutter_app_started = false
+
+local function current_flutter_run_state()
+  local commands_ok, flutter_commands = pcall(require, "flutter-tools.commands")
+  if not commands_ok or not flutter_commands.is_running() then
+    return "idle"
+  end
+
+  local dap_session = dap_ok and dap.session() or nil
+  if dap_session and dap_session.stopped_thread_id then
+    return "paused"
+  end
+
+  return has_flutter_app_started and "running" or "building"
+end
+
 function components.flutter_device()
   local decorations = vim.g.flutter_tools_decorations
   -- Prefer the last selected/running device (kept after the app quits).
@@ -195,26 +222,56 @@ function components.flutter_device()
   end
   -- Strip the trailing "(mobile)"/"(desktop)"/"(web)" annotation flutter appends to the name
   local name = device.name:gsub(" %([^%(%)]-%)%s*$", "")
-  local is_app_running = require("flutter-tools.commands").is_running()
-  local highlight_group = is_app_running and "DiagnosticOk" or "Comment"
-  local text = "  " .. flutter_device_icon(device.platform) .. name .. " "
-  return clickable("flutter_device", hi_pattern:format(highlight_group, text))
+  local run_state = FLUTTER_RUN_STATES[current_flutter_run_state()]
+  local text = "  " .. run_state.icon .. " " .. flutter_device_icon(device.platform) .. name .. " "
+  return clickable("flutter_device", hi_pattern:format(run_state.highlight_group, text))
 end
 
 local function redraw_statusline_soon()
   vim.defer_fn(function()
     vim.cmd("redrawstatus")
-  end, 200)
+  end, STATUSLINE_REDRAW_DELAY_MS)
 end
 
 vim.api.nvim_create_autocmd("User", {
   pattern = "FlutterToolsAppStarted",
-  callback = redraw_statusline_soon,
+  callback = function()
+    has_flutter_app_started = true
+    redraw_statusline_soon()
+  end,
 })
 
-local dap_ok, dap = pcall(require, "dap")
+local function set_flutter_paused_highlight()
+  vim.api.nvim_set_hl(0, FLUTTER_PAUSED_HIGHLIGHT_GROUP, { fg = FLUTTER_PAUSED_COLOR })
+end
+set_flutter_paused_highlight()
+vim.api.nvim_create_autocmd("ColorScheme", { callback = set_flutter_paused_highlight })
+
+local function reset_flutter_app_started(session)
+  if session.config.type ~= "dart" then
+    return
+  end
+
+  has_flutter_app_started = false
+  redraw_statusline_soon()
+end
+
 if dap_ok then
-  for _, event in ipairs({ "event_terminated", "event_exited", "disconnect" }) do
+  for _, event in ipairs({ "event_initialized", "event_terminated", "event_exited" }) do
+    dap.listeners.before[event]["statusline_flutter_state"] = reset_flutter_app_started
+  end
+  for _, event in ipairs({
+    "event_terminated",
+    "event_exited",
+    "disconnect",
+    "event_stopped",
+    "event_continued",
+    "continue",
+    "next",
+    "stepIn",
+    "stepOut",
+    "threads",
+  }) do
     dap.listeners.after[event]["statusline_flutter_state"] = redraw_statusline_soon
   end
 end
