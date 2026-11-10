@@ -28,7 +28,7 @@ Personal Neovim config powered by [lazy.nvim](https://github.com/folke/lazy.nvim
 |---|---|---|
 | Ruby | `ruby_lsp` | `gem install ruby-lsp` (add `ruby-lsp-rails` to Gemfile for Rails support) |
 | TypeScript/JS | `ts_ls`, `vtsls` | `npm install -g typescript typescript-language-server` |
-| Vue | `volar` | `npm install -g @vue/language-server` |
+| Vue | `vue_ls` | `npm install -g @vue/language-server` |
 | ESLint / JSON / CSS | `eslint`, `jsonls`, `cssls` | `npm i -g vscode-langservers-extracted` |
 | Emmet | `emmet_ls` | `npm install -g emmet-ls` |
 | Tailwind | `tailwindcss` | `npm install -g @tailwindcss/language-server` |

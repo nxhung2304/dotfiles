@@ -58,14 +58,16 @@ vim.keymap.set("n", "<leader>yd", "<cmd>CopyCurrentDiagnostic<cr>", { desc = "Co
 
 -- Diagnostics
 keymap("n", "]e", function()
-	vim.diagnostic.goto_next({
+	vim.diagnostic.jump({
+		count = 1,
 		severity = vim.diagnostic.severity.ERROR,
 		float = { border = "rounded" },
 	})
 end)
 
 keymap("n", "[e", function()
-	vim.diagnostic.goto_prev({
+	vim.diagnostic.jump({
+		count = -1,
 		severity = vim.diagnostic.severity.ERROR,
 		float = { border = "rounded" },
 	})

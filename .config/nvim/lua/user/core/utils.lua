@@ -190,7 +190,7 @@ M.lsp_on_attach = function(client, bufnr)
 
 	local keymap = M.keymap
 
-	vim.api.nvim_buf_set_option(bufnr, "omnifunc", "v:lua.vim.lsp.omnifunc")
+	vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
 
 	local ok, symbol = pcall(require, "user.core.symbol")
 	if ok then symbol.attach(bufnr) end
