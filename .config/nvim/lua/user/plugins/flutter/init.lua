@@ -308,7 +308,7 @@ return {
 			-- connected device; fall back to a simulator/emulator if none is plugged in.
 			-- flutter-tools only tracks "current device" once a run session starts, so
 			-- we cache our own pick and (a) surface it via vim.g.flutter_preferred_device
-			-- for the statusline, (b) feed it into <leader>Fr below.
+			-- for the statusline, (b) feed it into <leader>Fs below.
 			local preferred_device = nil
 
 			local function is_virtual_device(device)
