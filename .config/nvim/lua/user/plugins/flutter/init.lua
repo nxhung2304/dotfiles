@@ -435,7 +435,7 @@ return {
 				)
 
 				local stopped = false
-				return function()
+				local function stop()
 					if stopped then
 						return
 					end
@@ -447,7 +447,15 @@ return {
 					-- Dismiss the persistent notification (timeout=false won't self-close)
 					vim.notify("", vim.log.levels.INFO, { id = id, timeout = 1 })
 				end
+
+				local function set_label(new_label)
+					label = new_label
+				end
+
+				return stop, set_label
 			end
+
+			require("user.plugins.flutter.progress_notify").setup(start_spinner)
 
 			dap.listeners.on_config["flutter_prepare_launch"] = function(config)
 				if config.type ~= "dart" or config.request ~= "launch" then
