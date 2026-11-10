@@ -456,23 +456,6 @@ return {
 				clear_flutter_log()
 				open_flutter_log_window(false)
 
-				-- Spin until the app is actually running: debugger_runner emits
-				-- FlutterToolsAppStarted on the DAP `app.started` event (i.e. once
-				-- Flutter reports the app is live), not merely once the process spawns.
-				local stop = start_spinner("Flutter running")
-				local once = vim.api.nvim_create_autocmd("User", {
-					pattern = "FlutterToolsAppStarted",
-					once = true,
-					callback = stop,
-				})
-				dap.listeners.before["event_flutter.appStarted"]["flutter_loading"] = stop
-				dap.listeners.before.event_terminated["flutter_loading"] = stop
-				dap.listeners.before.event_exited["flutter_loading"] = stop
-				vim.defer_fn(function()
-					pcall(vim.api.nvim_del_autocmd, once)
-					stop()
-				end, 120000)
-
 				local launch_config = vim.tbl_extend("keep", config, {
 					debugExternalPackageLibraries = false,
 					debugSdkLibraries = false,
@@ -619,6 +602,9 @@ return {
 				require("user.plugins.flutter.flutter_new").prompt_new_feature()
 			end, {})
 
+			vim.api.nvim_create_user_command("FlutterLogTab", function()
+				open_flutter_log_window(true)
+			end, {})
 			vim.api.nvim_create_user_command("FlutterSelectDevice", function()
 				flutter_with_loading("Loading devices", "FlutterDevices", confirm_switch_device)
 			end, {})
