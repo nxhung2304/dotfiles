@@ -560,10 +560,17 @@ return {
 				})
 			end
 
+			vim.api.nvim_create_autocmd("BufWritePost", {
+				pattern = "*.dart",
+				callback = function()
+					require("flutter-tools.commands").reload(true)
+				end,
+			})
+
 			-- Flutter commands (<leader>F)
-			vim.keymap.set("n", "<leader>Fr", run_with_debugger, { desc = "Flutter: Run (debug)" })
-			vim.keymap.set("n", "<leader>Fs", "<cmd>FlutterRestart<CR>", { desc = "Flutter: Hot Restart" })
-			vim.keymap.set("n", "<leader>FR", "<cmd>FlutterReload<CR>", { desc = "Flutter: Hot Reload" })
+			vim.keymap.set("n", "<leader>Fr", "<cmd>FlutterReload<CR>", { desc = "Flutter: Hot Reload" })
+			vim.keymap.set("n", "<leader>FR", "<cmd>FlutterRestart<CR>", { desc = "Flutter: Hot Restart" })
+			vim.keymap.set("n", "<leader>Fs", run_with_debugger, { desc = "Flutter: Start (debug)" })
 			vim.keymap.set("n", "<leader>Fq", "<cmd>FlutterQuit<CR>", { desc = "Flutter: Quit" })
 			vim.keymap.set("n", "<leader>Fl", function()
 				open_flutter_log_window(true)

@@ -133,9 +133,9 @@ go install golang.org/x/tools/cmd/goimports@latest
 
 | Key | Action |
 |---|---|
-| `<leader>Fr` | Run with debugger |
-| `<leader>Fs` | Hot Restart |
-| `<leader>FR` | Hot Reload |
+| `<leader>Fr` | Hot Reload (also runs automatically when a `.dart` file is saved) |
+| `<leader>FR` | Hot Restart |
+| `<leader>Fs` | Start with debugger |
 | `<leader>Fq` | Quit |
 | `<leader>Fl` | Toggle Log |
 | `<leader>Fd` | Devices |
@@ -172,7 +172,7 @@ go install golang.org/x/tools/cmd/goimports@latest
 
 ```
 1. <leader>Fd / <leader>Fe   — pick device or emulator
-2. <leader>Fr               — run the app with debugger
+2. <leader>Fs               — start the app with debugger
 3. <leader>db                — set breakpoints
 4. <leader>dc                — continue past a breakpoint
 5. <leader>do/di/dO          — step over / into / out
