@@ -17,7 +17,7 @@ Personal Neovim config powered by [lazy.nvim](https://github.com/folke/lazy.nvim
 
 ## Requirements
 
-- Neovim >= **0.11** (LuaJIT build)
+- Neovim >= **0.12** (LuaJIT build)
 - Git >= **2.19.0**
 - [Nerd Font](https://www.nerdfonts.com/)
 - herdr (for Claude Code integration)

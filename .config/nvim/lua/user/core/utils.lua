@@ -209,16 +209,7 @@ M.lsp_on_attach = function(client, bufnr)
 	end
 
 	if client.server_capabilities.codeLensProvider then
-		if vim.fn.has("nvim-0.12") == 1 then
-			vim.lsp.codelens.enable(true, { bufnr = bufnr })
-		else
-			vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-				buffer = bufnr,
-				callback = function()
-					vim.lsp.codelens.refresh()
-				end,
-			})
-		end
+		vim.lsp.codelens.enable(true, { bufnr = bufnr })
 	end
 
 	if client.server_capabilities.documentHighlightProvider then
