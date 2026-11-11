@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Requirements
 
-- Neovim >= 0.10 (LuaJIT build)
+- Neovim >= 0.12 (LuaJIT build)
 - Nerd Font (for icons)
 - External tools for LSP servers — see `README.md` for per-language install commands
 - Formatters: `rubocop`, `swiftformat`, `prettier`, `stylua`, `kotlin-language-server`
