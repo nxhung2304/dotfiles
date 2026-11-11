@@ -1,3 +1,5 @@
+local INDENT_DISABLED_FILETYPES = { "dart" }
+
 return {
 	{
 		"nvim-treesitter/nvim-treesitter-context",
@@ -68,11 +70,22 @@ return {
 				"yaml",
 			}
 
-			require("nvim-treesitter").setup({
-        ensure_installed = parsers,
-				indent = { enable = true, disable = { "dart" } },
-			})
 			require("nvim-treesitter").install(parsers)
+
+			local function enable_treesitter_indent(bufnr, filetype)
+				local lang = vim.treesitter.language.get_lang(filetype)
+				local has_parser = lang ~= nil and vim.tbl_contains(parsers, lang)
+				if has_parser and not vim.tbl_contains(INDENT_DISABLED_FILETYPES, filetype) then
+					vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+				end
+			end
+			vim.api.nvim_create_autocmd("FileType", {
+				group = vim.api.nvim_create_augroup("TreesitterIndent", { clear = true }),
+				callback = function(args)
+					enable_treesitter_indent(args.buf, args.match)
+				end,
+			})
+			enable_treesitter_indent(vim.api.nvim_get_current_buf(), vim.bo.filetype)
 
 			require("nvim-treesitter-textobjects").setup({
 				select = {

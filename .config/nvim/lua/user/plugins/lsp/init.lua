@@ -5,7 +5,7 @@ return {
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
-			"williamboman/mason.nvim",
+			"mason-org/mason.nvim",
 		},
 		config = function()
 			-- diagnostics
@@ -79,7 +79,7 @@ return {
 		end,
 	},
 	{
-		"williamboman/mason.nvim",
+		"mason-org/mason.nvim",
 		opts = {
 			ui = {
 				border = "rounded",
@@ -92,7 +92,7 @@ return {
 		-- It installs any missing tool below on startup (run_on_start).
 		-- Names must be Mason registry package names (dashes, not lspconfig ids).
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
-		dependencies = { "williamboman/mason.nvim" },
+		dependencies = { "mason-org/mason.nvim" },
 		opts = {
 			ensure_installed = {
 				-- LSP Servers
@@ -133,5 +133,4 @@ return {
 			auto_update = false,
 		},
 	},
-	{ "williamboman/mason-lspconfig.nvim", event = { "BufReadPre", "BufNewFile" } },
 }

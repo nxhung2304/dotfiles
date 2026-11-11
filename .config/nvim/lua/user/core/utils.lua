@@ -209,16 +209,7 @@ M.lsp_on_attach = function(client, bufnr)
 	end
 
 	if client.server_capabilities.codeLensProvider then
-		if vim.fn.has("nvim-0.12") == 1 then
-			vim.lsp.codelens.enable(true, { bufnr = bufnr })
-		else
-			vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
-				buffer = bufnr,
-				callback = function()
-					vim.lsp.codelens.refresh()
-				end,
-			})
-		end
+		vim.lsp.codelens.enable(true, { bufnr = bufnr })
 	end
 
 	if client.server_capabilities.documentHighlightProvider then
@@ -256,7 +247,7 @@ function M.attach_dartls_to_all_buffers()
 	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
 		if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_is_valid(buf) then
 			local name = vim.api.nvim_buf_get_name(buf)
-			local filetype = vim.api.nvim_buf_get_option(buf, "filetype")
+			local filetype = vim.bo[buf].filetype
 
 			-- Check if it's a dart file
 			if filetype == "dart" or name:match("%.dart$") then

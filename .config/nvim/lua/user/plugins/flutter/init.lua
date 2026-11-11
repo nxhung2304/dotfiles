@@ -11,7 +11,6 @@ return {
 		lazy = false,
 		dependencies = {
 			"nvim-lua/plenary.nvim",
-			"stevearc/dressing.nvim",
 			"mfussenegger/nvim-dap",
 			{ "nxhung2304/nvim-dap-virtual-text", branch = "fix/stacktrace-listener-args" },
 			"igorlfs/nvim-dap-view",

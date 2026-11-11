@@ -41,7 +41,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 - **Custom aliases**: Docker commands, navigation shortcuts, editor shortcuts
 
 ### Development Environment Dependencies
-- **Required**: nvim 0.11+, Ghostty
+- **Required**: nvim 0.12+, Ghostty
 - **Package managers**: mise (runtime version management), brew (macOS)
 - **Runtime support**: Ruby, Node.js, Python, Java, Gradle via mise
 - **Tools**: direnv for environment management
