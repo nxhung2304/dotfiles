@@ -33,8 +33,9 @@ Set `model` explicitly on every `Agent` call. Never leave it to inherit from the
 | Plan (draft or revise a spec) | `opus` | A wrong plan makes every later phase wrong. The user already saw a weaker model write a poor spec. |
 | Prepare (worktree + branch) | `haiku` | Mechanical. `implement-prepare` already pins haiku. |
 | Risk check (`risk-issue`) | `opus` | Read-only. `risk-issue` already pins opus. |
-| Code (`implement-code` + `quality-runner`) | `sonnet` | Follows an approved checklist. |
-| Review (`review-issue`) | `opus` | Read-only, one pass per round. `review-issue` already pins opus. |
+| Code (`implement-code`) | `sonnet` | Follows an approved checklist. |
+| Quality (`quality-runner` agent) | `sonnet` | Runs checks and fixes source errors. |
+| Review (`review-issue`) | orchestrator | Runs in the orchestrator itself, because it launches its own agents. |
 | Fix MUST items | `sonnet` | Targeted edits from a concrete finding. |
 | Finalize (`implement-finalize`) | `sonnet` | Writes the PR description, which the user reviews closely. Not a haiku job. |
 
@@ -48,7 +49,7 @@ Cost rules:
 - Review sees only the diff boundary `review-issue` computes. Do not widen it.
 - Stop the review loop the moment a round has no MUST. Do not run a round "to be sure".
 - Give each phase agent only the profile traits relevant to it (category `workflow` and `review-habits` for review and fix, `communication` for finalize and plan), not the whole profile.
-- The orchestrator itself only dispatches, reads small structured results and updates the state file. It does not read diffs or specs beyond what STEP 0 needs.
+- The orchestrator itself only dispatches, reads small structured results and updates the state file. It does not read diffs or specs beyond what STEP 0 and the Review phase need. Run one Review at a time; other tasks keep running their own phases meanwhile.
 
 ## STEP 0: Load context
 
@@ -70,6 +71,8 @@ All phases of one task work in the same worktree. The Prepare phase creates it; 
 
 Every phase agent gets: the task's spec filename, the worktree path (after Prepare), the relevant approved profile rules verbatim as "decide the way the user would", and the hard limits. Every phase returns only a small structured result and no summary prose.
 
+Phase agents have no `Agent` tool, so they cannot launch agents. Anything that needs one runs from the orchestrator: the Quality phase and the Review phase. When a skill run inside a phase agent asks for a subagent (e.g. `rule-lookup`, `code-reviewer` in `implement-code`), the phase agent reads the rules files directly instead and says so in its result.
+
 **Plan** (`opus`) — only for specs that need it, see "Plan phase".
 
 **Prepare** (`haiku`):
@@ -79,11 +82,13 @@ Every phase agent gets: the task's spec filename, the worktree path (after Prepa
 
 **Risk** (`opus`) — skip when the Plan phase already ran `risk-issue` on this spec in this run: invoke `risk-issue` with the spec path (so it never asks for one) and write its report to `~/.ai-metrics/orchestrator/<run-id>-<spec>-risk.md`. Return `{ missing, possible, risk_report_path }`.
 
-**Code** (`sonnet`): give it the risk report path, read it first, and guard against a listed risk only when that stays within the spec's checklist; never widen the scope for a risk. Then, inside the worktree, invoke `implement-code` with the spec path, then the `quality-runner` agent. Do not use `implement-issue`: it is user-only (`disable-model-invocation`), and its prepare/finalize steps would redo this skill's Prepare and Finalize. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
+**Code** (`sonnet`): give it the risk report path, read it first, and guard against a listed risk only when that stays within the spec's checklist; never widen the scope for a risk. Then, inside the worktree, invoke `implement-code` with the spec path. Do not use `implement-issue`: it is user-only (`disable-model-invocation`), and its prepare/finalize steps would redo this skill's Prepare and Finalize. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
 
-**Stage** (after Code and after every Fix, before Review): `review-issue` only sees committed or staged changes, so uncommitted Code work would look like an empty diff. In the worktree run `git add -A`, then `git reset -q -- <path>` for every spec path copied in by Prepare.
+**Quality** (`sonnet`, launched by the orchestrator after Code): run the `quality-runner` agent on the worktree. Return `{ tests_passed, files_fixed, warnings }`.
 
-**Review** (`opus`): invoke `review-issue` on the branch. Return `{ must_open, should_open, comment_log_path }`.
+**Stage** (after Quality and after every Fix, before Review): `review-issue` only sees committed or staged changes, so uncommitted Code work would look like an empty diff. In the worktree run `git add -A`, then `git reset -q -- <path>` for every spec path copied in by Prepare.
+
+**Review** (orchestrator): invoke `review-issue` yourself with the Skill tool, on the task's branch, running its git commands inside the worktree. Its STEP 5 chat report is internal: do not send it to the user. Return `{ must_open, should_open, comment_log_path }`.
 
 **Fix** (`sonnet`, escalating): fix only the MUST items from `comment.log` (no SHOULD or NIT), then Stage, then return to Review. Rounds are capped by `max-review-rounds`; stop earlier when a round has no MUST.
 
