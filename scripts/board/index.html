@@ -15,13 +15,13 @@
     --text: #1b1b19;
     --text-muted: #5f5e57;
     --text-faint: #77766e;
-    --accent: #2457c5;
-    --accent-surface: #e8eefc;
+    --accent: #3552a8;
+    --accent-surface: #eaeefa;
     --needs-you: #c2410c;
     --needs-you-surface: #fff3ea;
     --review: #6d3fc4;
-    --next: #15803d;
-    --next-surface: #eaf6ee;
+    --next: #3d7a54;
+    --next-surface: #f1f3ee;
     --danger: #b42318;
     --danger-surface: #fdecea;
     --warning-surface: #fff4d6;
@@ -29,6 +29,8 @@
     --related: #e8f0ff;
     --merged: #6d3fc4;
     --on-state: #ffffff;
+    --ink: #1b1b19;
+    --on-ink: #ffffff;
     --shadow: 0 1px 2px rgba(20, 20, 18, 0.06);
     --font-body: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -51,20 +53,22 @@
       --text: #ebeae5;
       --text-muted: #a3a198;
       --text-faint: #85837b;
-      --accent: #7aa7f7;
-      --accent-surface: #1b2842;
+      --accent: #8fa8ee;
+      --accent-surface: #1b2338;
       --needs-you: #ff9a5c;
       --needs-you-surface: #2b1b10;
       --review: #b79af0;
-      --next: #5fcf8d;
-      --next-surface: #13291c;
+      --next: #7fb594;
+      --next-surface: #1d211c;
       --danger: #f08379;
       --danger-surface: #34181a;
       --warning-surface: #3a2f12;
       --warning-text: #f2cf74;
       --related: #1f2d47;
       --merged: #b79af0;
-      --on-state: #0f1f16;
+      --on-state: #1a1208;
+      --ink: #ebeae5;
+      --on-ink: #141413;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     }
   }
@@ -123,8 +127,6 @@
   .summary .stat.needs-you { --dot: var(--needs-you); }
   .summary .stat.needs-you.has-items strong { color: var(--needs-you); }
   .summary .stat.in-progress { --dot: var(--accent); }
-  .summary .stat.review { --dot: var(--review); }
-  .summary .stat.ready { --dot: var(--next); }
 
   .side-right:empty { display: none; }
   .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
@@ -157,9 +159,7 @@
   section { margin-bottom: var(--space-6); --state: transparent; }
   section.needs-you { --state: var(--needs-you); }
   section.in-progress { --state: var(--accent); }
-  section.review { --state: var(--review); }
-  section.ready { --state: var(--next); }
-  section.blocked, section.done { --state: var(--border-strong); }
+  section.review, section.ready, section.blocked, section.done { --state: var(--border-strong); }
   section h2 {
     display: flex;
     align-items: center;
@@ -190,7 +190,7 @@
   .row.clickable { cursor: pointer; }
   .row.clickable:hover { background: var(--surface-hover); }
   .row.related { background: var(--related); }
-  .row.is-next { background: var(--next-surface); }
+  .row.is-next { background: var(--surface-hover); box-shadow: inset 3px 0 0 var(--accent); }
   section.needs-you .row { background: var(--needs-you-surface); }
   .row > .actions, .row > button { align-self: center; }
   section.blocked .row .title, section.done .row .title { color: var(--text-muted); font-weight: 400; }
@@ -203,7 +203,7 @@
   .diff-stats { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
   .diff-stats .insertions { color: var(--next); }
   .diff-stats .deletions { color: var(--danger); }
-  .diff-stats .dirty { color: var(--warning-text); }
+  .diff-stats .dirty { color: var(--text); font-weight: 600; }
   .preview {
     margin-top: var(--space-2);
     padding: var(--space-2) 10px;
@@ -236,22 +236,19 @@
   .ref .state { font-size: 11px; }
   .ref .signal { font-size: 11px; }
   .ref .signal.bad { color: var(--danger); }
-  .ref .signal.good { color: var(--next); }
-  .ref .signal.waiting { color: var(--warning-text); }
+  .ref .signal.good, .ref .signal.waiting { color: var(--text-muted); }
   .ref.issue svg { color: var(--text-muted); }
-  .ref.pr-open svg, .ref.pr-open .state { color: var(--next); }
-  .ref.pr-draft svg, .ref.pr-draft .state { color: var(--text-faint); }
-  .ref.pr-merged svg, .ref.pr-merged .state { color: var(--merged); }
+  .ref.pr-open svg, .ref.pr-open .state, .ref.pr-draft svg, .ref.pr-draft .state, .ref.pr-merged svg, .ref.pr-merged .state { color: var(--text-faint); }
   .ref.pr-closed svg, .ref.pr-closed .state { color: var(--danger); }
   .meta a { color: var(--accent); text-decoration: none; }
   .meta a:hover { text-decoration: underline; }
 
   .tag { display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 18px; }
-  .tag.next { background: var(--next); color: var(--on-state); }
-  .tag.auto { background: var(--accent-surface); color: var(--accent); }
-  .tag.p1 { background: var(--danger-surface); color: var(--danger); }
+  .tag.next { background: var(--accent-surface); color: var(--accent); }
+  .tag.auto { background: var(--surface-2); color: var(--text-muted); }
+  .tag.p1 { padding: 0; background: none; color: var(--danger); }
   .tag.p3 { background: var(--surface-2); color: var(--text-muted); }
-  .tag.unapproved { background: var(--warning-surface); color: var(--warning-text); font-weight: 500; }
+  .tag.unapproved { background: var(--surface-2); color: var(--text-muted); font-weight: 500; }
 
   button {
     font: inherit;
@@ -267,8 +264,8 @@
     white-space: nowrap;
   }
   button:hover { background: var(--surface-hover); border-color: var(--text-muted); }
-  button.primary { background: var(--next); border-color: var(--next); color: var(--on-state); }
-  button.primary:hover { filter: brightness(1.08); }
+  button.primary { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+  button.primary:hover { filter: brightness(1.2); background: var(--ink); }
   section.needs-you button { background: var(--needs-you); border-color: var(--needs-you); color: var(--on-state); }
   button:disabled { opacity: 0.5; cursor: progress; }
   .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 260px; }
@@ -281,6 +278,31 @@
     border-radius: var(--radius-lg);
     color: var(--text-muted);
     font-size: 13px;
+  }
+
+  .focus {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-4);
+    align-items: center;
+    margin-bottom: var(--space-6);
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--tone-surface, var(--surface));
+    box-shadow: var(--shadow), inset 4px 0 0 var(--tone, var(--border-strong));
+  }
+  .focus.needs-you { --tone: var(--needs-you); --tone-surface: var(--needs-you-surface); }
+  .focus.review, .focus.working, .focus.next { --tone: var(--accent); }
+  .focus-kicker { font-size: 11px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tone, var(--text-muted)); }
+  .focus-headline { margin-top: 2px; font-size: 18px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .focus-detail { margin-top: 4px; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+  .focus-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+  .focus button { min-height: 36px; padding: 0 var(--space-4); font-size: 13px; }
+  .focus.needs-you button.primary { background: var(--needs-you); border-color: var(--needs-you); }
+  @media (max-width: 560px) {
+    .focus { grid-template-columns: minmax(0, 1fr); padding: var(--space-4); }
+    .focus-actions { justify-content: flex-start; }
   }
   @media (max-width: 560px) {
     .row { grid-template-columns: 40px minmax(0, 1fr); padding-right: var(--space-3); }
@@ -304,6 +326,7 @@
   </aside>
   <div class="page-main">
     <div id="banner"></div>
+    <div id="focus"></div>
     <main id="board"></main>
   </div>
   <aside class="side side-right" id="side-notes"></aside>
@@ -849,6 +872,64 @@
 
   const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
 
+  function describeNeedsYouReason(task) {
+    if (task.autoRun?.problem) return task.autoRun.problem;
+    if (task.previewLines.length > 0) return task.previewLines[0];
+    return "Claude đang chờ anh trả lời";
+  }
+
+  function buildFocusCard(tone, kicker, headline, detail, actions = []) {
+    const card = createElement("div", `focus ${tone}`);
+    const text = createElement("div", "focus-text");
+    text.append(createElement("div", "focus-kicker", kicker), createElement("div", "focus-headline", headline));
+    if (detail) text.append(createElement("div", "focus-detail", detail));
+    card.append(text);
+    if (actions.length > 0) {
+      const actionGroup = createElement("div", "focus-actions");
+      actionGroup.append(...actions);
+      card.append(actionGroup);
+    }
+    return card;
+  }
+
+  function buildFocus() {
+    const needsYou = tasksIn("needsYou");
+    if (needsYou.length > 0) {
+      const task = needsYou[0];
+      const others = needsYou.length > 1 ? ` · còn ${needsYou.length - 1} task khác cũng đang chờ anh` : "";
+      return buildFocusCard("needs-you", "Làm ngay", shortName(task.id), `${describeNeedsYouReason(task)}${others}`, [
+        buildButton("Mở tab để trả lời", "primary", () => focusTask(task)),
+      ]);
+    }
+    const reviewing = tasksIn("review").filter((task) => task.pullRequest);
+    if (reviewing.length > 0) {
+      const task = reviewing[0];
+      const { pullRequest } = task;
+      const signals = [CHECK_SIGNALS[pullRequest.checks], REVIEW_SIGNALS[pullRequest.reviewDecision]].filter(Boolean).map((signal) => signal.label);
+      const others = reviewing.length > 1 ? ` · còn ${reviewing.length - 1} PR khác` : "";
+      return buildFocusCard("review", "Làm tiếp", `Review PR #${pullRequest.number}: ${shortName(task.id)}`, `${signals.join(" · ") || "đang chờ review"}${others}`, [
+        buildButton("Mở PR", "primary", () => window.open(pullRequest.url, "_blank", "noopener")),
+      ]);
+    }
+    const working = tasksIn("inProgress");
+    const next = tasksIn("ready")[0];
+    if (working.length > 0) {
+      const canStartMore = next && working.length < WORK_IN_PROGRESS_LIMIT;
+      const actions = canStartMore ? [buildAction(next, true)] : [];
+      const suggestion = canStartMore ? `Có thể bắt đầu thêm: ${shortName(next.id)}` : "";
+      return buildFocusCard("working", "Chưa cần anh", `Claude đang làm ${working.length} task`, [working.map((task) => shortName(task.id)).join(", "), suggestion].filter(Boolean).join(" · "), actions);
+    }
+    if (next) {
+      const reason = next.isApproved ? "Spec đã duyệt, bắt đầu được ngay" : "Spec chưa duyệt, sẽ chạy review spec trước";
+      return buildFocusCard("next", "Tiếp theo", shortName(next.id), reason, [buildAction(next, true)]);
+    }
+    return buildFocusCard("idle", "Xong việc", "Không còn việc nào cần làm", "Không có task sẵn sàng, đang chạy hay chờ review.");
+  }
+
+  function renderFocus() {
+    document.getElementById("focus").replaceChildren(buildFocus());
+  }
+
   function renderSideNotes() {
     const sideNotes = document.getElementById("side-notes");
     sideNotes.replaceChildren();
@@ -864,6 +945,7 @@
     renderTabs();
     renderSummary();
     renderSideNotes();
+    renderFocus();
     document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
   }
 
