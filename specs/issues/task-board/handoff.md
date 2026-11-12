@@ -10,9 +10,10 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 
 ## State (2026-11-12)
 - Branch `claude/dazzling-ramanujan-id70x6` in `nxhung2304/dotfiles`, pushed, no PR yet.
-- Built and tested in a cloud session without herdr: herdr and `gh` were replaced by stub scripts. Nothing has run against the real herdr yet.
+- Built in a cloud session with stub herdr and `gh`. On 2026-11-12 it was run against the real herdr and `gh` on the user's machine (mobile repo); results below.
+- Rebased onto `master` (adds `vibe-issue`). Local commits only, not pushed.
 - Code: `scripts/board/` (Node 22, stdlib only, no build). Start: `scripts/board/board` from a repo root inside a herdr pane → `http://127.0.0.1:4777`.
-- Tests: `bash tests/test-board.sh` (20 node tests, all pass).
+- Tests: `bash tests/test-board.sh` (26 node tests, all pass).
 
 ## Files
 | File | Does |
@@ -23,20 +24,22 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 | `columns.js` | Derives the column of each task from spec + worktrees + herdr agents + PRs; ready/blocked; unlinked worktrees; issues without spec |
 | `live-state.js` | `git worktree list`, `herdr pane/agent list` (3 s cache), `gh pr list` and `gh issue list` (60 s cache) |
 | `worktree-details.js` | Diff size and uncommitted files per worktree, last lines of the Claude pane (`herdr pane read`) |
-| `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
+| `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
 | `index.html` | Single page, 3 tabs: Đang chạy / Backlog / Đã xong |
 | `migrate-specs.js` | Normalizes `Depends on` and adds `Priority` in spec files; dry run unless `--write` |
 
-## Verify first on the real machine
-1. Run the board in the mobile repo from a herdr pane. Expected: tasks in the right tabs, Issue/PR links, merged work under Đã xong.
-2. Press "Bắt đầu" on a ready task. Expected: new `[WT] feature-…` workspace, Claude receives `/implement-issue <spec> — Branch … is already checked out …` (or `/review-specs #n`, or the "read the issue folder" prompt for folder docs).
-3. Check that Claude really skips implement-prepare's checkout/branch steps because of that note. Unverified.
-4. When Claude asks something, the row moves to "Cần anh" and shows the question in the grey preview box. The chrome filter in `worktree-details.js` (`TERMINAL_CHROME_PATTERN`) was written against guessed pane text. Unverified, most likely to need tuning.
-5. "Mở tab" jumps to the right pane. "Dọn worktree" on a done task removes the worktree and keeps the branch.
+## Verify on the real machine (run 2026-11-12)
+1. Done. Tasks, tabs, Issue/PR links and merged work under Đã xong are right. Fixed: branches without `#` (`feature/hung-16-…`) were not matched, so task 012 showed as ready (`columns.js`).
+2. Done. A new `[WT]` workspace opens and Claude receives the prompt. Fixed: `herdr agent start claude` failed with `agent_name_taken` when another pane already had that name, so the second workspace never got Claude (`scripts/herdr/worktree-workspace` now names agents `claude-<pane>`).
+3. Not verified. `implement-prepare` creates its own worktree and stops when the branch or path exists, so the old "skip checkout" note was unlikely to work. Spec-file prompt changed to run `implement-code`, `quality-runner`, `implement-finalize` directly and never `implement-prepare`. No approved spec-file task was ready, so it has not run with real Claude. A throwaway approved spec `999-board-check` (untracked, mobile repo `specs/issues/`) exists for this check; delete it after.
+4. Done with a real AskUserQuestion dialog: row moves to "Cần anh". Fixed: preview now cuts the input box and footer, drops dialog hints and shows 6 lines when blocked (`worktree-details.js`).
+5. "Mở tab" works. "Dọn worktree" refuses the main checkout (409) as designed. Actual removal not tried: no done task has its own worktree.
+Also fixed: "Worktree chưa gắn task" lists only branches with a real issue number.
 
 ## Open decisions
 - Run `node ~/dotfiles/scripts/board/migrate-specs.js <mobile repo> --write` on a feature branch of the mobile repo? Dry run is clean except `timesheet-api-permission-check` (free-text dependency, left for a hand edit). Waiting for the user.
 - Open a PR for the dotfiles branch? Not asked yet.
+- Auto-run rows are not tracked: the `[AUTO]` pane runs at the repo root, so the board cannot map it to a task or show "Cần anh" for it until `vibe-issue` creates the worktree. Reading `~/.ai-metrics/orchestrator/<run-id>.json` would fix it (file shape unchecked, no run yet).
 
 ## Not done on purpose
 - Web chat, in-board diff viewer and comments, auto-commit/auto-PR, auto-start of dependents, `story.md` items on the board. Reasons in `investigate.md`.
