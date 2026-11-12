@@ -1,4 +1,5 @@
 const http = require("node:http");
+const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadSpecs } = require("./specs");
@@ -17,6 +18,17 @@ const repoRoot = process.argv[2] ?? process.cwd();
 const port = Number.parseInt(process.env.BOARD_PORT ?? "", 10) || DEFAULT_PORT;
 const readLiveState = createLiveStateReader(repoRoot);
 const startingTaskIds = new Set();
+
+function readMainRepoName() {
+  try {
+    const gitCommonDir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repoRoot, encoding: "utf8" }).trim();
+    return path.basename(path.dirname(gitCommonDir));
+  } catch {
+    return path.basename(repoRoot);
+  }
+}
+
+const mainRepoName = readMainRepoName();
 const githubWebUrlPromise = readGithubWebUrl(repoRoot);
 
 function loadSpecsOnlyInWorktrees(worktrees, mainSpecIds) {
@@ -144,7 +156,7 @@ async function routeRequest(request, response) {
   if (request.method === "GET" && pathname === "/api/board") {
     const { tasks, issuesWithoutSpec, unlinkedWorktrees, warnings } = await readBoardState();
     const githubWebUrl = await githubWebUrlPromise;
-    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, issuesWithoutSpec, unlinkedWorktrees, warnings });
+    sendJson(response, 200, { repoName: mainRepoName, githubWebUrl, tasks, issuesWithoutSpec, unlinkedWorktrees, warnings });
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];

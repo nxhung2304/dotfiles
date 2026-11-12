@@ -60,14 +60,13 @@
     color: var(--text);
     font: 14px/1.45 var(--font-body);
   }
-  .page { max-width: 880px; margin: 0 auto; padding: var(--space-6) var(--space-4) 64px; }
-  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
-  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
-  header .updated { color: var(--text-faint); font-size: 12px; font-family: var(--font-mono); }
-  .summary { margin: var(--space-1) 0 var(--space-4); color: var(--text-muted); font-size: 13px; }
-  .summary strong { color: var(--text); font-weight: 600; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); max-width: 880px; margin: 0 auto; padding: var(--space-6) var(--space-4) 64px; }
+  .side h1 { margin: 0 0 var(--space-3); font-size: 16px; font-weight: 600; word-break: break-word; }
+  .summary { display: flex; flex-wrap: wrap; gap: 2px var(--space-3); margin-top: var(--space-3); color: var(--text-muted); font-size: 13px; }
+  .summary .stat { display: flex; gap: var(--space-2); justify-content: space-between; }
+  .summary strong { color: var(--text); font-weight: 600; font-family: var(--font-mono); }
   .summary .needs-you strong { color: var(--needs-you); }
-  .tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
+  .tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--border); }
   .tabs button {
     border: none;
     border-bottom: 2px solid transparent;
@@ -82,6 +81,20 @@
   .tabs button.active { color: var(--text); font-weight: 600; border-bottom-color: var(--text); }
   .tabs .count { margin-left: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
   .tabs .count.needs-you { color: var(--needs-you); font-weight: 600; }
+  .side-right:empty { display: none; }
+  .side-right .row { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+  .side-right .row > .number:empty { display: none; }
+  .side-right .row > :last-child:not(:first-child) { justify-self: start; }
+  .side-note { color: var(--text-faint); font-size: 12px; }
+  @media (min-width: 1200px) {
+    .layout { max-width: none; grid-template-columns: 200px minmax(0, 840px) 300px; gap: 32px; justify-content: center; }
+    .side { position: sticky; top: var(--space-6); align-self: start; }
+    .tabs { flex-direction: column; border-bottom: none; }
+    .tabs button { display: flex; justify-content: space-between; text-align: left; border-bottom: none; border-left: 2px solid transparent; margin-bottom: 0; padding: 6px 10px; }
+    .tabs button.active { border-left-color: var(--text); }
+    .tabs .count { margin-left: auto; }
+    .summary { flex-direction: column; padding-left: 12px; }
+  }
   #banner {
     margin-bottom: var(--space-4);
     padding: var(--space-2) var(--space-3);
@@ -207,15 +220,17 @@
 </style>
 </head>
 <body>
-<div class="page">
-  <header>
+<div class="layout">
+  <aside class="side side-left">
     <h1 id="repo-name">Task Board</h1>
-    <span class="updated" id="updated-at"></span>
-  </header>
-  <div class="summary" id="summary"></div>
-  <nav class="tabs" id="tabs"></nav>
-  <div id="banner"></div>
-  <main id="board"></main>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="summary" id="summary"></div>
+  </aside>
+  <div class="page-main">
+    <div id="banner"></div>
+    <main id="board"></main>
+  </div>
+  <aside class="side side-right" id="side-notes"></aside>
 </div>
 <script>
   const BOARD_REFRESH_MS = 3000;
@@ -683,11 +698,10 @@
   function renderSummary() {
     const summary = document.getElementById("summary");
     summary.replaceChildren();
-    SUMMARY_PARTS.forEach((part, index) => {
-      if (index > 0) summary.append(" · ");
-      const span = createElement("span", part.className ?? "");
-      span.append(createElement("strong", "", String(tasksIn(part.key).length)), ` ${part.label}`);
-      summary.append(span);
+    SUMMARY_PARTS.forEach((part) => {
+      const stat = createElement("span", part.className ? `stat ${part.className}` : "stat");
+      stat.append(createElement("span", "", part.label), createElement("strong", "", String(tasksIn(part.key).length)));
+      summary.append(stat);
     });
   }
 
@@ -705,7 +719,6 @@
     const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
     if (!hasActiveTasks) board.append(buildIdleHint());
     appendTaskSections(board, ["needsYou", "inProgress", "review"]);
-    if (unlinkedWorktrees.length > 0) board.append(buildUnlinkedWorktreesSection());
     if (tasksIn("ready").length > 0) {
       board.append(buildSection(findSection("ready"), {
         limit: READY_PREVIEW_COUNT,
@@ -716,7 +729,6 @@
 
   function buildBacklogTab(board) {
     appendTaskSections(board, ["ready", "todo"]);
-    if (issuesWithoutSpec.length > 0) board.append(buildIssuesWithoutSpecSection());
     if (board.childElementCount === 0) board.append(createElement("div", "empty-hint", "Backlog trống."));
   }
 
@@ -727,9 +739,9 @@
 
   function countTab(tabKey) {
     if (tabKey === "running") {
-      return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0) + unlinkedWorktrees.length;
+      return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0);
     }
-    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length;
+    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length;
     return tasksIn("done").length;
   }
 
@@ -747,12 +759,21 @@
 
   const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
 
+  function renderSideNotes() {
+    const sideNotes = document.getElementById("side-notes");
+    sideNotes.replaceChildren();
+    if (unlinkedWorktrees.length > 0) sideNotes.append(buildUnlinkedWorktreesSection());
+    if (issuesWithoutSpec.length > 0) sideNotes.append(buildIssuesWithoutSpecSection());
+    if (sideNotes.childElementCount === 0) sideNotes.append(createElement("div", "side-note", "Không có worktree hay issue GitHub nào cần để ý."));
+  }
+
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
     TAB_BUILDERS[selectedTab](board);
     renderTabs();
     renderSummary();
+    renderSideNotes();
     document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
   }
 
@@ -763,7 +784,6 @@
       if (!response.ok) throw new Error(body.error);
       document.getElementById("repo-name").textContent = body.repoName;
       document.title = `Board · ${body.repoName}`;
-      document.getElementById("updated-at").textContent = new Date().toLocaleTimeString();
       const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.unlinkedWorktrees, body.warnings, actionMessage]);
       if (renderedJson === lastRenderedJson) return;
       lastRenderedJson = renderedJson;

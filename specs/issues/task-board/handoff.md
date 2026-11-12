@@ -26,7 +26,7 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 | `live-state.js` | `git worktree list`, `herdr pane/agent list` (3 s cache), `gh pr list` and `gh issue list` (60 s cache) |
 | `worktree-details.js` | Diff size and uncommitted files per worktree, last lines of the Claude pane (`herdr pane read`) |
 | `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only; for an unapproved spec the row has a "tự duyệt spec" checkbox that adds `auto-approve-spec=true`, off by default), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
-| `index.html` | Single page, 3 tabs: Đang chạy / Backlog / Đã xong |
+| `index.html` | Single page. Left sidebar: project name (main repo, not the worktree folder), the 3 tabs Đang chạy / Backlog / Đã xong and a status count list. Right sidebar: unlinked worktrees and GitHub issues without spec. Below 1200px it collapses to one column |
 | `migrate-specs.js` | Normalizes `Depends on` and adds `Priority` in spec files; dry run unless `--write` |
 
 ## Verify on the real machine (run 2026-11-12)
