@@ -13,11 +13,16 @@ const AGENT_STATUS_RANK = { blocked: 0, working: 1, done: 2, idle: 3 };
 const PULL_REQUEST_STATE_RANK = { OPEN: 0, MERGED: 1 };
 const LOWEST_RANK = 9;
 
+function findIssueNumberInBranch(branch) {
+  const issueMatch = branch?.match(/(?:\/[A-Za-z]+-#?|#)(\d+)(?:-|$)/);
+  return issueMatch ? Number(issueMatch[1]) : null;
+}
+
 function findSpecIdForBranch(branch, specs) {
   if (!branch) return null;
-  const issueMatch = branch.match(/#(\d+)(?:-|$)/);
-  if (issueMatch) {
-    const specByIssue = specs.find((spec) => spec.githubIssues.includes(Number(issueMatch[1])));
+  const issueNumber = findIssueNumberInBranch(branch);
+  if (issueNumber) {
+    const specByIssue = specs.find((spec) => spec.githubIssues.includes(issueNumber));
     if (specByIssue) return specByIssue.id;
   }
   const specBySlug = specs.find(
@@ -118,7 +123,7 @@ function findIssuesWithoutSpec(specs, openIssues) {
 
 function findUnlinkedWorktrees(specs, liveState) {
   return liveState.worktrees
-    .filter((worktree) => !worktree.isMain && !findSpecIdForBranch(worktree.branch, specs))
+    .filter((worktree) => !worktree.isMain && findIssueNumberInBranch(worktree.branch) && !findSpecIdForBranch(worktree.branch, specs))
     .map((worktree) => ({
       ...worktree,
       agent: pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []),

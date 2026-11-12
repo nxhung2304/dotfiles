@@ -68,6 +68,7 @@ test("buildBoard sorts by priority first", () => {
 test("findSpecIdForBranch matches the issue number, then the slug", () => {
   assert.equal(findSpecIdForBranch("feature/hung-#2-next", specs), "002-next");
   assert.equal(findSpecIdForBranch("fix/blocked", specs), "003-blocked");
+  assert.equal(findSpecIdForBranch("feature/hung-2-old-style-name", specs), "002-next");
   assert.equal(findSpecIdForBranch("develop", specs), null);
   assert.equal(findSpecIdForBranch("feature/x-database", specs), null);
 });
@@ -99,8 +100,10 @@ test("findUnlinkedWorktrees lists task worktrees whose branch matches no spec", 
   const { findUnlinkedWorktrees } = require("../columns");
   const state = {
     ...liveState,
-    worktrees: [...liveState.worktrees, { path: "/repo.spike", branch: "spike/try-riverpod-3", isMain: false }],
+    worktrees: [...liveState.worktrees, { path: "/repo.spike", branch: "spike/hung-#9-try-riverpod-3", isMain: false },
+      { path: "/repo.agent", branch: "worktree-agent-a97d7c02ec0dcbff1", isMain: false },
+      { path: "/repo.chore", branch: "chore/hung-fix-slack-notify", isMain: false }],
     agentsByWorktreePath: new Map([...liveState.agentsByWorktreePath, ["/repo.spike", [{ paneId: "p9", status: "idle" }]]]),
   };
-  assert.deepEqual(findUnlinkedWorktrees(specs, state).map((worktree) => [worktree.branch, worktree.agent.paneId]), [["spike/try-riverpod-3", "p9"]]);
+  assert.deepEqual(findUnlinkedWorktrees(specs, state).map((worktree) => [worktree.branch, worktree.agent.paneId]), [["spike/hung-#9-try-riverpod-3", "p9"]]);
 });

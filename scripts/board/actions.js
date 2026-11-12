@@ -100,8 +100,10 @@ function buildStartPrompt(task, branch, { isNewBranch, startPoint }) {
   }
   const origin = isNewBranch ? ` (new, from ${startPoint})` : " (existing branch)";
   return (
-    `/implement-issue ${task.id} — Branch ${branch}${origin} is already checked out in this worktree. ` +
-    "Skip the checkout, pull and branch-creation steps of implement-prepare and keep working on this branch."
+    `Branch ${branch}${origin} is already checked out in this worktree. Work on spec ${task.id} here: ` +
+    "do not run implement-prepare and do not create or enter another worktree. " +
+    `Invoke implement-code with ${task.id}, then run the quality-runner agent, ` +
+    `then invoke implement-finalize with thread_ts null and base_branch ${startPoint}.`
   );
 }
 

@@ -3,10 +3,12 @@ const { runCommand } = require("./command");
 const BASE_REF_CANDIDATES = ["origin/develop", "origin/main", "origin/master"];
 const PREVIEW_SOURCE_LINES = "40";
 const PREVIEW_LINE_COUNT = 2;
+const BLOCKED_PREVIEW_LINE_COUNT = 6;
 const PREVIEW_MAX_LENGTH = 160;
 const PREVIEW_AGENT_STATUSES = ["blocked", "working"];
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;?]*[A-Za-z]/g;
-const TERMINAL_CHROME_PATTERN = /^[\s│|╭╮╰╯─━┃>❯·•*✻✶✳✢⏵⎿]*$|for shortcuts|esc to interrupt|bypass permissions|auto-accept/i;
+const INPUT_BOX_RULE_PATTERN = /^─{10,}$/;
+const TERMINAL_CHROME_PATTERN = /^[\s│|╭╮╰╯─━┃>❯·•*✻✶✳✢⏵⎿]*$|enter to select|esc to cancel|chat about this|for shortcuts|esc to interrupt|bypass permissions|auto-accept/i;
 
 async function findBaseRef(repoRoot) {
   for (const candidate of BASE_REF_CANDIDATES) {
@@ -39,20 +41,26 @@ async function readDiffStats(worktreePath, baseRef) {
   return { ...parseShortStat(shortStat), uncommittedFileCount };
 }
 
-function extractPreview(paneText) {
-  const meaningfulLines = paneText
-    .replace(ANSI_ESCAPE_PATTERN, "")
-    .split("\n")
+function dropInputBoxAndFooter(lines) {
+  const ruleIndexes = lines.map((line, index) => (INPUT_BOX_RULE_PATTERN.test(line.trim()) ? index : -1)).filter((index) => index >= 0);
+  const [openingRule, closingRule] = ruleIndexes.slice(-2);
+  const isInputBox = ruleIndexes.length >= 2 && closingRule - openingRule <= 2;
+  return isInputBox ? lines.slice(0, openingRule) : lines;
+}
+
+function extractPreview(paneText, lineCount = PREVIEW_LINE_COUNT) {
+  const paneLines = paneText.replace(ANSI_ESCAPE_PATTERN, "").split("\n");
+  const meaningfulLines = dropInputBoxAndFooter(paneLines)
     .map((line) => line.replace(/^[\s│┃|]+|[\s│┃|]+$/g, ""))
     .filter((line) => /\p{L}/u.test(line) && !TERMINAL_CHROME_PATTERN.test(line));
   return meaningfulLines
-    .slice(-PREVIEW_LINE_COUNT)
+    .slice(-lineCount)
     .map((line) => (line.length > PREVIEW_MAX_LENGTH ? `${line.slice(0, PREVIEW_MAX_LENGTH)}…` : line));
 }
 
-async function readAgentPreview(paneId) {
+async function readAgentPreview(paneId, agentStatus) {
   const paneText = await runCommand("herdr", ["pane", "read", paneId, "--source", "recent-unwrapped", "--lines", PREVIEW_SOURCE_LINES]);
-  return extractPreview(paneText);
+  return extractPreview(paneText, agentStatus === "blocked" ? BLOCKED_PREVIEW_LINE_COUNT : PREVIEW_LINE_COUNT);
 }
 
 async function readWorktreeDetail(worktree, baseRef, agents) {
@@ -64,7 +72,7 @@ async function readWorktreeDetail(worktree, baseRef, agents) {
   }
   const previewAgent = agents.find((agent) => PREVIEW_AGENT_STATUSES.includes(agent.status));
   try {
-    if (previewAgent) detail.previewLines = await readAgentPreview(previewAgent.paneId);
+    if (previewAgent) detail.previewLines = await readAgentPreview(previewAgent.paneId, previewAgent.status);
   } catch (error) {
     console.warn(`[board] preview for pane ${previewAgent.paneId}: ${error.message}`);
   }

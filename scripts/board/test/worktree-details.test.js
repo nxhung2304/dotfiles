@@ -27,3 +27,41 @@ test("summarizeChecks reduces check runs to failing, pending or passing", () => 
   assert.equal(summarizeChecks([{ conclusion: "SUCCESS" }, { state: "SUCCESS" }]), "passing");
   assert.equal(summarizeChecks([]), null);
 });
+
+test("extractPreview drops the input box and footer of a real Claude pane", () => {
+  const rule = "─".repeat(40);
+  const paneText = [
+    "⏺ Kết luận: đã chuyển file sang checkout chính.",
+    "",
+    "✻ Sautéed for 11s · done",
+    "",
+    rule,
+    "❯",
+    rule,
+    "  rights_vn-office_management-mobile › [WT] feature-hung--87-load-ot",
+    "  Opus 5.5 · ctx 14%, 7 day: 73% (5,4h left)",
+    "  ⏵⏵ auto mode on (shift+tab to cycle) · ← 5 agents",
+  ].join("\n");
+  assert.deepEqual(extractPreview(paneText), ["⏺ Kết luận: đã chuyển file sang checkout chính.", "✻ Sautéed for 11s · done"]);
+});
+
+test("extractPreview keeps the question and options of a blocked agent dialog", () => {
+  const rule = "─".repeat(40);
+  const paneText = [
+    rule,
+    " ☐ A hay B",
+    "",
+    "Bạn chọn A hay B?",
+    "",
+    "❯ 1. A",
+    "     Lựa chọn A",
+    "  2. B",
+    "     Lựa chọn B",
+    "  3. Type something.",
+    rule,
+    "  4. Chat about this",
+    "",
+    "Enter to select · ↑/↓ to navigate · Esc to cancel",
+  ].join("\n");
+  assert.deepEqual(extractPreview(paneText, 6), ["Bạn chọn A hay B?", "❯ 1. A", "Lựa chọn A", "2. B", "Lựa chọn B", "3. Type something."]);
+});
