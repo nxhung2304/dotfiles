@@ -3,6 +3,7 @@
 Status: v1 implemented in `scripts/board/` (steps 1, 3–6). Step 2 written, dry run checked, not yet applied to the mobile repo.
 
 ## Related
+- [Handoff](./handoff.md)
 - [Original issue](./issue.md)
 - [Investigation](./investigate.md)
 
