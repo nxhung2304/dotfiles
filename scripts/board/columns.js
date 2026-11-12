@@ -62,11 +62,12 @@ function isSpecDone(spec, pullRequest) {
   return spec.isMarkedDone || pullRequest?.state === "MERGED";
 }
 
-function deriveColumn({ isDone, pullRequest, worktree, agent, hasOpenDependencies }) {
+function deriveColumn({ isDone, pullRequest, worktree, agent, autoRun, hasOpenDependencies }) {
+  const isWorkStarted = Boolean(worktree || autoRun);
   if (isDone) return COLUMN.done;
-  if (worktree && agent?.status === "blocked") return COLUMN.needsYou;
+  if (isWorkStarted && (agent?.status === "blocked" || autoRun?.runStatus === "needs_you")) return COLUMN.needsYou;
   if (pullRequest?.state === "OPEN") return COLUMN.review;
-  if (worktree) return COLUMN.inProgress;
+  if (isWorkStarted) return COLUMN.inProgress;
   return hasOpenDependencies ? COLUMN.todo : COLUMN.ready;
 }
 
@@ -86,12 +87,15 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
   ];
   const worktree = worktreeBySpecId.get(spec.id) ?? null;
   const pullRequest = pullRequestBySpecId.get(spec.id) ?? null;
-  const agent = worktree ? pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []) : null;
+  const autoRun = liveState.autoRunBySpecId?.get(spec.id) ?? null;
+  const worktreeAgent = worktree ? pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []) : null;
+  const agent = autoRun ? { paneId: autoRun.paneId, status: autoRun.agentStatus } : worktreeAgent;
   const column = deriveColumn({
     isDone: doneSpecIds.has(spec.id),
     pullRequest,
     worktree,
     agent,
+    autoRun,
     hasOpenDependencies: blockedBy.length > 0 || unresolvedDependencies.length > 0 || Boolean(spec.onlyInBranch),
   });
   const worktreeDetail = worktree ? liveState.worktreeDetailsByPath?.get(worktree.path) ?? null : null;
@@ -99,8 +103,9 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
   return {
     ...{ id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch: onlyInBranch ?? null },
     ...{ dependsOn, blockedBy, unresolvedDependencies, column, worktree, agent, pullRequest },
+    autoRun: autoRun ? { phase: autoRun.phase, status: autoRun.runStatus } : null,
     diffStats: worktreeDetail?.diffStats ?? null,
-    previewLines: worktreeDetail?.previewLines ?? [],
+    previewLines: autoRun?.previewLines ?? worktreeDetail?.previewLines ?? [],
   };
 }
 

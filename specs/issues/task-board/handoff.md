@@ -13,7 +13,7 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 - Built in a cloud session with stub herdr and `gh`. On 2026-11-12 it was run against the real herdr and `gh` on the user's machine (mobile repo); results below.
 - Rebased onto `master` (adds `vibe-issue`). Local commits only, not pushed.
 - Code: `scripts/board/` (Node 22, stdlib only, no build). Start: `scripts/board/board` from a repo root inside a herdr pane → `http://127.0.0.1:4777`.
-- Tests: `bash tests/test-board.sh` (26 node tests, all pass).
+- Tests: `bash tests/test-board.sh` (29 node tests, all pass).
 
 ## Files
 | File | Does |
@@ -22,6 +22,7 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 | `server.js` | HTTP on 127.0.0.1, Host/Origin/Content-Type guard, routes `/api/board`, `/api/start`, `/api/focus`, `/api/clean-up` |
 | `specs.js` | Reads `specs/issues/*.md` and folder docs `specs/issues/<n>-<slug>/issue.md`, parses Status/Metadata, resolves `Depends on` (file name, `#NNN` spec number, `#NN` GitHub issue, `PR #N`) |
 | `columns.js` | Derives the column of each task from spec + worktrees + herdr agents + PRs; ready/blocked; unlinked worktrees; issues without spec |
+| `auto-runs.js` | Reads `vibe-issue` run files and links active tasks to their `[AUTO]` pane |
 | `live-state.js` | `git worktree list`, `herdr pane/agent list` (3 s cache), `gh pr list` and `gh issue list` (60 s cache) |
 | `worktree-details.js` | Diff size and uncommitted files per worktree, last lines of the Claude pane (`herdr pane read`) |
 | `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
@@ -39,7 +40,7 @@ Also fixed: "Worktree chưa gắn task" lists only branches with a real issue nu
 ## Open decisions
 - Run `node ~/dotfiles/scripts/board/migrate-specs.js <mobile repo> --write` on a feature branch of the mobile repo? Dry run is clean except `timesheet-api-permission-check` (free-text dependency, left for a hand edit). Waiting for the user.
 - Open a PR for the dotfiles branch? Not asked yet.
-- Auto-run rows are not tracked: the `[AUTO]` pane runs at the repo root, so the board cannot map it to a task or show "Cần anh" for it until `vibe-issue` creates the worktree. Reading `~/.ai-metrics/orchestrator/<run-id>.json` would fix it (file shape unchecked, no run yet).
+- Auto-run rows are tracked through `~/.ai-metrics/orchestrator/<run-id>.json` (`auto-runs.js`): a task with an active run and a live `[AUTO] <spec>` workspace is In progress, or Cần anh when the run status is `needs_you`. Checked against a real run (shape: `tasks[].spec/phase/status/worktree/branch/pr_url`); a finished or crashed run is ignored once its workspace is closed.
 
 ## Not done on purpose
 - Web chat, in-board diff viewer and comments, auto-commit/auto-PR, auto-start of dependents, `story.md` items on the board. Reasons in `investigate.md`.

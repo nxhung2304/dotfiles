@@ -1,5 +1,6 @@
 const { runCommand, runJsonCommand } = require("./command");
-const { readWorktreeDetails } = require("./worktree-details");
+const { readWorktreeDetails, readAgentPreview } = require("./worktree-details");
+const { readRunFiles, findActiveAutoRuns } = require("./auto-runs");
 
 const HERDR_REFRESH_MS = 3_000;
 const PULL_REQUEST_REFRESH_MS = 60_000;
@@ -36,6 +37,18 @@ function groupClaudeAgentsByWorktree(worktrees, panes, agents) {
   return agentsByWorktreePath;
 }
 
+async function addAutoRunPreviews(autoRunBySpecId) {
+  for (const autoRun of autoRunBySpecId.values()) {
+    if (!["blocked", "working"].includes(autoRun.agentStatus)) continue;
+    try {
+      autoRun.previewLines = await readAgentPreview(autoRun.paneId, autoRun.agentStatus);
+    } catch (error) {
+      console.warn(`[board] preview for pane ${autoRun.paneId}: ${error.message}`);
+    }
+  }
+  return autoRunBySpecId;
+}
+
 function createCachedReader(readFresh, refreshMs) {
   let cachedResult = null;
   let cachedAt = 0;
@@ -49,13 +62,14 @@ function createCachedReader(readFresh, refreshMs) {
 
 async function readHerdrSnapshot() {
   try {
-    const [paneList, agentList] = await Promise.all([
+    const [paneList, agentList, workspaceList] = await Promise.all([
       runJsonCommand("herdr", ["pane", "list"]),
       runJsonCommand("herdr", ["agent", "list"]),
+      runJsonCommand("herdr", ["workspace", "list"]),
     ]);
-    return { isAvailable: true, panes: paneList.result.panes, agents: agentList.result.agents };
+    return { isAvailable: true, panes: paneList.result.panes, agents: agentList.result.agents, workspaces: workspaceList.result.workspaces };
   } catch (error) {
-    return { isAvailable: false, error: error.message, panes: [], agents: [] };
+    return { isAvailable: false, error: error.message, panes: [], agents: [], workspaces: [] };
   }
 }
 
@@ -118,9 +132,11 @@ function createLiveStateReader(repoRoot) {
     ]);
     const worktrees = parseWorktreeList(worktreeOutput);
     const agentsByWorktreePath = groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents);
+    const autoRunBySpecId = await addAutoRunPreviews(findActiveAutoRuns(readRunFiles(), herdr.workspaces, herdr.agents));
     return {
       worktrees,
       agentsByWorktreePath,
+      autoRunBySpecId,
       worktreeDetailsByPath: await readWorktreeDetails(repoRoot, worktrees, agentsByWorktreePath),
       pullRequests: pullRequestState.pullRequests,
       openIssues: openIssueState.openIssues,

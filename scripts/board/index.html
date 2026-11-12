@@ -388,6 +388,7 @@
       const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
       meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
     }
+    if (task.autoRun) meta.append(createElement("span", "tag next", `Tự động · ${task.autoRun.phase}`));
     if (task.column === "needsYou" && task.previewLines.length === 0) meta.append("Claude đang chờ anh trả lời");
     if (task.column === "inProgress") meta.append(task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude");
     return meta.childNodes.length > 0 ? meta : null;

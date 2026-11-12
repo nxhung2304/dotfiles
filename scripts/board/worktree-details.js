@@ -88,4 +88,4 @@ async function readWorktreeDetails(repoRoot, worktrees, agentsByWorktreePath) {
   return new Map(taskWorktrees.map((worktree, index) => [worktree.path, details[index]]));
 }
 
-module.exports = { parseShortStat, extractPreview, readWorktreeDetails };
+module.exports = { parseShortStat, extractPreview, readAgentPreview, readWorktreeDetails };
