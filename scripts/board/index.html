@@ -67,6 +67,21 @@
   .summary { margin: var(--space-1) 0 var(--space-4); color: var(--text-muted); font-size: 13px; }
   .summary strong { color: var(--text); font-weight: 600; }
   .summary .needs-you strong { color: var(--needs-you); }
+  .tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
+  .tabs button {
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: -1px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.active { color: var(--text); font-weight: 600; border-bottom-color: var(--text); }
+  .tabs .count { margin-left: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+  .tabs .count.needs-you { color: var(--needs-you); font-weight: 600; }
   #banner {
     margin-bottom: var(--space-4);
     padding: var(--space-2) var(--space-3);
@@ -196,13 +211,20 @@
     <span class="updated" id="updated-at"></span>
   </header>
   <div class="summary" id="summary"></div>
+  <nav class="tabs" id="tabs"></nav>
   <div id="banner"></div>
   <main id="board"></main>
 </div>
 <script>
   const BOARD_REFRESH_MS = 3000;
   const WORK_IN_PROGRESS_LIMIT = 3;
-  const RECENT_DONE_COUNT = 5;
+  const READY_PREVIEW_COUNT = 3;
+  const SELECTED_TAB_STORAGE_KEY = "task-board-selected-tab";
+  const TABS = [
+    { key: "running", label: "Đang chạy" },
+    { key: "backlog", label: "Backlog" },
+    { key: "done", label: "Đã xong" },
+  ];
   const SHORT_TITLE_LENGTH = 32;
   const SECTIONS = [
     { key: "needsYou", label: "Cần anh", className: "needs-you" },
@@ -241,8 +263,8 @@
   let actionMessage = "";
   let currentWarnings = [];
   let githubWebUrl = null;
-  let isDoneExpanded = false;
-  let isIssuesWithoutSpecExpanded = false;
+  let selectedTab = readSavedTab();
+  let previousNeedsYouCount = 0;
   let issuesWithoutSpec = [];
   let unlinkedWorktrees = [];
   const CHECK_SIGNALS = {
@@ -535,38 +557,38 @@
     });
   }
 
-  function buildDoneList(tasks) {
-    const sorted = sortDoneByRecency(tasks);
-    const visible = isDoneExpanded ? sorted : sorted.slice(0, RECENT_DONE_COUNT);
-    const fragment = document.createDocumentFragment();
-    const list = createElement("div", "list");
-    list.append(...visible.map((task) => buildRow(task, false)));
-    fragment.append(list);
-    if (sorted.length > RECENT_DONE_COUNT) {
-      const label = isDoneExpanded ? "Thu gọn" : `Xem tất cả ${sorted.length} task đã xong`;
-      const toggle = buildButton(label, "toggle", () => {
-        isDoneExpanded = !isDoneExpanded;
-        lastRenderedJson = "";
-        render();
-      });
-      fragment.append(toggle);
+  function readSavedTab() {
+    try {
+      const savedTab = window.localStorage.getItem(SELECTED_TAB_STORAGE_KEY);
+      return TABS.some((tab) => tab.key === savedTab) ? savedTab : TABS[0].key;
+    } catch {
+      return TABS[0].key;
     }
-    return fragment;
   }
 
-  function buildSection(section) {
-    const tasks = tasksIn(section.key);
+  function selectTab(tabKey) {
+    selectedTab = tabKey;
+    try {
+      window.localStorage.setItem(SELECTED_TAB_STORAGE_KEY, tabKey);
+    } catch {
+      console.warn("[board] cannot remember the selected tab");
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function buildSection(section, { limit, moreLabel } = {}) {
+    const allTasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
+    const tasks = limit ? allTasks.slice(0, limit) : allTasks;
     const element = createElement("section", section.className ?? "");
     const heading = createElement("h2");
-    heading.append(createElement("span", "", section.label), createElement("span", "count", String(tasks.length)));
-    element.append(heading);
-    if (section.key === "done") {
-      element.append(buildDoneList(tasks));
-      return element;
-    }
+    heading.append(createElement("span", "", section.label), createElement("span", "count", String(allTasks.length)));
     const list = createElement("div", "list");
     list.append(...tasks.map((task, index) => buildRow(task, section.key === "ready" && index === 0)));
-    element.append(list);
+    element.append(heading, list);
+    if (allTasks.length > tasks.length) {
+      element.append(buildButton(moreLabel(allTasks.length), "toggle", () => selectTab("backlog")));
+    }
     return element;
   }
 
@@ -605,18 +627,9 @@
       createElement("span", "", "Issue GitHub chưa có spec"),
       createElement("span", "count", String(issuesWithoutSpec.length)),
     );
-    element.append(heading);
-    if (isIssuesWithoutSpecExpanded) {
-      const list = createElement("div", "list");
-      list.append(...issuesWithoutSpec.map(buildIssueWithoutSpecRow));
-      element.append(list);
-    }
-    const label = isIssuesWithoutSpecExpanded ? "Thu gọn" : `Xem ${issuesWithoutSpec.length} issue đang mở trên GitHub chưa có spec`;
-    element.append(buildButton(label, "toggle", () => {
-      isIssuesWithoutSpecExpanded = !isIssuesWithoutSpecExpanded;
-      lastRenderedJson = "";
-      render();
-    }));
+    const list = createElement("div", "list");
+    list.append(...issuesWithoutSpec.map(buildIssueWithoutSpecRow));
+    element.append(heading, list);
     return element;
   }
 
@@ -640,16 +653,67 @@
     });
   }
 
+  function findSection(key) {
+    return SECTIONS.find((section) => section.key === key);
+  }
+
+  function appendTaskSections(board, keys) {
+    for (const key of keys) {
+      if (tasksIn(key).length > 0) board.append(buildSection(findSection(key)));
+    }
+  }
+
+  function buildRunningTab(board) {
+    const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
+    if (!hasActiveTasks) board.append(buildIdleHint());
+    appendTaskSections(board, ["needsYou", "inProgress", "review"]);
+    if (unlinkedWorktrees.length > 0) board.append(buildUnlinkedWorktreesSection());
+    if (tasksIn("ready").length > 0) {
+      board.append(buildSection(findSection("ready"), {
+        limit: READY_PREVIEW_COUNT,
+        moreLabel: (total) => `Xem cả ${total} task sẵn sàng trong Backlog`,
+      }));
+    }
+  }
+
+  function buildBacklogTab(board) {
+    appendTaskSections(board, ["ready", "todo"]);
+    if (issuesWithoutSpec.length > 0) board.append(buildIssuesWithoutSpecSection());
+    if (board.childElementCount === 0) board.append(createElement("div", "empty-hint", "Backlog trống."));
+  }
+
+  function buildDoneTab(board) {
+    appendTaskSections(board, ["done"]);
+    if (board.childElementCount === 0) board.append(createElement("div", "empty-hint", "Chưa có task nào xong."));
+  }
+
+  function countTab(tabKey) {
+    if (tabKey === "running") {
+      return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0) + unlinkedWorktrees.length;
+    }
+    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length;
+    return tasksIn("done").length;
+  }
+
+  function renderTabs() {
+    const tabs = document.getElementById("tabs");
+    tabs.replaceChildren();
+    for (const tab of TABS) {
+      const button = createElement("button", tab.key === selectedTab ? "active" : "", tab.label);
+      const hasNeedsYou = tab.key === "running" && tasksIn("needsYou").length > 0;
+      button.append(createElement("span", hasNeedsYou ? "count needs-you" : "count", String(countTab(tab.key))));
+      button.addEventListener("click", () => selectTab(tab.key));
+      tabs.append(button);
+    }
+  }
+
+  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
+
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
-    const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
-    if (!hasActiveTasks) board.append(buildIdleHint());
-    for (const section of SECTIONS) {
-      if (section.key === "ready" && unlinkedWorktrees.length > 0) board.append(buildUnlinkedWorktreesSection());
-      if (section.key === "done" && issuesWithoutSpec.length > 0) board.append(buildIssuesWithoutSpecSection());
-      if (tasksIn(section.key).length > 0) board.append(buildSection(section));
-    }
+    TAB_BUILDERS[selectedTab](board);
+    renderTabs();
     renderSummary();
     document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
   }
@@ -670,6 +734,9 @@
       githubWebUrl = body.githubWebUrl;
       issuesWithoutSpec = body.issuesWithoutSpec;
       unlinkedWorktrees = body.unlinkedWorktrees;
+      const needsYouCount = tasksIn("needsYou").length;
+      if (needsYouCount > previousNeedsYouCount) selectedTab = "running";
+      previousNeedsYouCount = needsYouCount;
       render();
     } catch (error) {
       document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;

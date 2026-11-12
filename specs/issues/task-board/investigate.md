@@ -69,4 +69,5 @@
   - Done → "Dọn worktree": close herdr workspace + `git worktree remove`, only when clean, branch kept (cleanup in all four).
   - Worktrees that match no spec listed with "Mở tab" (kanban-code discovers orphan worktrees and sessions).
   - Not taken: in-board diff viewer and line comments, embedded terminal, auto-commit/auto-PR, auto-start of dependents, cost tracking — they duplicate herdr/skills or skip the user's review.
+- 2026-11-12 Tabs (user asked whether to split the single page): "Đang chạy" (needs you, in progress, review, unlinked worktrees, first 3 ready), "Backlog" (all ready, blocked, GitHub issues without spec), "Đã xong" (all done). Tab is remembered per browser; a new "needs you" task switches back to "Đang chạy". Same page and API.
 
