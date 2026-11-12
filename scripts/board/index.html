@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Board</title>
+<style>
+  :root {
+    --background: #f6f6f4;
+    --surface: #ffffff;
+    --border: #e2e1dc;
+    --text: #1d1d1b;
+    --text-muted: #6b6a64;
+    --accent: #2f6fde;
+    --danger: #c43c2f;
+    --warning-surface: #fff4d6;
+    --warning-text: #7a5600;
+    --needs-you: #d9480f;
+    --highlight: #e8f0ff;
+    --p1: #c43c2f;
+    --p2: #8a6d00;
+    --p3: #6b6a64;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #161615;
+      --surface: #21211f;
+      --border: #34332f;
+      --text: #ecebe6;
+      --text-muted: #9c9a92;
+      --accent: #6c9cf0;
+      --danger: #ef7064;
+      --warning-surface: #3a2f12;
+      --warning-text: #f2cf74;
+      --needs-you: #ff8a4c;
+      --highlight: #22324f;
+      --p1: #ef7064;
+      --p2: #e0bb4a;
+      --p3: #9c9a92;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 16px 16px 8px;
+  }
+  header h1 { margin: 0; font-size: 18px; }
+  header .meta { color: var(--text-muted); font-size: 12px; }
+  #banner {
+    margin: 0 16px 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--warning-surface);
+    color: var(--warning-text);
+    white-space: pre-line;
+  }
+  #banner:empty { display: none; }
+  main {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(220px, 1fr));
+    gap: 12px;
+    padding: 8px 16px 24px;
+    overflow-x: auto;
+  }
+  .column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    min-height: 200px;
+  }
+  .column.drop-target { outline: 2px dashed var(--accent); }
+  .column h2 {
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 4px 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .column[data-column="needsYou"] h2 { color: var(--needs-you); }
+  .card {
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    cursor: default;
+  }
+  .card[draggable="true"] { cursor: grab; }
+  .card.clickable { cursor: pointer; }
+  .card.related { background: var(--highlight); border-color: var(--accent); }
+  .card.needs-you { border-color: var(--needs-you); border-width: 2px; }
+  .card .top { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .card .title { margin: 4px 0; font-weight: 600; }
+  .card .note { font-size: 12px; color: var(--text-muted); }
+  .card .note.blocked { color: var(--danger); }
+  .badge {
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    padding: 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.P1 { color: var(--p1); }
+  .badge.P2 { color: var(--p2); }
+  .badge.P3 { color: var(--p3); }
+  .badge.unapproved { color: var(--warning-text); }
+  .card a { color: var(--accent); }
+  .card button {
+    margin-top: 6px;
+    font: inherit;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    main { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="repo-name">Task Board</h1>
+  <span class="meta" id="updated-at"></span>
+</header>
+<div id="banner"></div>
+<main id="board"></main>
+<script>
+  const BOARD_REFRESH_MS = 3000;
+  const WORK_IN_PROGRESS_LIMIT = 3;
+  const COLUMNS = [
+    { key: "ready", label: "Sẵn sàng" },
+    { key: "todo", label: "Todo" },
+    { key: "inProgress", label: "Đang làm" },
+    { key: "needsYou", label: "Cần anh" },
+    { key: "review", label: "Review" },
+    { key: "done", label: "Xong" },
+  ];
+  const STARTABLE_COLUMNS = ["ready", "todo"];
+  const ACTIVE_COLUMNS = ["inProgress", "needsYou"];
+
+  let currentTasks = [];
+  let actionMessage = "";
+  let draggedTaskId = null;
+
+  function createElement(tagName, className, text) {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
+  async function postAction(actionPath, taskId) {
+    const response = await fetch(actionPath, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error);
+    return body;
+  }
+
+  async function runAction(actionPath, taskId, successMessage) {
+    try {
+      const result = await postAction(actionPath, taskId);
+      actionMessage = successMessage(result);
+    } catch (error) {
+      actionMessage = `Lỗi: ${error.message}`;
+    }
+    await refreshBoard();
+  }
+
+  function confirmStart(task) {
+    const activeCount = currentTasks.filter((candidate) => ACTIVE_COLUMNS.includes(candidate.column)).length;
+    if (task.blockedBy.length > 0) {
+      actionMessage = `${task.id} còn bị chặn bởi: ${task.blockedBy.join(", ")}`;
+      renderBanner([]);
+      return false;
+    }
+    const questions = [];
+    if (activeCount >= WORK_IN_PROGRESS_LIMIT) questions.push(`Đang có ${activeCount} task chạy song song.`);
+    if (task.unresolvedDependencies.length > 0) {
+      questions.push(`Phụ thuộc chưa xác định: ${task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken).join(", ")}.`);
+    }
+    if (questions.length === 0) return true;
+    return window.confirm(`${questions.join("\n")}\nVẫn bắt đầu ${task.id}?`);
+  }
+
+  function startTask(task) {
+    if (!confirmStart(task)) return;
+    actionMessage = `Đang mở worktree cho ${task.id}…`;
+    renderBanner([]);
+    runAction("/api/start", task.id, (result) =>
+      result.isPromptSent
+        ? `Đã mở ${result.branch} và gửi lệnh cho Claude.`
+        : `Đã tạo ${result.branch} nhưng chưa gửi được lệnh (${result.warning}). Gõ tay trong tab đó:\n${result.prompt}`,
+    );
+  }
+
+  function highlightRelated(task, isOn) {
+    const relatedIds = new Set([
+      ...task.dependsOn,
+      ...currentTasks.filter((candidate) => candidate.dependsOn.includes(task.id)).map((candidate) => candidate.id),
+    ]);
+    document.querySelectorAll(".card").forEach((card) => {
+      card.classList.toggle("related", isOn && relatedIds.has(card.dataset.taskId));
+    });
+  }
+
+  function describeNotes(task) {
+    const notes = [];
+    const isDone = task.column === "done";
+    if (!isDone && task.blockedBy.length > 0) notes.push({ text: `Bị chặn bởi: ${task.blockedBy.join(", ")}`, isBlocked: true });
+    for (const dependency of isDone ? [] : task.unresolvedDependencies) {
+      notes.push({ text: `Phụ thuộc không rõ: ${dependency.unresolvedToken} (${dependency.reason})`, isBlocked: true });
+    }
+    if (task.worktree && !task.worktree.isMain) notes.push({ text: `Worktree: ${task.worktree.branch}` });
+    if (task.agent) notes.push({ text: `Claude: ${task.agent.status}` });
+    return notes;
+  }
+
+  function buildCard(task) {
+    const card = createElement("div", "card");
+    card.dataset.taskId = task.id;
+
+    const top = createElement("div", "top");
+    top.append(createElement("span", `badge ${task.priority}`, task.priority));
+    top.append(createElement("span", "", task.number ? `#${task.number}` : task.id));
+    if (task.githubIssues.length > 0) top.append(createElement("span", "", `GH #${task.githubIssues.join(", #")}`));
+    if (!task.isApproved && task.column !== "done") top.append(createElement("span", "badge unapproved", "chưa duyệt"));
+    card.append(top, createElement("div", "title", task.title));
+
+    for (const note of describeNotes(task)) {
+      card.append(createElement("div", note.isBlocked ? "note blocked" : "note", note.text));
+    }
+    if (task.pullRequest) {
+      const link = createElement("a", "note", `PR #${task.pullRequest.number} (${task.pullRequest.state})`);
+      link.href = task.pullRequest.url;
+      link.target = "_blank";
+      const linkRow = createElement("div", "note");
+      linkRow.append(link);
+      card.append(linkRow);
+    }
+    attachCardBehaviour(card, task);
+    return card;
+  }
+
+  function attachCardBehaviour(card, task) {
+    card.addEventListener("mouseenter", () => highlightRelated(task, true));
+    card.addEventListener("mouseleave", () => highlightRelated(task, false));
+    if (task.column === "needsYou") card.classList.add("needs-you");
+    if (STARTABLE_COLUMNS.includes(task.column)) {
+      card.draggable = true;
+      card.addEventListener("dragstart", () => { draggedTaskId = task.id; });
+    }
+    if (task.agent) {
+      card.classList.add("clickable");
+      card.title = "Bấm để nhảy sang tab herdr của task";
+      card.addEventListener("click", (event) => {
+        if (event.target.closest("a, button")) return;
+        runAction("/api/focus", task.id, () => `Đã chuyển sang tab của ${task.id}.`);
+      });
+    }
+    if (task.column === "done" && task.worktree && !task.worktree.isMain) {
+      const closeButton = createElement("button", "", "Đóng workspace");
+      closeButton.addEventListener("click", () =>
+        runAction("/api/close-workspace", task.id, () => `Đã đóng workspace của ${task.id}.`),
+      );
+      card.append(closeButton);
+    }
+  }
+
+  function attachDropTarget(columnElement) {
+    columnElement.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      columnElement.classList.add("drop-target");
+    });
+    columnElement.addEventListener("dragleave", () => columnElement.classList.remove("drop-target"));
+    columnElement.addEventListener("drop", (event) => {
+      event.preventDefault();
+      columnElement.classList.remove("drop-target");
+      const task = currentTasks.find((candidate) => candidate.id === draggedTaskId);
+      draggedTaskId = null;
+      if (task) startTask(task);
+    });
+  }
+
+  function renderColumns(tasks) {
+    const board = document.getElementById("board");
+    board.replaceChildren();
+    for (const column of COLUMNS) {
+      const columnTasks = tasks.filter((task) => task.column === column.key);
+      const columnElement = createElement("section", "column");
+      columnElement.dataset.column = column.key;
+      const heading = createElement("h2");
+      heading.append(createElement("span", "", column.label), createElement("span", "", String(columnTasks.length)));
+      columnElement.append(heading, ...columnTasks.map(buildCard));
+      if (column.key === "inProgress") attachDropTarget(columnElement);
+      board.append(columnElement);
+    }
+  }
+
+  function renderBanner(warnings) {
+    document.getElementById("banner").textContent = [actionMessage, ...warnings].filter(Boolean).join("\n");
+  }
+
+  async function refreshBoard() {
+    if (draggedTaskId) return;
+    try {
+      const response = await fetch("/api/board");
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      currentTasks = body.tasks;
+      document.getElementById("repo-name").textContent = `Task Board — ${body.repoName}`;
+      document.title = `Board ${body.repoName}`;
+      document.getElementById("updated-at").textContent = `cập nhật ${new Date().toLocaleTimeString()}`;
+      renderColumns(currentTasks);
+      renderBanner(body.warnings);
+    } catch (error) {
+      renderBanner([`Không đọc được board: ${error.message}`]);
+    }
+  }
+
+  refreshBoard();
+  setInterval(refreshBoard, BOARD_REFRESH_MS);
+</script>
+</body>
+</html>

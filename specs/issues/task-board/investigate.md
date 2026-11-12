@@ -53,7 +53,10 @@
 - Q19 Saved here, in dotfiles `specs/issues/task-board/`.
 - Default: server binds to `127.0.0.1` only, since it can run commands.
 
-## Open questions
-- How to map a worktree/branch back to a spec: branch name pattern from `implement-prepare` must be checked before coding (Unconfirmed).
-- How to find the PR of a task with `gh` (by branch name) — Unconfirmed until the branch pattern is checked.
-- Whether `herdr worktree open` can create the worktree itself or `wt switch --create` must run first — Unconfirmed.
+## Open questions (resolved 2026-11-12)
+- Branch ↔ spec: Confirmed. `implement-prepare` names branches `feature/<user>-#<GitHub issue>-<slug>` (`.claude/skills/implement-prepare/SKILL.md`, step 3) → board matches `#<n>` to the spec's `GitHub Issue`, then falls back to the file slug.
+- PR of a task: `gh pr list --state all --json number,state,headRefName,url` matched by `headRefName` the same way.
+- Worktree creation: `herdr worktree open --path` needs an existing worktree (`worktree-workspace` is called by worktrunk's post-switch hook, `.config/worktrunk/config.toml`) → board runs `git worktree add` itself, then `worktree-workspace open`.
+- `implement-prepare` checks out `develop` and creates the branch itself, which fails inside a worktree → the board's prompt tells it to skip those steps (args override the skill).
+- Starting the command: `herdr pane send-text` + `send-keys enter` into the Claude pane, the same way `scripts/herdr/peer-pair:45-46` does.
+- Old spec status formats also mean done: `## **Status:** Merged` (001, 002) and `- ✅ Completed` (022).
