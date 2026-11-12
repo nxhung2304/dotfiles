@@ -49,6 +49,7 @@ This is a personal dotfiles repository containing terminal, editor, and developm
 
 ### Script Utilities
 - **Dotfile management**: `install.sh` runs the modular steps in `scripts/install/` (Oh My Zsh, plugins, package managers, stow symlinks)
+- **Task board**: `scripts/board/board` (run from a repo root inside herdr) serves a local kanban of `specs/issues/*.md` at `127.0.0.1:4777`; `scripts/board/migrate-specs.js` normalizes `Depends on`/`Priority` (dry run unless `--write`)
 
 ### Managed Configuration Files
 - **Dotfiles**: `.zshrc`
