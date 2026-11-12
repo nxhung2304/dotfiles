@@ -71,3 +71,24 @@ test("toGithubWebUrl handles https and ssh remotes", () => {
   assert.equal(toGithubWebUrl("git@github.com:nxhung2304/dotfiles.git"), "https://github.com/nxhung2304/dotfiles");
   assert.equal(toGithubWebUrl("https://gitlab.com/a/b"), null);
 });
+
+test("loadSpecs reads folder issue docs only when no file spec has the same name", () => {
+  const fs = require("node:fs");
+  const os = require("node:os");
+  const path = require("node:path");
+  const { loadSpecs } = require("../specs");
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "board-specs-"));
+  const specsDir = path.join(rootDir, "specs", "issues");
+  fs.mkdirSync(path.join(specsDir, "023-with-file"), { recursive: true });
+  fs.mkdirSync(path.join(specsDir, "87-folder-only"), { recursive: true });
+  fs.writeFileSync(path.join(specsDir, "023-with-file.md"), buildSpecContent({ title: "File spec" }));
+  fs.writeFileSync(path.join(specsDir, "023-with-file", "testcases.md"), "x");
+  fs.writeFileSync(path.join(specsDir, "87-folder-only", "issue.md"), buildSpecContent({ title: "Folder spec", issue: 87 }));
+  const loaded = loadSpecs(rootDir);
+  fs.rmSync(rootDir, { recursive: true });
+  assert.deepEqual(loaded.map((spec) => [spec.id, spec.isFolderSpec]), [["023-with-file", false], ["87-folder-only", true]]);
+});
+
+test("resolveDependencyToken reads PR references", () => {
+  assert.deepEqual(resolveDependencyToken("PR #73 (OT Request) merged first", specs), { pullRequestNumber: 73 });
+});

@@ -71,8 +71,14 @@ function compareTasks(first, second) {
 }
 
 function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds }) {
-  const { dependsOn, unresolvedDependencies } = resolveDependencies(spec, specs);
-  const blockedBy = dependsOn.filter((specId) => !doneSpecIds.has(specId));
+  const { dependsOn, pullRequestDependencies, unresolvedDependencies } = resolveDependencies(spec, specs);
+  const mergedPullRequestNumbers = new Set(
+    liveState.pullRequests.filter((pullRequest) => pullRequest.state === "MERGED").map((pullRequest) => pullRequest.number),
+  );
+  const blockedBy = [
+    ...dependsOn.filter((specId) => !doneSpecIds.has(specId)),
+    ...pullRequestDependencies.filter((number) => !mergedPullRequestNumbers.has(number)).map((number) => `PR #${number}`),
+  ];
   const worktree = worktreeBySpecId.get(spec.id) ?? null;
   const pullRequest = pullRequestBySpecId.get(spec.id) ?? null;
   const agent = worktree ? pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []) : null;
@@ -81,11 +87,11 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
     pullRequest,
     worktree,
     agent,
-    hasOpenDependencies: blockedBy.length > 0 || unresolvedDependencies.length > 0,
+    hasOpenDependencies: blockedBy.length > 0 || unresolvedDependencies.length > 0 || Boolean(spec.onlyInBranch),
   });
-  const { id, number, title, priority, githubIssues, isApproved } = spec;
+  const { id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch } = spec;
   return {
-    ...{ id, number, title, priority, githubIssues, isApproved },
+    ...{ id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch: onlyInBranch ?? null },
     ...{ dependsOn, blockedBy, unresolvedDependencies, column, worktree, agent, pullRequest },
   };
 }
@@ -100,4 +106,11 @@ function buildBoard(specs, liveState) {
   return specs.map((spec) => buildTask(spec, context)).sort(compareTasks);
 }
 
-module.exports = { COLUMN, findSpecIdForBranch, deriveColumn, buildBoard };
+function findIssuesWithoutSpec(specs, openIssues) {
+  const trackedIssueNumbers = new Set(specs.flatMap((spec) => spec.githubIssues));
+  return openIssues
+    .filter((issue) => !trackedIssueNumbers.has(issue.number))
+    .map((issue) => ({ number: issue.number, title: issue.title, url: issue.url }));
+}
+
+module.exports = { COLUMN, findSpecIdForBranch, deriveColumn, buildBoard, findIssuesWithoutSpec };

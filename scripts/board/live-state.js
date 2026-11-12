@@ -58,6 +58,21 @@ async function readHerdrSnapshot() {
   }
 }
 
+function createOpenIssueReader(repoRoot) {
+  return async () => {
+    try {
+      const openIssues = await runJsonCommand(
+        "gh",
+        ["issue", "list", "--state", "open", "--limit", PULL_REQUEST_LIMIT, "--json", "number,title,url"],
+        { cwd: repoRoot },
+      );
+      return { isAvailable: true, openIssues };
+    } catch (error) {
+      return { isAvailable: false, error: error.message, openIssues: [] };
+    }
+  };
+}
+
 function createPullRequestReader(repoRoot) {
   return async () => {
     try {
@@ -76,19 +91,22 @@ function createPullRequestReader(repoRoot) {
 function createLiveStateReader(repoRoot) {
   const readHerdr = createCachedReader(readHerdrSnapshot, HERDR_REFRESH_MS);
   const readPullRequests = createCachedReader(createPullRequestReader(repoRoot), PULL_REQUEST_REFRESH_MS);
+  const readOpenIssues = createCachedReader(createOpenIssueReader(repoRoot), PULL_REQUEST_REFRESH_MS);
 
   return async () => {
-    const [worktreeOutput, herdr, pullRequestState] = await Promise.all([
+    const [worktreeOutput, herdr, pullRequestState, openIssueState] = await Promise.all([
       runCommand("git", ["worktree", "list", "--porcelain"], { cwd: repoRoot }),
       readHerdr(),
       readPullRequests(),
+      readOpenIssues(),
     ]);
     const worktrees = parseWorktreeList(worktreeOutput);
     return {
       worktrees,
       agentsByWorktreePath: groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents),
       pullRequests: pullRequestState.pullRequests,
-      warnings: [herdr.error, pullRequestState.error].filter(Boolean),
+      openIssues: openIssueState.openIssues,
+      warnings: [herdr.error, pullRequestState.error, openIssueState.error].filter(Boolean),
     };
   };
 }

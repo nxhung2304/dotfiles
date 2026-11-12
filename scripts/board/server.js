@@ -2,7 +2,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadSpecs } = require("./specs");
-const { buildBoard } = require("./columns");
+const { buildBoard, findIssuesWithoutSpec } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
 const { BoardActionError, startTask, focusTask, closeTaskWorkspace } = require("./actions");
@@ -19,10 +19,29 @@ const readLiveState = createLiveStateReader(repoRoot);
 const startingTaskIds = new Set();
 const githubWebUrlPromise = readGithubWebUrl(repoRoot);
 
+function loadSpecsOnlyInWorktrees(worktrees, mainSpecIds) {
+  const seenSpecIds = new Set(mainSpecIds);
+  const extraSpecs = [];
+  for (const worktree of worktrees.filter((candidate) => !candidate.isMain)) {
+    for (const spec of loadSpecs(worktree.path)) {
+      if (seenSpecIds.has(spec.id)) continue;
+      seenSpecIds.add(spec.id);
+      extraSpecs.push({ ...spec, onlyInBranch: worktree.branch ?? worktree.path });
+    }
+  }
+  return extraSpecs;
+}
+
 async function readBoardState() {
-  const specs = loadSpecs(repoRoot);
   const liveState = await readLiveState();
-  return { specs, tasks: buildBoard(specs, liveState), warnings: liveState.warnings };
+  const mainSpecs = loadSpecs(repoRoot);
+  const specs = [...mainSpecs, ...loadSpecsOnlyInWorktrees(liveState.worktrees, mainSpecs.map((spec) => spec.id))];
+  return {
+    specs,
+    tasks: buildBoard(specs, liveState),
+    issuesWithoutSpec: findIssuesWithoutSpec(specs, liveState.openIssues),
+    warnings: liveState.warnings,
+  };
 }
 
 function sendJson(response, httpStatus, body) {
@@ -108,9 +127,9 @@ async function routeRequest(request, response) {
     return;
   }
   if (request.method === "GET" && pathname === "/api/board") {
-    const { tasks, warnings } = await readBoardState();
+    const { tasks, issuesWithoutSpec, warnings } = await readBoardState();
     const githubWebUrl = await githubWebUrlPromise;
-    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, warnings });
+    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, issuesWithoutSpec, warnings });
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];

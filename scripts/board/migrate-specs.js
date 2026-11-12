@@ -1,7 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const {
-  SPECS_RELATIVE_DIR,
   DEFAULT_PRIORITY,
   extractHeader,
   normalizePriority,
@@ -14,13 +13,14 @@ const METADATA_HEADING = /^## Metadata\s*$/;
 const BULLET_LINE = /^\s*-\s/;
 
 function planDependsOn(spec, specs) {
-  const { dependsOn, unresolvedDependencies } = resolveDependencies(spec, specs);
+  const { dependsOn, pullRequestDependencies, unresolvedDependencies } = resolveDependencies(spec, specs);
   if (unresolvedDependencies.length > 0) {
     return {
       value: spec.rawDependsOn,
       problem: unresolvedDependencies.map((dependency) => `${dependency.unresolvedToken}: ${dependency.reason}`).join("; "),
     };
   }
+  if (pullRequestDependencies.length > 0) return { value: spec.rawDependsOn, problem: null };
   return { value: dependsOn.length > 0 ? dependsOn.join(", ") : NO_DEPENDENCY, problem: null };
 }
 
@@ -56,7 +56,7 @@ function upsertMetadataField(content, fieldName, value) {
 }
 
 function applyPlanEntry(repoRoot, entry) {
-  const filePath = path.join(repoRoot, SPECS_RELATIVE_DIR, `${entry.spec.id}.md`);
+  const filePath = path.join(repoRoot, entry.spec.specPath);
   const original = fs.readFileSync(filePath, "utf8");
   let updated = original;
   if (!entry.dependsOn.problem) updated = upsertMetadataField(updated, "Depends on", entry.dependsOn.value);

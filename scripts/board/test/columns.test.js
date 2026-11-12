@@ -80,3 +80,17 @@ test("buildBoard keeps a merged PR over an older closed one", () => {
   const board = buildBoard(specs, { ...liveState, pullRequests });
   assert.equal(columnOf(board, "002-next"), "done");
 });
+
+test("buildBoard blocks on an unmerged PR dependency and unblocks once merged", () => {
+  const specsWithPullRequestDependency = [...specs, buildSpec("008-after-pr.md", { issue: 8, dependsOn: "PR #73 (Connect API) merged first, it adds code" })];
+  const openState = { ...liveState, pullRequests: [{ number: 73, state: "OPEN", headRefName: "other", url: "u" }] };
+  const mergedState = { ...liveState, pullRequests: [{ number: 73, state: "MERGED", headRefName: "other", url: "u" }] };
+  assert.deepEqual(buildBoard(specsWithPullRequestDependency, openState).find((task) => task.id === "008-after-pr").blockedBy, ["PR #73"]);
+  assert.equal(columnOf(buildBoard(specsWithPullRequestDependency, mergedState), "008-after-pr"), "ready");
+});
+
+test("findIssuesWithoutSpec keeps only open issues no spec mentions", () => {
+  const { findIssuesWithoutSpec } = require("../columns");
+  const openIssues = [{ number: 2, title: "tracked", url: "a" }, { number: 99, title: "new", url: "b" }];
+  assert.deepEqual(findIssuesWithoutSpec(specs, openIssues), [{ number: 99, title: "new", url: "b" }]);
+});
