@@ -6,37 +6,49 @@
 <title>Task Board</title>
 <style>
   :root {
-    --background: #f6f6f4;
+    --background: #f7f7f5;
     --surface: #ffffff;
-    --border: #e2e1dc;
+    --surface-hover: #f0efeb;
+    --border: #e4e3de;
     --text: #1d1d1b;
-    --text-muted: #6b6a64;
+    --text-muted: #73726b;
+    --text-faint: #a3a29b;
     --accent: #2f6fde;
+    --needs-you: #d9480f;
+    --needs-you-surface: #fff1e8;
+    --next: #1f8a4c;
+    --next-surface: #eaf6ee;
     --danger: #c43c2f;
     --warning-surface: #fff4d6;
     --warning-text: #7a5600;
-    --needs-you: #d9480f;
-    --highlight: #e8f0ff;
-    --p1: #c43c2f;
-    --p2: #8a6d00;
-    --p3: #6b6a64;
+    --related: #e8f0ff;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --radius: 6px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --background: #161615;
-      --surface: #21211f;
-      --border: #34332f;
-      --text: #ecebe6;
-      --text-muted: #9c9a92;
+      --background: #141413;
+      --surface: #1c1c1a;
+      --surface-hover: #252523;
+      --border: #2e2d2a;
+      --text: #e9e8e3;
+      --text-muted: #9a988f;
+      --text-faint: #65645e;
       --accent: #6c9cf0;
+      --needs-you: #ff8a4c;
+      --needs-you-surface: #33200f;
+      --next: #5fcf8d;
+      --next-surface: #13291c;
       --danger: #ef7064;
       --warning-surface: #3a2f12;
       --warning-text: #f2cf74;
-      --needs-you: #ff8a4c;
-      --highlight: #22324f;
-      --p1: #ef7064;
-      --p2: #e0bb4a;
-      --p3: #9c9a92;
+      --related: #1f2d47;
     }
   }
   * { box-sizing: border-box; }
@@ -44,124 +56,151 @@
     margin: 0;
     background: var(--background);
     color: var(--text);
-    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font: 14px/1.45 var(--font-body);
   }
-  header {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    padding: 16px 16px 8px;
-  }
-  header h1 { margin: 0; font-size: 18px; }
-  header .meta { color: var(--text-muted); font-size: 12px; }
+  .page { max-width: 880px; margin: 0 auto; padding: var(--space-6) var(--space-4) 64px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header .updated { color: var(--text-faint); font-size: 12px; font-family: var(--font-mono); }
+  .summary { margin: var(--space-1) 0 var(--space-4); color: var(--text-muted); font-size: 13px; }
+  .summary strong { color: var(--text); font-weight: 600; }
+  .summary .needs-you strong { color: var(--needs-you); }
   #banner {
-    margin: 0 16px 8px;
-    padding: 8px 12px;
-    border-radius: 6px;
+    margin-bottom: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
     background: var(--warning-surface);
     color: var(--warning-text);
+    font-size: 13px;
     white-space: pre-line;
   }
   #banner:empty { display: none; }
-  main {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(220px, 1fr));
-    gap: 12px;
-    padding: 8px 16px 24px;
-    overflow-x: auto;
-  }
-  .column {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px;
-    min-height: 200px;
-  }
-  .column.drop-target { outline: 2px dashed var(--accent); }
-  .column h2 {
+  section { margin-bottom: var(--space-6); }
+  section h2 {
     display: flex;
-    justify-content: space-between;
-    margin: 4px 4px 8px;
-    font-size: 13px;
+    gap: var(--space-2);
+    align-items: baseline;
+    margin: 0 0 var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--text-muted);
   }
-  .column[data-column="needsYou"] h2 { color: var(--needs-you); }
-  .card {
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 8px;
-    cursor: default;
+  section h2 .count { font-family: var(--font-mono); color: var(--text-faint); }
+  section.needs-you h2 { color: var(--needs-you); }
+  .list { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+  .row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: var(--space-3);
+    align-items: center;
+    padding: 10px var(--space-3);
+    border-top: 1px solid var(--border);
   }
-  .card[draggable="true"] { cursor: grab; }
-  .card.clickable { cursor: pointer; }
-  .card.related { background: var(--highlight); border-color: var(--accent); }
-  .card.needs-you { border-color: var(--needs-you); border-width: 2px; }
-  .card .top { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-muted); }
-  .card .title { margin: 4px 0; font-weight: 600; }
-  .card .note { font-size: 12px; color: var(--text-muted); }
-  .card .note.blocked { color: var(--danger); }
-  .badge {
-    border: 1px solid currentColor;
-    border-radius: 4px;
-    padding: 0 4px;
-    font-size: 11px;
-    font-weight: 600;
-  }
-  .badge.P1 { color: var(--p1); }
-  .badge.P2 { color: var(--p2); }
-  .badge.P3 { color: var(--p3); }
-  .badge.unapproved { color: var(--warning-text); }
-  .card a { color: var(--accent); }
-  .card button {
-    margin-top: 6px;
+  .row:first-child { border-top: none; }
+  .row.clickable { cursor: pointer; }
+  .row.clickable:hover { background: var(--surface-hover); }
+  .row.related { background: var(--related); }
+  .row.is-next { background: var(--next-surface); }
+  section.needs-you .row { background: var(--needs-you-surface); }
+  section.blocked .row .title, section.done .row .title { color: var(--text-muted); font-weight: 400; }
+  .number { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+  .title { font-weight: 500; overflow-wrap: anywhere; }
+  .meta { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+  .meta .blocked-by { color: var(--danger); }
+  .meta a { color: var(--accent); text-decoration: none; }
+  .meta a:hover { text-decoration: underline; }
+  .tag { font-size: 11px; font-weight: 600; margin-right: var(--space-2); }
+  .tag.next { color: var(--next); }
+  .tag.p1 { color: var(--danger); }
+  .tag.p3 { color: var(--text-faint); }
+  .tag.unapproved { color: var(--warning-text); font-weight: 400; }
+  button {
     font: inherit;
     font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: var(--space-1) 10px;
+    border-radius: var(--radius);
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
     cursor: pointer;
+    white-space: nowrap;
   }
-  @media (max-width: 700px) {
-    main { grid-template-columns: 1fr; }
+  button:hover { border-color: var(--text-muted); }
+  button.primary { background: var(--next); border-color: var(--next); color: var(--surface); }
+  section.needs-you button { background: var(--needs-you); border-color: var(--needs-you); color: var(--surface); }
+  button:disabled { opacity: 0.5; cursor: progress; }
+  .empty-hint {
+    padding: var(--space-3);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .toggle { margin-top: var(--space-2); border: none; background: none; color: var(--accent); padding: 0; }
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 36px 1fr; }
+    .row > :nth-child(3) { grid-column: 2; justify-self: start; }
   }
 </style>
 </head>
 <body>
-<header>
-  <h1 id="repo-name">Task Board</h1>
-  <span class="meta" id="updated-at"></span>
-</header>
-<div id="banner"></div>
-<main id="board"></main>
+<div class="page">
+  <header>
+    <h1 id="repo-name">Task Board</h1>
+    <span class="updated" id="updated-at"></span>
+  </header>
+  <div class="summary" id="summary"></div>
+  <div id="banner"></div>
+  <main id="board"></main>
+</div>
 <script>
   const BOARD_REFRESH_MS = 3000;
   const WORK_IN_PROGRESS_LIMIT = 3;
-  const COLUMNS = [
-    { key: "ready", label: "Sẵn sàng" },
-    { key: "todo", label: "Todo" },
+  const RECENT_DONE_COUNT = 5;
+  const SHORT_TITLE_LENGTH = 32;
+  const SECTIONS = [
+    { key: "needsYou", label: "Cần anh", className: "needs-you" },
     { key: "inProgress", label: "Đang làm" },
-    { key: "needsYou", label: "Cần anh" },
     { key: "review", label: "Review" },
-    { key: "done", label: "Xong" },
+    { key: "ready", label: "Sẵn sàng" },
+    { key: "todo", label: "Bị chặn", className: "blocked" },
+    { key: "done", label: "Xong", className: "done" },
   ];
-  const STARTABLE_COLUMNS = ["ready", "todo"];
   const ACTIVE_COLUMNS = ["inProgress", "needsYou"];
+  const SUMMARY_PARTS = [
+    { key: "needsYou", label: "cần anh", className: "needs-you" },
+    { key: "inProgress", label: "đang làm" },
+    { key: "review", label: "review" },
+    { key: "ready", label: "sẵn sàng" },
+    { key: "todo", label: "bị chặn" },
+    { key: "done", label: "xong" },
+  ];
 
   let currentTasks = [];
+  let lastRenderedJson = "";
   let actionMessage = "";
-  let draggedTaskId = null;
+  let currentWarnings = [];
+  let isDoneExpanded = false;
+  const startingTaskIds = new Set();
 
   function createElement(tagName, className, text) {
     const element = document.createElement(tagName);
     if (className) element.className = className;
     if (text !== undefined) element.textContent = text;
     return element;
+  }
+
+  function tasksIn(column) {
+    return currentTasks.filter((task) => task.column === column);
+  }
+
+  function shortName(taskId) {
+    const task = currentTasks.find((candidate) => candidate.id === taskId);
+    if (!task) return taskId;
+    const title = task.title.length > SHORT_TITLE_LENGTH ? `${task.title.slice(0, SHORT_TITLE_LENGTH)}…` : task.title;
+    return task.number ? `#${task.number} ${title}` : title;
   }
 
   async function postAction(actionPath, taskId) {
@@ -177,39 +216,42 @@
 
   async function runAction(actionPath, taskId, successMessage) {
     try {
-      const result = await postAction(actionPath, taskId);
-      actionMessage = successMessage(result);
+      actionMessage = successMessage(await postAction(actionPath, taskId));
     } catch (error) {
       actionMessage = `Lỗi: ${error.message}`;
     }
+    lastRenderedJson = "";
     await refreshBoard();
   }
 
   function confirmStart(task) {
     const activeCount = currentTasks.filter((candidate) => ACTIVE_COLUMNS.includes(candidate.column)).length;
-    if (task.blockedBy.length > 0) {
-      actionMessage = `${task.id} còn bị chặn bởi: ${task.blockedBy.join(", ")}`;
-      renderBanner([]);
-      return false;
-    }
     const questions = [];
     if (activeCount >= WORK_IN_PROGRESS_LIMIT) questions.push(`Đang có ${activeCount} task chạy song song.`);
     if (task.unresolvedDependencies.length > 0) {
-      questions.push(`Phụ thuộc chưa xác định: ${task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken).join(", ")}.`);
+      const tokens = task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken).join(", ");
+      questions.push(`Phụ thuộc chưa xác định: ${tokens}.`);
     }
     if (questions.length === 0) return true;
-    return window.confirm(`${questions.join("\n")}\nVẫn bắt đầu ${task.id}?`);
+    return window.confirm(`${questions.join("\n")}\nVẫn bắt đầu ${shortName(task.id)}?`);
   }
 
-  function startTask(task) {
+  async function startTask(task) {
     if (!confirmStart(task)) return;
-    actionMessage = `Đang mở worktree cho ${task.id}…`;
-    renderBanner([]);
-    runAction("/api/start", task.id, (result) =>
+    startingTaskIds.add(task.id);
+    actionMessage = `Đang mở worktree cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/start", task.id, (result) =>
       result.isPromptSent
         ? `Đã mở ${result.branch} và gửi lệnh cho Claude.`
         : `Đã tạo ${result.branch} nhưng chưa gửi được lệnh (${result.warning}). Gõ tay trong tab đó:\n${result.prompt}`,
     );
+    startingTaskIds.delete(task.id);
+  }
+
+  function focusTask(task) {
+    runAction("/api/focus", task.id, () => `Đã chuyển sang tab của ${shortName(task.id)}.`);
   }
 
   function highlightRelated(task, isOn) {
@@ -217,122 +259,176 @@
       ...task.dependsOn,
       ...currentTasks.filter((candidate) => candidate.dependsOn.includes(task.id)).map((candidate) => candidate.id),
     ]);
-    document.querySelectorAll(".card").forEach((card) => {
-      card.classList.toggle("related", isOn && relatedIds.has(card.dataset.taskId));
+    document.querySelectorAll(".row").forEach((row) => {
+      row.classList.toggle("related", isOn && relatedIds.has(row.dataset.taskId));
     });
   }
 
-  function describeNotes(task) {
-    const notes = [];
-    const isDone = task.column === "done";
-    if (!isDone && task.blockedBy.length > 0) notes.push({ text: `Bị chặn bởi: ${task.blockedBy.join(", ")}`, isBlocked: true });
-    for (const dependency of isDone ? [] : task.unresolvedDependencies) {
-      notes.push({ text: `Phụ thuộc không rõ: ${dependency.unresolvedToken} (${dependency.reason})`, isBlocked: true });
-    }
-    if (task.worktree && !task.worktree.isMain) notes.push({ text: `Worktree: ${task.worktree.branch}` });
-    if (task.agent) notes.push({ text: `Claude: ${task.agent.status}` });
-    return notes;
+  function appendPriorityTags(meta, task) {
+    if (task.priority === "P1") meta.append(createElement("span", "tag p1", "P1"));
+    if (task.priority === "P3") meta.append(createElement("span", "tag p3", "P3"));
   }
 
-  function buildCard(task) {
-    const card = createElement("div", "card");
-    card.dataset.taskId = task.id;
-
-    const top = createElement("div", "top");
-    top.append(createElement("span", `badge ${task.priority}`, task.priority));
-    top.append(createElement("span", "", task.number ? `#${task.number}` : task.id));
-    if (task.githubIssues.length > 0) top.append(createElement("span", "", `GH #${task.githubIssues.join(", #")}`));
-    if (!task.isApproved && task.column !== "done") top.append(createElement("span", "badge unapproved", "chưa duyệt"));
-    card.append(top, createElement("div", "title", task.title));
-
-    for (const note of describeNotes(task)) {
-      card.append(createElement("div", note.isBlocked ? "note blocked" : "note", note.text));
+  function describeMeta(task, isNext) {
+    const meta = createElement("div", "meta");
+    if (isNext) meta.append(createElement("span", "tag next", "Tiếp theo"));
+    if (task.column !== "done") appendPriorityTags(meta, task);
+    if (task.column === "ready" && !task.isApproved) {
+      meta.append(createElement("span", "tag unapproved", "chưa duyệt · sẽ chạy review spec"));
     }
-    if (task.pullRequest) {
-      const link = createElement("a", "note", `PR #${task.pullRequest.number} (${task.pullRequest.state})`);
+    if (task.column === "todo") {
+      const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
+      meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
+    }
+    if (task.column === "needsYou") meta.append("Claude đang chờ anh trả lời");
+    if (task.column === "inProgress") meta.append(task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude");
+    if (task.column === "review" && task.pullRequest) {
+      const link = createElement("a", "", `PR #${task.pullRequest.number}`);
       link.href = task.pullRequest.url;
       link.target = "_blank";
-      const linkRow = createElement("div", "note");
-      linkRow.append(link);
-      card.append(linkRow);
+      meta.append(link);
     }
-    attachCardBehaviour(card, task);
-    return card;
+    return meta.childNodes.length > 0 ? meta : null;
   }
 
-  function attachCardBehaviour(card, task) {
-    card.addEventListener("mouseenter", () => highlightRelated(task, true));
-    card.addEventListener("mouseleave", () => highlightRelated(task, false));
-    if (task.column === "needsYou") card.classList.add("needs-you");
-    if (STARTABLE_COLUMNS.includes(task.column)) {
-      card.draggable = true;
-      card.addEventListener("dragstart", () => { draggedTaskId = task.id; });
-    }
-    if (task.agent) {
-      card.classList.add("clickable");
-      card.title = "Bấm để nhảy sang tab herdr của task";
-      card.addEventListener("click", (event) => {
-        if (event.target.closest("a, button")) return;
-        runAction("/api/focus", task.id, () => `Đã chuyển sang tab của ${task.id}.`);
-      });
+  function buildAction(task, isNext) {
+    if (task.column === "needsYou") return buildButton("Mở tab", "", () => focusTask(task));
+    if (task.column === "inProgress" && task.agent) return buildButton("Mở tab", "", () => focusTask(task));
+    if (task.column === "ready") {
+      const button = buildButton(startingTaskIds.has(task.id) ? "Đang mở…" : "Bắt đầu", isNext ? "primary" : "", () => startTask(task));
+      button.disabled = startingTaskIds.size > 0;
+      return button;
     }
     if (task.column === "done" && task.worktree && !task.worktree.isMain) {
-      const closeButton = createElement("button", "", "Đóng workspace");
-      closeButton.addEventListener("click", () =>
-        runAction("/api/close-workspace", task.id, () => `Đã đóng workspace của ${task.id}.`),
+      return buildButton("Đóng workspace", "", () =>
+        runAction("/api/close-workspace", task.id, () => `Đã đóng workspace của ${shortName(task.id)}.`),
       );
-      card.append(closeButton);
     }
+    return null;
   }
 
-  function attachDropTarget(columnElement) {
-    columnElement.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      columnElement.classList.add("drop-target");
+  function buildButton(label, className, onClick) {
+    const button = createElement("button", className, label);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onClick();
     });
-    columnElement.addEventListener("dragleave", () => columnElement.classList.remove("drop-target"));
-    columnElement.addEventListener("drop", (event) => {
-      event.preventDefault();
-      columnElement.classList.remove("drop-target");
-      const task = currentTasks.find((candidate) => candidate.id === draggedTaskId);
-      draggedTaskId = null;
-      if (task) startTask(task);
+    return button;
+  }
+
+  function buildRow(task, isNext) {
+    const row = createElement("div", isNext ? "row is-next" : "row");
+    row.dataset.taskId = task.id;
+    const body = createElement("div");
+    body.append(createElement("div", "title", task.title));
+    const meta = describeMeta(task, isNext);
+    if (meta) body.append(meta);
+    row.append(createElement("span", "number", task.number ?? ""), body);
+    const action = buildAction(task, isNext);
+    if (action) row.append(action);
+    row.addEventListener("mouseenter", () => highlightRelated(task, true));
+    row.addEventListener("mouseleave", () => highlightRelated(task, false));
+    if (task.agent) {
+      row.classList.add("clickable");
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a")) focusTask(task);
+      });
+    }
+    return row;
+  }
+
+  function sortDoneByRecency(tasks) {
+    return [...tasks].sort((first, second) => {
+      const firstMerged = first.pullRequest?.mergedAt ?? "";
+      const secondMerged = second.pullRequest?.mergedAt ?? "";
+      if (firstMerged !== secondMerged) return secondMerged.localeCompare(firstMerged);
+      return second.id.localeCompare(first.id);
     });
   }
 
-  function renderColumns(tasks) {
+  function buildDoneList(tasks) {
+    const sorted = sortDoneByRecency(tasks);
+    const visible = isDoneExpanded ? sorted : sorted.slice(0, RECENT_DONE_COUNT);
+    const fragment = document.createDocumentFragment();
+    const list = createElement("div", "list");
+    list.append(...visible.map((task) => buildRow(task, false)));
+    fragment.append(list);
+    if (sorted.length > RECENT_DONE_COUNT) {
+      const label = isDoneExpanded ? "Thu gọn" : `Xem tất cả ${sorted.length} task đã xong`;
+      const toggle = buildButton(label, "toggle", () => {
+        isDoneExpanded = !isDoneExpanded;
+        lastRenderedJson = "";
+        render();
+      });
+      fragment.append(toggle);
+    }
+    return fragment;
+  }
+
+  function buildSection(section) {
+    const tasks = tasksIn(section.key);
+    const element = createElement("section", section.className ?? "");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", section.label), createElement("span", "count", String(tasks.length)));
+    element.append(heading);
+    if (section.key === "done") {
+      element.append(buildDoneList(tasks));
+      return element;
+    }
+    const list = createElement("div", "list");
+    list.append(...tasks.map((task, index) => buildRow(task, section.key === "ready" && index === 0)));
+    element.append(list);
+    return element;
+  }
+
+  function buildIdleHint() {
+    const hasNext = tasksIn("ready").length > 0;
+    return createElement(
+      "div",
+      "empty-hint",
+      hasNext ? "Chưa có task nào đang chạy. Bấm Bắt đầu ở task Tiếp theo bên dưới." : "Chưa có task nào đang chạy và không còn task sẵn sàng.",
+    );
+  }
+
+  function renderSummary() {
+    const summary = document.getElementById("summary");
+    summary.replaceChildren();
+    SUMMARY_PARTS.forEach((part, index) => {
+      if (index > 0) summary.append(" · ");
+      const span = createElement("span", part.className ?? "");
+      span.append(createElement("strong", "", String(tasksIn(part.key).length)), ` ${part.label}`);
+      summary.append(span);
+    });
+  }
+
+  function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
-    for (const column of COLUMNS) {
-      const columnTasks = tasks.filter((task) => task.column === column.key);
-      const columnElement = createElement("section", "column");
-      columnElement.dataset.column = column.key;
-      const heading = createElement("h2");
-      heading.append(createElement("span", "", column.label), createElement("span", "", String(columnTasks.length)));
-      columnElement.append(heading, ...columnTasks.map(buildCard));
-      if (column.key === "inProgress") attachDropTarget(columnElement);
-      board.append(columnElement);
+    const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
+    if (!hasActiveTasks) board.append(buildIdleHint());
+    for (const section of SECTIONS) {
+      if (tasksIn(section.key).length > 0) board.append(buildSection(section));
     }
-  }
-
-  function renderBanner(warnings) {
-    document.getElementById("banner").textContent = [actionMessage, ...warnings].filter(Boolean).join("\n");
+    renderSummary();
+    document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
   }
 
   async function refreshBoard() {
-    if (draggedTaskId) return;
     try {
       const response = await fetch("/api/board");
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
+      document.getElementById("repo-name").textContent = body.repoName;
+      document.title = `Board · ${body.repoName}`;
+      document.getElementById("updated-at").textContent = new Date().toLocaleTimeString();
+      const renderedJson = JSON.stringify([body.tasks, body.warnings, actionMessage]);
+      if (renderedJson === lastRenderedJson) return;
+      lastRenderedJson = renderedJson;
       currentTasks = body.tasks;
-      document.getElementById("repo-name").textContent = `Task Board — ${body.repoName}`;
-      document.title = `Board ${body.repoName}`;
-      document.getElementById("updated-at").textContent = `cập nhật ${new Date().toLocaleTimeString()}`;
-      renderColumns(currentTasks);
-      renderBanner(body.warnings);
+      currentWarnings = body.warnings;
+      render();
     } catch (error) {
-      renderBanner([`Không đọc được board: ${error.message}`]);
+      document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;
     }
   }
 

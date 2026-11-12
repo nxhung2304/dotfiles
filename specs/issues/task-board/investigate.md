@@ -52,6 +52,7 @@
 - Q18 More than 3 In progress → warning only, no block.
 - Q19 Saved here, in dotfiles `specs/issues/task-board/`.
 - Default: server binds to `127.0.0.1` only, since it can run commands.
+- 2026-11-12 UI v2 (user asked to fix clutter): 6 kanban columns → one vertical list by attention (Cần anh → Đang làm → Review → Sẵn sàng → Bị chặn → Xong, last 5 done + "xem tất cả"); empty sections hidden; drag & drop replaced by a "Bắt đầu" button (Q4 behaviour unchanged); P2, GH number and merged PR links hidden on rows.
 
 ## Open questions (resolved 2026-11-12)
 - Branch ↔ spec: Confirmed. `implement-prepare` names branches `feature/<user>-#<GitHub issue>-<slug>` (`.claude/skills/implement-prepare/SKILL.md`, step 3) → board matches `#<n>` to the spec's `GitHub Issue`, then falls back to the file slug.

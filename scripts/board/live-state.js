@@ -63,7 +63,7 @@ function createPullRequestReader(repoRoot) {
     try {
       const pullRequests = await runJsonCommand(
         "gh",
-        ["pr", "list", "--state", "all", "--limit", PULL_REQUEST_LIMIT, "--json", "number,state,headRefName,url"],
+        ["pr", "list", "--state", "all", "--limit", PULL_REQUEST_LIMIT, "--json", "number,state,headRefName,url,mergedAt"],
         { cwd: repoRoot },
       );
       return { isAvailable: true, pullRequests };
