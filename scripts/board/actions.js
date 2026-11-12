@@ -79,9 +79,9 @@ async function isTrackedByGit(repoRoot, relativePath) {
   }
 }
 
-async function copyUntrackedSpec(repoRoot, worktreePath, specId) {
+async function copyUntrackedSpec(repoRoot, worktreePath, specId, specPath) {
+  if (await isTrackedByGit(repoRoot, specPath)) return;
   const specFile = path.join(SPECS_RELATIVE_DIR, `${specId}.md`);
-  if (await isTrackedByGit(repoRoot, specFile)) return;
   for (const relativePath of [specFile, path.join(SPECS_RELATIVE_DIR, specId)]) {
     const sourcePath = path.join(repoRoot, relativePath);
     if (fs.existsSync(sourcePath)) fs.cpSync(sourcePath, path.join(worktreePath, relativePath), { recursive: true });
@@ -89,6 +89,12 @@ async function copyUntrackedSpec(repoRoot, worktreePath, specId) {
 }
 
 function buildStartPrompt(task, branch, { isNewBranch, startPoint }) {
+  if (task.specPath.endsWith("/issue.md")) {
+    return (
+      `Task docs: ${path.dirname(task.specPath)}/ (branch ${branch} is already checked out in this worktree). ` +
+      "Read every file in that folder, tell me the current status and the next step, and wait for my go before changing code."
+    );
+  }
   if (!task.isApproved) {
     return task.githubIssues.length > 0 ? `/review-specs #${task.githubIssues[0]}` : `/review-specs ${task.id}`;
   }
@@ -142,13 +148,16 @@ function ensureTaskCanStart(task) {
   if (!STARTABLE_COLUMNS.includes(task.column)) {
     throw new BoardActionError(`Task ${task.id} không ở Todo/Sẵn sàng`, 409);
   }
+  if (task.onlyInBranch) {
+    throw new BoardActionError(`Spec ${task.id} chỉ có trên branch ${task.onlyInBranch}, hãy merge về trước`, 409);
+  }
   if (task.blockedBy.length > 0) {
     throw new BoardActionError(`Task ${task.id} còn bị chặn bởi: ${task.blockedBy.join(", ")}`, 409);
   }
 }
 
-async function openWorkspaceAndSendPrompt({ repoRoot, worktreePath, specId, prompt }) {
-  await copyUntrackedSpec(repoRoot, worktreePath, specId);
+async function openWorkspaceAndSendPrompt({ repoRoot, worktreePath, task, prompt }) {
+  await copyUntrackedSpec(repoRoot, worktreePath, task.id, task.specPath);
   await runCommand(WORKTREE_WORKSPACE_SCRIPT, ["open", worktreePath]);
   const paneId = await waitForClaudePane(worktreePath);
   if (!paneId) throw new Error("Claude chưa sẵn sàng sau khi mở workspace");
@@ -163,7 +172,7 @@ async function startTask({ repoRoot, task, spec }) {
   const branchOrigin = await createWorktree(repoRoot, branch, worktreePath);
   const prompt = buildStartPrompt(task, branch, branchOrigin);
   try {
-    await openWorkspaceAndSendPrompt({ repoRoot, worktreePath, specId: task.id, prompt });
+    await openWorkspaceAndSendPrompt({ repoRoot, worktreePath, task, prompt });
     return { branch, worktreePath, isPromptSent: true, prompt };
   } catch (error) {
     console.error(`[board] worktree ${worktreePath} created but prompt not sent: ${error.message}`);

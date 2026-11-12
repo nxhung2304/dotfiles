@@ -222,6 +222,8 @@
   let currentWarnings = [];
   let githubWebUrl = null;
   let isDoneExpanded = false;
+  let isIssuesWithoutSpecExpanded = false;
+  let issuesWithoutSpec = [];
   const startingTaskIds = new Set();
 
   function createElement(tagName, className, text) {
@@ -312,10 +314,13 @@
     const meta = createElement("div", "meta");
     if (isNext) meta.append(createElement("span", "tag next", "Tiếp theo"));
     if (task.column !== "done") appendPriorityTags(meta, task);
-    if (task.column === "ready" && !task.isApproved) {
+    if (task.onlyInBranch) meta.append(createElement("span", "blocked-by", `spec chỉ có trên ${task.onlyInBranch}, merge về để bắt đầu`));
+    if (task.column === "ready" && task.specPath.endsWith("/issue.md")) {
+      meta.append(createElement("span", "tag unapproved", "chưa có spec · Claude sẽ đọc thư mục issue rồi hỏi anh bước tiếp"));
+    } else if (task.column === "ready" && !task.isApproved) {
       meta.append(createElement("span", "tag unapproved", "chưa duyệt · sẽ chạy review spec"));
     }
-    if (task.column === "todo") {
+    if (task.column === "todo" && !task.onlyInBranch) {
       const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
       meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
     }
@@ -471,6 +476,56 @@
     return element;
   }
 
+  function buildIssueWithoutSpecRow(issue) {
+    const row = createElement("div", "row");
+    const body = createElement("div");
+    body.append(createElement("div", "title", issue.title));
+    const references = createElement("div", "refs");
+    references.append(buildReference({
+      className: "issue",
+      iconPaths: ISSUE_ICON_PATHS,
+      kind: "Issue",
+      number: issue.number,
+      url: issue.url,
+    }));
+    body.append(references);
+    const command = `/github-issues-to-md ${issue.number} ${githubWebUrl?.replace("https://github.com/", "") ?? ""}`.trim();
+    const copyButton = buildButton("Copy lệnh tạo spec", "", async () => {
+      try {
+        await navigator.clipboard.writeText(command);
+        actionMessage = `Đã copy: ${command}`;
+      } catch (error) {
+        actionMessage = `Không copy được, gõ tay: ${command}`;
+      }
+      lastRenderedJson = "";
+      render();
+    });
+    row.append(createElement("span", "number", ""), body, copyButton);
+    return row;
+  }
+
+  function buildIssuesWithoutSpecSection() {
+    const element = createElement("section", "without-spec");
+    const heading = createElement("h2");
+    heading.append(
+      createElement("span", "", "Issue GitHub chưa có spec"),
+      createElement("span", "count", String(issuesWithoutSpec.length)),
+    );
+    element.append(heading);
+    if (isIssuesWithoutSpecExpanded) {
+      const list = createElement("div", "list");
+      list.append(...issuesWithoutSpec.map(buildIssueWithoutSpecRow));
+      element.append(list);
+    }
+    const label = isIssuesWithoutSpecExpanded ? "Thu gọn" : `Xem ${issuesWithoutSpec.length} issue đang mở trên GitHub chưa có spec`;
+    element.append(buildButton(label, "toggle", () => {
+      isIssuesWithoutSpecExpanded = !isIssuesWithoutSpecExpanded;
+      lastRenderedJson = "";
+      render();
+    }));
+    return element;
+  }
+
   function buildIdleHint() {
     const hasNext = tasksIn("ready").length > 0;
     return createElement(
@@ -497,6 +552,7 @@
     const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
     if (!hasActiveTasks) board.append(buildIdleHint());
     for (const section of SECTIONS) {
+      if (section.key === "done" && issuesWithoutSpec.length > 0) board.append(buildIssuesWithoutSpecSection());
       if (tasksIn(section.key).length > 0) board.append(buildSection(section));
     }
     renderSummary();
@@ -511,12 +567,13 @@
       document.getElementById("repo-name").textContent = body.repoName;
       document.title = `Board · ${body.repoName}`;
       document.getElementById("updated-at").textContent = new Date().toLocaleTimeString();
-      const renderedJson = JSON.stringify([body.tasks, body.warnings, actionMessage]);
+      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.warnings, actionMessage]);
       if (renderedJson === lastRenderedJson) return;
       lastRenderedJson = renderedJson;
       currentTasks = body.tasks;
       currentWarnings = body.warnings;
       githubWebUrl = body.githubWebUrl;
+      issuesWithoutSpec = body.issuesWithoutSpec;
       render();
     } catch (error) {
       document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;

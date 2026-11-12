@@ -61,3 +61,4 @@
 - `implement-prepare` checks out `develop` and creates the branch itself, which fails inside a worktree → the board's prompt tells it to skip those steps (args override the skill).
 - Starting the command: `herdr pane send-text` + `send-keys enter` into the Claude pane, the same way `scripts/herdr/peer-pair:45-46` does.
 - Old spec status formats also mean done: `## **Status:** Merged` (001, 002) and `- ✅ Completed` (022).
+- 2026-11-12 Sources widened (user asked why tasks were missing): folder issue docs `specs/issues/<n>-<slug>/issue.md` (7 in the mobile repo) are tasks too; specs that exist only in a task worktree show as blocked with "merge first"; open GitHub issues without any spec are listed in a collapsed section with a copy-command button for `/github-issues-to-md`; `Depends on: PR #N` blocks until that PR is merged. `story.md` items stay off the board (77 open items, owned by `generate-issues`).

@@ -6,6 +6,7 @@ const PRIORITY_LEVELS = ["P1", "P2", "P3"];
 const DEFAULT_PRIORITY = "P2";
 const PRIORITY_ALIASES = { high: "P1", medium: "P2", low: "P3" };
 const NO_DEPENDENCY_MARKERS = ["", "—", "-", "none"];
+const FOLDER_SPEC_FILE = "issue.md";
 const SPEC_NUMBER_LENGTH = 3;
 const MIN_MATCHING_WORD_LENGTH = 3;
 
@@ -37,9 +38,9 @@ function parseIssueNumbers(rawIssueField) {
   return [...rawIssueField.matchAll(/#(\d+)/g)].map((match) => Number(match[1]));
 }
 
-function parseSpec(fileName, content) {
+function parseSpec(fileOrFolderName, content) {
   const header = extractHeader(content);
-  const id = fileName.replace(/\.md$/, "");
+  const id = fileOrFolderName.replace(/\.md$/, "");
   const rawPriority = readField(header, "Priority");
   return {
     id,
@@ -55,20 +56,32 @@ function parseSpec(fileName, content) {
   };
 }
 
-function loadSpecs(repoRoot) {
-  const specsDir = path.join(repoRoot, SPECS_RELATIVE_DIR);
-  return fs
-    .readdirSync(specsDir)
-    .filter((fileName) => fileName.endsWith(".md"))
-    .sort()
-    .map((fileName) => parseSpec(fileName, fs.readFileSync(path.join(specsDir, fileName), "utf8")));
+function listSpecSources(specsDir) {
+  const entries = fs.readdirSync(specsDir, { withFileTypes: true });
+  const fileSpecIds = new Set(entries.filter((entry) => entry.isFile() && entry.name.endsWith(".md")).map((entry) => entry.name.replace(/\.md$/, "")));
+  const fileSources = [...fileSpecIds].map((id) => ({ name: `${id}.md`, relativePath: path.join(SPECS_RELATIVE_DIR, `${id}.md`) }));
+  const folderSources = entries
+    .filter((entry) => entry.isDirectory() && !fileSpecIds.has(entry.name))
+    .filter((entry) => fs.existsSync(path.join(specsDir, entry.name, FOLDER_SPEC_FILE)))
+    .map((entry) => ({ name: entry.name, relativePath: path.join(SPECS_RELATIVE_DIR, entry.name, FOLDER_SPEC_FILE) }));
+  return [...fileSources, ...folderSources].sort((first, second) => first.name.localeCompare(second.name));
+}
+
+function loadSpecs(rootDir) {
+  const specsDir = path.join(rootDir, SPECS_RELATIVE_DIR);
+  if (!fs.existsSync(specsDir)) return [];
+  return listSpecSources(specsDir).map((source) => ({
+    ...parseSpec(source.name, fs.readFileSync(path.join(rootDir, source.relativePath), "utf8")),
+    specPath: source.relativePath,
+    isFolderSpec: source.relativePath.endsWith(FOLDER_SPEC_FILE),
+  }));
 }
 
 function splitDependencyTokens(rawDependsOn) {
   if (rawDependsOn === null) return [];
   if (NO_DEPENDENCY_MARKERS.includes(rawDependsOn.trim().toLowerCase())) return [];
   return rawDependsOn
-    .split(/,(?![^(]*\))/)
+    .split(/[,;](?=\s*(?:#|PR\s*#|\d+-[a-z]))/i)
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
 }
@@ -105,7 +118,10 @@ function resolveDependencyToken(token, specs) {
   const exactSpec = specs.find((spec) => spec.id === token || `${spec.id}.md` === token);
   if (exactSpec) return { specId: exactSpec.id };
 
-  const numberMatch = token.match(/^#(\d+)\s*(?:\((.*)\))?$/);
+  const pullRequestMatch = token.match(/^PR\s*#(\d+)/i);
+  if (pullRequestMatch) return { pullRequestNumber: Number(pullRequestMatch[1]) };
+
+  const numberMatch = token.match(/^#(\d+)\s*(?:\(([^)]*)\))?/);
   if (!numberMatch) return { unresolvedToken: token, reason: "unknown format" };
 
   const [, digits, titleHint] = numberMatch;
@@ -119,6 +135,7 @@ function resolveDependencies(spec, specs) {
   const resolutions = splitDependencyTokens(spec.rawDependsOn).map((token) => resolveDependencyToken(token, specs));
   return {
     dependsOn: resolutions.filter((resolution) => resolution.specId).map((resolution) => resolution.specId),
+    pullRequestDependencies: resolutions.filter((resolution) => resolution.pullRequestNumber).map((resolution) => resolution.pullRequestNumber),
     unresolvedDependencies: resolutions.filter((resolution) => resolution.unresolvedToken),
   };
 }
