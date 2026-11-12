@@ -65,7 +65,7 @@ function isSpecDone(spec, pullRequest) {
 function deriveColumn({ isDone, pullRequest, worktree, agent, autoRun, hasOpenDependencies }) {
   const isWorkStarted = Boolean(worktree || autoRun);
   if (isDone) return COLUMN.done;
-  if (isWorkStarted && (agent?.status === "blocked" || autoRun?.runStatus === "needs_you")) return COLUMN.needsYou;
+  if (isWorkStarted && (agent?.status === "blocked" || autoRun?.runStatus === "needs_you" || autoRun?.problem)) return COLUMN.needsYou;
   if (pullRequest?.state === "OPEN") return COLUMN.review;
   if (isWorkStarted) return COLUMN.inProgress;
   return hasOpenDependencies ? COLUMN.todo : COLUMN.ready;
@@ -89,7 +89,7 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
   const pullRequest = pullRequestBySpecId.get(spec.id) ?? null;
   const autoRun = liveState.autoRunBySpecId?.get(spec.id) ?? null;
   const worktreeAgent = worktree ? pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []) : null;
-  const agent = autoRun ? { paneId: autoRun.paneId, status: autoRun.agentStatus } : worktreeAgent;
+  const agent = autoRun?.paneId ? { paneId: autoRun.paneId, status: autoRun.agentStatus } : worktreeAgent;
   const column = deriveColumn({
     isDone: doneSpecIds.has(spec.id),
     pullRequest,
@@ -103,7 +103,7 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
   return {
     ...{ id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch: onlyInBranch ?? null },
     ...{ dependsOn, blockedBy, unresolvedDependencies, column, worktree, agent, pullRequest },
-    autoRun: autoRun ? { phase: autoRun.phase, status: autoRun.runStatus } : null,
+    autoRun: autoRun ? { phase: autoRun.phase, status: autoRun.runStatus, problem: autoRun.problem } : null,
     diffStats: worktreeDetail?.diffStats ?? null,
     previewLines: autoRun?.previewLines ?? worktreeDetail?.previewLines ?? [],
   };

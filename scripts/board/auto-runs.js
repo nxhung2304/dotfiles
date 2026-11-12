@@ -5,6 +5,8 @@ const path = require("node:path");
 const DEFAULT_RUNS_DIR = path.join(os.homedir(), ".ai-metrics", "orchestrator");
 const AUTO_WORKSPACE_LABEL_PREFIX = "[AUTO] ";
 const ACTIVE_TASK_STATUSES = ["queued", "running", "needs_you"];
+const PROBLEM_TASK_STATUSES = { failed: "vibe-issue báo task này bị lỗi", blocked: "vibe-issue báo task này bị chặn" };
+const MISSING_CLAUDE_PROBLEM = "Phiên Claude trong tab [AUTO] không còn chạy";
 const CLAUDE_AGENT_LABEL = "claude";
 
 function readRunFiles(runsDir = DEFAULT_RUNS_DIR) {
@@ -25,15 +27,27 @@ function readRunFiles(runsDir = DEFAULT_RUNS_DIR) {
   return runs;
 }
 
-function findActiveAutoRuns(runs, workspaces, agents) {
+function describeProblem(task, agent) {
+  if (PROBLEM_TASK_STATUSES[task.status]) return `${PROBLEM_TASK_STATUSES[task.status]} (phase ${task.phase})`;
+  return agent ? null : MISSING_CLAUDE_PROBLEM;
+}
+
+function findActiveAutoRuns(runs, workspaces, panes, agents) {
   const autoRunBySpecId = new Map();
   for (const run of runs) {
     for (const task of run.tasks ?? []) {
-      if (!ACTIVE_TASK_STATUSES.includes(task.status)) continue;
+      if (!ACTIVE_TASK_STATUSES.includes(task.status) && !PROBLEM_TASK_STATUSES[task.status]) continue;
       const workspace = workspaces.find((candidate) => candidate.label === `${AUTO_WORKSPACE_LABEL_PREFIX}${task.spec}`);
-      const agent = workspace && agents.find((candidate) => candidate.agent === CLAUDE_AGENT_LABEL && candidate.workspace_id === workspace.workspace_id);
-      if (!agent) continue;
-      autoRunBySpecId.set(task.spec, { paneId: agent.pane_id, agentStatus: agent.agent_status, phase: task.phase, runStatus: task.status });
+      if (!workspace) continue;
+      const agent = agents.find((candidate) => candidate.agent === CLAUDE_AGENT_LABEL && candidate.workspace_id === workspace.workspace_id);
+      const paneId = agent?.pane_id ?? panes.find((pane) => pane.workspace_id === workspace.workspace_id)?.pane_id ?? null;
+      autoRunBySpecId.set(task.spec, {
+        paneId,
+        agentStatus: agent?.agent_status ?? null,
+        phase: task.phase,
+        runStatus: task.status,
+        problem: describeProblem(task, agent),
+      });
     }
   }
   return autoRunBySpecId;

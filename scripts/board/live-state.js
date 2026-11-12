@@ -132,7 +132,7 @@ function createLiveStateReader(repoRoot) {
     ]);
     const worktrees = parseWorktreeList(worktreeOutput);
     const agentsByWorktreePath = groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents);
-    const autoRunBySpecId = await addAutoRunPreviews(findActiveAutoRuns(readRunFiles(), herdr.workspaces, herdr.agents));
+    const autoRunBySpecId = await addAutoRunPreviews(findActiveAutoRuns(readRunFiles(), herdr.workspaces, herdr.panes, herdr.agents));
     return {
       worktrees,
       agentsByWorktreePath,
