@@ -181,6 +181,14 @@
   .detail-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-3); margin-top: 5px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); font-size: 12px; color: var(--text-muted); }
   .meta .blocked-by { color: var(--danger); }
+  .agent-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--text-faint); }
+  .agent-status.working::before { background: var(--accent); }
+  .agent-status.blocked::before { background: var(--needs-you); }
+  .agent-status.blocked { color: var(--needs-you); font-weight: 500; }
+  .row-toggle { min-height: 0; padding: 0 2px; border: none; background: none; color: var(--text-muted); font-size: 12px; }
+  .row-toggle:hover { background: none; color: var(--accent); text-decoration: underline; }
+  .row-details { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
+  .row-details .diff-stats, .row-details .preview { margin-top: 0; }
   .diff-stats { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
   .diff-stats .insertions { color: var(--next); }
   .diff-stats .deletions { color: var(--danger); }
@@ -249,6 +257,7 @@
   button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
   button.primary:hover { background: #1a7f37; border-color: #1a7f37; }
   section.needs-you button { background: var(--needs-you); border-color: var(--needs-you); color: var(--on-state); }
+  section.needs-you button.row-toggle { background: none; border: none; color: var(--text-muted); }
   button:disabled { opacity: 0.5; cursor: progress; }
   .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 260px; }
   .auto-approve { flex-basis: 100%; display: flex; gap: 6px; justify-content: flex-end; align-items: center; font-size: 12px; color: var(--text-muted); cursor: pointer; }
@@ -388,6 +397,7 @@
   };
   const startingTaskIds = new Set();
   const autoApproveTaskIds = new Set();
+  const expandedRowKeys = new Set();
 
   function createElement(tagName, className, text) {
     const element = document.createElement(tagName);
@@ -485,25 +495,43 @@
     if (task.priority === "P3") meta.append(createElement("span", "tag p3", "P3"));
   }
 
-  function describeMeta(task, isNext) {
-    const meta = createElement("div", "meta");
-    if (isNext) meta.append(createElement("span", "tag next", "Tiếp theo"));
-    if (task.column !== "done") appendPriorityTags(meta, task);
-    if (task.onlyInBranch) meta.append(createElement("span", "blocked-by", `spec chỉ có trên ${task.onlyInBranch}, merge về để bắt đầu`));
-    if (task.column === "ready" && task.specPath.endsWith("/issue.md")) {
-      meta.append(createElement("span", "tag unapproved", "chưa có spec · Claude sẽ đọc thư mục issue rồi hỏi anh bước tiếp"));
-    } else if (task.column === "ready" && !task.isApproved) {
-      meta.append(createElement("span", "tag unapproved", "chưa duyệt · sẽ chạy review spec"));
+  function buildAgentStatus(text, status) {
+    return createElement("span", `agent-status ${status ?? ""}`.trim(), text);
+  }
+
+  function describeClaudeStatus(task) {
+    if (task.agent) {
+      const phase = task.autoRun ? ` · ${AUTO_RUN_PHASE_LABELS[task.autoRun.phase] ?? task.autoRun.phase}` : "";
+      return buildAgentStatus(`Claude: ${task.agent.status}${phase}`, task.agent.status);
     }
+    if (task.column === "inProgress") return buildAgentStatus("chưa có phiên Claude");
+    if (task.column === "needsYou" && !task.autoRun?.problem) return buildAgentStatus("Claude đang chờ anh trả lời", "blocked");
+    return null;
+  }
+
+  function describeStatus(task) {
+    const meta = createElement("div", "meta");
+    const claudeStatus = describeClaudeStatus(task);
+    if (claudeStatus) meta.append(claudeStatus);
+    if (task.onlyInBranch) meta.append(createElement("span", "blocked-by", `spec chỉ có trên ${task.onlyInBranch}, merge về để bắt đầu`));
     if (task.column === "todo" && !task.onlyInBranch) {
       const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
       meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
     }
-    if (task.autoRun) meta.append(createElement("span", "tag auto", `Tự động · ${AUTO_RUN_PHASE_LABELS[task.autoRun.phase] ?? task.autoRun.phase}`));
     if (task.autoRun?.problem) meta.append(createElement("span", "blocked-by", task.autoRun.problem));
-    if (task.column === "needsYou" && task.previewLines.length === 0 && !task.autoRun?.problem) meta.append("Claude đang chờ anh trả lời");
-    if (task.column === "inProgress") meta.append(task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude");
     return meta.childNodes.length > 0 ? meta : null;
+  }
+
+  function describeTags(task, isNext) {
+    const tags = createElement("div", "meta");
+    if (isNext) tags.append(createElement("span", "tag next", "Tiếp theo"));
+    if (task.column !== "done") appendPriorityTags(tags, task);
+    if (task.column === "ready" && task.specPath.endsWith("/issue.md")) {
+      tags.append(createElement("span", "tag unapproved", "chưa có spec · Claude sẽ đọc thư mục issue rồi hỏi anh bước tiếp"));
+    } else if (task.column === "ready" && !task.isApproved) {
+      tags.append(createElement("span", "tag unapproved", "chưa duyệt · sẽ chạy review spec"));
+    }
+    return tags.childNodes.length > 0 ? tags : null;
   }
 
   function buildIcon(paths) {
@@ -637,10 +665,29 @@
     return line;
   }
 
-  function appendWorktreeDetails(body, item) {
+  function buildWorktreeDetailNodes(item) {
+    const nodes = [];
     const diffStatsLine = item.diffStats && item.column !== "done" ? buildDiffStats(item.diffStats) : null;
-    if (diffStatsLine) body.append(diffStatsLine);
-    if (item.previewLines?.length > 0) body.append(createElement("div", "preview", item.previewLines.join("\n")));
+    if (diffStatsLine) nodes.push(diffStatsLine);
+    if (item.previewLines?.length > 0) nodes.push(createElement("div", "preview", item.previewLines.join("\n")));
+    return nodes;
+  }
+
+  function buildRowDetails(rowKey, detailNodes) {
+    if (detailNodes.length === 0) return { toggle: null, panel: null };
+    const isOpen = expandedRowKeys.has(rowKey);
+    const toggle = buildButton(isOpen ? "Ẩn chi tiết ▴" : "Chi tiết ▾", "row-toggle", () => {
+      if (isOpen) expandedRowKeys.delete(rowKey);
+      else expandedRowKeys.add(rowKey);
+      render();
+    });
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    let panel = null;
+    if (isOpen) {
+      panel = createElement("div", "row-details");
+      panel.append(...detailNodes);
+    }
+    return { toggle, panel };
   }
 
   function buildUnlinkedWorktreeRow(worktree) {
@@ -650,11 +697,15 @@
     body.append(createElement("div", "title", pseudoTask.title));
     const meta = createElement("div", "meta", worktree.agent ? `Claude: ${worktree.agent.status} · không khớp spec nào` : "không có phiên Claude · không khớp spec nào");
     body.append(meta);
-    appendWorktreeDetails(body, worktree);
+    const { toggle, panel } = buildRowDetails(pseudoTask.id, buildWorktreeDetailNodes(worktree));
+    if (toggle) meta.append(toggle);
+    if (panel) body.append(panel);
     row.append(createElement("span", "number", ""), body);
     if (worktree.agent) {
       row.append(buildButton("Mở tab", "", () => focusTask(pseudoTask)));
-      row.addEventListener("click", () => focusTask(pseudoTask));
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a, button")) focusTask(pseudoTask);
+      });
     }
     return row;
   }
@@ -675,12 +726,15 @@
     const body = createElement("div");
     body.append(createElement("div", "title", task.title));
     const detailLine = createElement("div", "detail-line");
-    const meta = describeMeta(task, isNext);
-    if (meta) detailLine.append(meta);
+    const status = describeStatus(task);
+    if (status) detailLine.append(status);
     const references = buildReferences(task);
     if (references) detailLine.append(references);
+    const tags = describeTags(task, isNext);
+    const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
+    if (toggle) detailLine.append(toggle);
     if (detailLine.childElementCount > 0) body.append(detailLine);
-    appendWorktreeDetails(body, task);
+    if (panel) body.append(panel);
     row.append(createElement("span", "number", task.number ?? ""), body);
     const action = buildAction(task, isNext);
     if (action) row.append(action);
@@ -689,7 +743,7 @@
     if (task.agent) {
       row.classList.add("clickable");
       row.addEventListener("click", (event) => {
-        if (!event.target.closest("a")) focusTask(task);
+        if (!event.target.closest("a, button")) focusTask(task);
       });
     }
     return row;
