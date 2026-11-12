@@ -33,7 +33,7 @@ Set `model` explicitly on every `Agent` call. Never leave it to inherit from the
 | Plan (draft or revise a spec) | `opus` | A wrong plan makes every later phase wrong. The user already saw a weaker model write a poor spec. |
 | Prepare (worktree + branch) | `haiku` | Mechanical. `implement-prepare` already pins haiku. |
 | Risk check (`risk-issue`) | `opus` | Read-only. `risk-issue` already pins opus. |
-| Code (`implement-issue local=true`) | `sonnet` | Follows an approved checklist. |
+| Code (`implement-code` + `quality-runner`) | `sonnet` | Follows an approved checklist. |
 | Review (`review-issue`) | `opus` | Read-only, one pass per round. `review-issue` already pins opus. |
 | Fix MUST items | `sonnet` | Targeted edits from a concrete finding. |
 | Finalize (`implement-finalize`) | `sonnet` | Writes the PR description, which the user reviews closely. Not a haiku job. |
@@ -79,9 +79,9 @@ Every phase agent gets: the task's spec filename, the worktree path (after Prepa
 
 **Risk** (`opus`) — skip when the Plan phase already ran `risk-issue` on this spec in this run: invoke `risk-issue` with the spec path (so it never asks for one) and write its report to `~/.ai-metrics/orchestrator/<run-id>-<spec>-risk.md`. Return `{ missing, possible, risk_report_path }`.
 
-**Code** (`sonnet`): give it the risk report path, read it first, and guard against a listed risk only when that stays within the spec's checklist; never widen the scope for a risk. Then invoke `implement-issue` with `<spec> local=true` inside the worktree. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
+**Code** (`sonnet`): give it the risk report path, read it first, and guard against a listed risk only when that stays within the spec's checklist; never widen the scope for a risk. Then, inside the worktree, invoke `implement-code` with the spec path, then the `quality-runner` agent. Do not use `implement-issue`: it is user-only (`disable-model-invocation`), and its prepare/finalize steps would redo this skill's Prepare and Finalize. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
 
-**Stage** (after Code and after every Fix, before Review): `review-issue` only sees committed or staged changes, so `local=true` work would look like an empty diff. In the worktree run `git add -A`, then `git reset -q -- <path>` for every spec path copied in by Prepare.
+**Stage** (after Code and after every Fix, before Review): `review-issue` only sees committed or staged changes, so uncommitted Code work would look like an empty diff. In the worktree run `git add -A`, then `git reset -q -- <path>` for every spec path copied in by Prepare.
 
 **Review** (`opus`): invoke `review-issue` on the branch. Return `{ must_open, should_open, comment_log_path }`.
 
