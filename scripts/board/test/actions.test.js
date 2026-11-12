@@ -29,3 +29,11 @@ test("ensureTaskCanRunAutomatically refuses a folder of docs and a blocked task"
   assert.throws(() => ensureTaskCanRunAutomatically({ ...readyTask, specPath: "specs/issues/89-x/issue.md" }), /vibe-issue chỉ chạy task có file spec/);
   assert.throws(() => ensureTaskCanRunAutomatically({ ...readyTask, blockedBy: ["024"] }), /bị chặn/);
 });
+
+test("buildAutoRunPrompt adds auto-approve-spec only when asked and the spec is not approved", () => {
+  const { buildAutoRunPrompt } = require("../actions");
+  const unapprovedTask = { ...approvedSpecTask, isApproved: false };
+  assert.equal(buildAutoRunPrompt(unapprovedTask, true), "/vibe-issue 89-firebase-crashlytics max-parallel=1 auto-approve-spec=true");
+  assert.equal(buildAutoRunPrompt(unapprovedTask, false), "/vibe-issue 89-firebase-crashlytics max-parallel=1");
+  assert.equal(buildAutoRunPrompt(approvedSpecTask, true), "/vibe-issue 89-firebase-crashlytics max-parallel=1");
+});

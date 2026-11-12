@@ -182,8 +182,9 @@ async function startTask({ repoRoot, task, spec }) {
   }
 }
 
-function buildAutoRunPrompt(task) {
-  return `/vibe-issue ${task.id} max-parallel=1`;
+function buildAutoRunPrompt(task, autoApproveSpec = false) {
+  const autoApproveFlag = autoApproveSpec && !task.isApproved ? " auto-approve-spec=true" : "";
+  return `/vibe-issue ${task.id} max-parallel=1${autoApproveFlag}`;
 }
 
 function buildAgentNameForPane(paneId) {
@@ -197,13 +198,13 @@ function ensureTaskCanRunAutomatically(task) {
   }
 }
 
-async function startAutoRun({ repoRoot, task }) {
+async function startAutoRun({ repoRoot, task, autoApproveSpec }) {
   ensureRunningInsideHerdr();
   ensureTaskCanRunAutomatically(task);
   const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", `[AUTO] ${task.id}`, "--focus"]);
   const paneId = created.result.root_pane.pane_id;
   await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
-  const prompt = buildAutoRunPrompt(task);
+  const prompt = buildAutoRunPrompt(task, autoApproveSpec);
   await sendPrompt(paneId, prompt);
   return { paneId, prompt, isPromptSent: true };
 }

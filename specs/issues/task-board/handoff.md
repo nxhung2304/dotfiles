@@ -13,7 +13,7 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 - Built in a cloud session with stub herdr and `gh`. On 2026-11-12 it was run against the real herdr and `gh` on the user's machine (mobile repo); results below.
 - Rebased onto `master` (adds `vibe-issue`). Local commits only, not pushed.
 - Code: `scripts/board/` (Node 22, stdlib only, no build). Start: `scripts/board/board` from a repo root inside a herdr pane → `http://127.0.0.1:4777`.
-- Tests: `bash tests/test-board.sh` (29 node tests, all pass).
+- Tests: `bash tests/test-board.sh` (32 node tests, all pass).
 
 ## Files
 | File | Does |
@@ -25,7 +25,7 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 | `auto-runs.js` | Reads `vibe-issue` run files and links active tasks to their `[AUTO]` pane |
 | `live-state.js` | `git worktree list`, `herdr pane/agent list` (3 s cache), `gh pr list` and `gh issue list` (60 s cache) |
 | `worktree-details.js` | Diff size and uncommitted files per worktree, last lines of the Claude pane (`herdr pane read`) |
-| `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
+| `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only; for an unapproved spec the row has a "tự duyệt spec" checkbox that adds `auto-approve-spec=true`, off by default), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
 | `index.html` | Single page, 3 tabs: Đang chạy / Backlog / Đã xong |
 | `migrate-specs.js` | Normalizes `Depends on` and adds `Priority` in spec files; dry run unless `--write` |
 

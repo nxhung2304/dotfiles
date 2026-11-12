@@ -106,12 +106,12 @@ async function handleStart(taskId) {
   }
 }
 
-async function handleStartAuto(taskId) {
+async function handleStartAuto(taskId, { autoApproveSpec }) {
   if (startingTaskIds.has(taskId)) throw new BoardActionError(`Task ${taskId} đang được khởi động`, 409);
   startingTaskIds.add(taskId);
   try {
     const { task } = await findTaskContext(taskId);
-    return await startAutoRun({ repoRoot, task });
+    return await startAutoRun({ repoRoot, task, autoApproveSpec: autoApproveSpec === true });
   } finally {
     startingTaskIds.delete(taskId);
   }
@@ -128,9 +128,9 @@ async function handleAction(request, response, actionHandler) {
   if (!(request.headers["content-type"] ?? "").startsWith("application/json")) {
     throw new BoardActionError("Cần Content-Type application/json", 415);
   }
-  const { taskId } = await readJsonBody(request);
-  if (typeof taskId !== "string") throw new BoardActionError("Thiếu taskId", 400);
-  sendJson(response, 200, (await actionHandler(taskId)) ?? { isOk: true });
+  const requestBody = await readJsonBody(request);
+  if (typeof requestBody.taskId !== "string") throw new BoardActionError("Thiếu taskId", 400);
+  sendJson(response, 200, (await actionHandler(requestBody.taskId, requestBody)) ?? { isOk: true });
 }
 
 async function routeRequest(request, response) {

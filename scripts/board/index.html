@@ -107,7 +107,8 @@
   section h2 .count { font-family: var(--font-mono); color: var(--text-faint); }
   section.needs-you h2 { color: var(--needs-you); }
   .list { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
-  .actions { display: flex; gap: 6px; }
+  .actions { display: flex; gap: 6px; align-items: center; }
+  .auto-approve { font-size: 12px; color: var(--text-muted); display: flex; gap: 4px; align-items: center; cursor: pointer; }
   .row {
     display: grid;
     grid-template-columns: 44px 1fr auto;
@@ -279,6 +280,7 @@
     APPROVED: { label: "đã duyệt", tone: "good" },
   };
   const startingTaskIds = new Set();
+  const autoApproveTaskIds = new Set();
 
   function createElement(tagName, className, text) {
     const element = document.createElement(tagName);
@@ -298,20 +300,20 @@
     return task.number ? `#${task.number} ${title}` : title;
   }
 
-  async function postAction(actionPath, taskId) {
+  async function postAction(actionPath, taskId, options = {}) {
     const response = await fetch(actionPath, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId }),
+      body: JSON.stringify({ taskId, ...options }),
     });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error);
     return body;
   }
 
-  async function runAction(actionPath, taskId, successMessage) {
+  async function runAction(actionPath, taskId, successMessage, options) {
     try {
-      actionMessage = successMessage(await postAction(actionPath, taskId));
+      actionMessage = successMessage(await postAction(actionPath, taskId, options));
     } catch (error) {
       actionMessage = `Lỗi: ${error.message}`;
     }
@@ -351,7 +353,9 @@
     actionMessage = `Đang mở workspace tự động cho ${shortName(task.id)}…`;
     lastRenderedJson = "";
     render();
-    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)} và gửi /vibe-issue. Claude sẽ tự tạo worktree khi chạy.`);
+    const autoApproveSpec = !task.isApproved && autoApproveTaskIds.has(task.id);
+    const approvalNote = autoApproveSpec ? " Spec sẽ được tự duyệt nếu agent review không thấy vấn đề." : "";
+    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)} và gửi /vibe-issue. Claude sẽ tự tạo worktree khi chạy.${approvalNote}`, { autoApproveSpec });
     startingTaskIds.delete(task.id);
   }
 
@@ -454,6 +458,20 @@
     return container;
   }
 
+  function buildAutoApproveToggle(task) {
+    const label = createElement("label", "auto-approve");
+    const checkbox = createElement("input", "");
+    checkbox.type = "checkbox";
+    checkbox.checked = autoApproveTaskIds.has(task.id);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) autoApproveTaskIds.add(task.id);
+      else autoApproveTaskIds.delete(task.id);
+    });
+    label.title = "Chỉ tự duyệt khi agent review không thấy vấn đề chặn và không còn câu hỏi mở. Nếu không, dừng chờ anh duyệt.";
+    label.append(checkbox, " tự duyệt spec");
+    return label;
+  }
+
   function buildAction(task, isNext) {
     if (task.column === "needsYou") return buildButton("Mở tab", "", () => focusTask(task));
     if (task.column === "inProgress" && task.agent) return buildButton("Mở tab", "", () => focusTask(task));
@@ -465,6 +483,7 @@
       autoButton.disabled = startingTaskIds.size > 0;
       autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
       const group = createElement("div", "actions");
+      if (!task.isApproved) group.append(buildAutoApproveToggle(task));
       group.append(button, autoButton);
       return group;
     }
