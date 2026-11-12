@@ -22,6 +22,7 @@
     --warning-surface: #fff4d6;
     --warning-text: #7a5600;
     --related: #e8f0ff;
+    --merged: #8250df;
     --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
     --space-1: 4px;
@@ -49,6 +50,7 @@
       --warning-surface: #3a2f12;
       --warning-text: #f2cf74;
       --related: #1f2d47;
+      --merged: #b48cf2;
     }
   }
   * { box-sizing: border-box; }
@@ -111,6 +113,28 @@
   .meta .blocked-by { color: var(--danger); }
   .meta a { color: var(--accent); text-decoration: none; }
   .meta a:hover { text-decoration: underline; }
+  .refs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 6px; }
+  .ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 7px 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    background: var(--surface);
+  }
+  .ref:hover { border-color: var(--text-muted); color: var(--text); }
+  .ref svg { width: 14px; height: 14px; flex: none; }
+  .ref .kind { font-weight: 600; color: var(--text); }
+  .ref .state { font-size: 11px; }
+  .ref.issue svg { color: var(--text-muted); }
+  .ref.pr-open svg, .ref.pr-open .state { color: var(--next); }
+  .ref.pr-draft svg, .ref.pr-draft .state { color: var(--text-faint); }
+  .ref.pr-merged svg, .ref.pr-merged .state { color: var(--merged); }
+  .ref.pr-closed svg, .ref.pr-closed .state { color: var(--danger); }
   .tag { font-size: 11px; font-weight: 600; margin-right: var(--space-2); }
   .tag.next { color: var(--next); }
   .tag.p1 { color: var(--danger); }
@@ -169,6 +193,20 @@
     { key: "done", label: "Xong", className: "done" },
   ];
   const ACTIVE_COLUMNS = ["inProgress", "needsYou"];
+  const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+  const ISSUE_ICON_PATHS = [
+    "M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
+    "M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z",
+  ];
+  const PULL_REQUEST_ICON_PATHS = [
+    "M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z",
+  ];
+  const PULL_REQUEST_STATES = {
+    draft: { label: "nháp", className: "pr-draft" },
+    OPEN: { label: "đang mở", className: "pr-open" },
+    MERGED: { label: "đã merge", className: "pr-merged" },
+    CLOSED: { label: "đã đóng", className: "pr-closed" },
+  };
   const SUMMARY_PARTS = [
     { key: "needsYou", label: "cần anh", className: "needs-you" },
     { key: "inProgress", label: "đang làm" },
@@ -182,6 +220,7 @@
   let lastRenderedJson = "";
   let actionMessage = "";
   let currentWarnings = [];
+  let githubWebUrl = null;
   let isDoneExpanded = false;
   const startingTaskIds = new Set();
 
@@ -282,13 +321,62 @@
     }
     if (task.column === "needsYou") meta.append("Claude đang chờ anh trả lời");
     if (task.column === "inProgress") meta.append(task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude");
-    if (task.column === "review" && task.pullRequest) {
-      const link = createElement("a", "", `PR #${task.pullRequest.number}`);
-      link.href = task.pullRequest.url;
-      link.target = "_blank";
-      meta.append(link);
-    }
     return meta.childNodes.length > 0 ? meta : null;
+  }
+
+  function buildIcon(paths) {
+    const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("fill", "currentColor");
+    svg.setAttribute("aria-hidden", "true");
+    for (const pathData of paths) {
+      const path = document.createElementNS(SVG_NAMESPACE, "path");
+      path.setAttribute("d", pathData);
+      path.setAttribute("fill-rule", "evenodd");
+      svg.append(path);
+    }
+    return svg;
+  }
+
+  function buildReference({ className, iconPaths, kind, number, url, stateLabel }) {
+    const link = createElement("a", `ref ${className}`);
+    link.href = url;
+    link.target = "_blank";
+    link.title = `Mở ${kind} #${number} trên GitHub`;
+    link.append(buildIcon(iconPaths), createElement("span", "kind", kind), `#${number}`);
+    if (stateLabel) link.append(createElement("span", "state", `· ${stateLabel}`));
+    return link;
+  }
+
+  function buildReferences(task) {
+    const references = [];
+    if (githubWebUrl) {
+      for (const issueNumber of task.githubIssues) {
+        references.push(buildReference({
+          className: "issue",
+          iconPaths: ISSUE_ICON_PATHS,
+          kind: "Issue",
+          number: issueNumber,
+          url: `${githubWebUrl}/issues/${issueNumber}`,
+        }));
+      }
+    }
+    const pullRequest = task.pullRequest;
+    if (pullRequest) {
+      const state = PULL_REQUEST_STATES[pullRequest.isDraft && pullRequest.state === "OPEN" ? "draft" : pullRequest.state];
+      references.push(buildReference({
+        className: state?.className ?? "pr-open",
+        iconPaths: PULL_REQUEST_ICON_PATHS,
+        kind: "PR",
+        number: pullRequest.number,
+        url: pullRequest.url,
+        stateLabel: state?.label,
+      }));
+    }
+    if (references.length === 0) return null;
+    const container = createElement("div", "refs");
+    container.append(...references);
+    return container;
   }
 
   function buildAction(task, isNext) {
@@ -323,6 +411,8 @@
     body.append(createElement("div", "title", task.title));
     const meta = describeMeta(task, isNext);
     if (meta) body.append(meta);
+    const references = buildReferences(task);
+    if (references) body.append(references);
     row.append(createElement("span", "number", task.number ?? ""), body);
     const action = buildAction(task, isNext);
     if (action) row.append(action);
@@ -426,6 +516,7 @@
       lastRenderedJson = renderedJson;
       currentTasks = body.tasks;
       currentWarnings = body.warnings;
+      githubWebUrl = body.githubWebUrl;
       render();
     } catch (error) {
       document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;

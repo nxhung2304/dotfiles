@@ -4,6 +4,7 @@ const path = require("node:path");
 const { loadSpecs } = require("./specs");
 const { buildBoard } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
+const { readGithubWebUrl } = require("./repo-url");
 const { BoardActionError, startTask, focusTask, closeTaskWorkspace } = require("./actions");
 
 const HOST = "127.0.0.1";
@@ -16,6 +17,7 @@ const repoRoot = process.argv[2] ?? process.cwd();
 const port = Number.parseInt(process.env.BOARD_PORT ?? "", 10) || DEFAULT_PORT;
 const readLiveState = createLiveStateReader(repoRoot);
 const startingTaskIds = new Set();
+const githubWebUrlPromise = readGithubWebUrl(repoRoot);
 
 async function readBoardState() {
   const specs = loadSpecs(repoRoot);
@@ -107,7 +109,8 @@ async function routeRequest(request, response) {
   }
   if (request.method === "GET" && pathname === "/api/board") {
     const { tasks, warnings } = await readBoardState();
-    sendJson(response, 200, { repoName: path.basename(repoRoot), tasks, warnings });
+    const githubWebUrl = await githubWebUrlPromise;
+    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, warnings });
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];
