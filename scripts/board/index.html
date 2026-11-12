@@ -107,6 +107,7 @@
   section h2 .count { font-family: var(--font-mono); color: var(--text-faint); }
   section.needs-you h2 { color: var(--needs-you); }
   .list { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+  .actions { display: flex; gap: 6px; }
   .row {
     display: grid;
     grid-template-columns: 44px 1fr auto;
@@ -344,6 +345,16 @@
     startingTaskIds.delete(task.id);
   }
 
+  async function startAutoTask(task) {
+    if (!confirmStart(task)) return;
+    startingTaskIds.add(task.id);
+    actionMessage = `Đang mở workspace tự động cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)} và gửi /vibe-issue. Claude sẽ tự tạo worktree khi chạy.`);
+    startingTaskIds.delete(task.id);
+  }
+
   function focusTask(task) {
     runAction("/api/focus", task.id, () => `Đã chuyển sang tab của ${shortName(task.id)}.`);
   }
@@ -447,7 +458,13 @@
     if (task.column === "ready") {
       const button = buildButton(startingTaskIds.has(task.id) ? "Đang mở…" : "Bắt đầu", isNext ? "primary" : "", () => startTask(task));
       button.disabled = startingTaskIds.size > 0;
-      return button;
+      if (task.specPath.endsWith("/issue.md")) return button;
+      const autoButton = buildButton("Chạy tự động", "", () => startAutoTask(task));
+      autoButton.disabled = startingTaskIds.size > 0;
+      autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
+      const group = createElement("div", "actions");
+      group.append(button, autoButton);
+      return group;
     }
     if (task.column === "done" && task.worktree && !task.worktree.isMain) {
       const uncommittedFileCount = task.diffStats?.uncommittedFileCount ?? 0;

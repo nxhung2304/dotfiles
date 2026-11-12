@@ -182,6 +182,32 @@ async function startTask({ repoRoot, task, spec }) {
   }
 }
 
+function buildAutoRunPrompt(task) {
+  return `/vibe-issue ${task.id} max-parallel=1`;
+}
+
+function buildAgentNameForPane(paneId) {
+  return `claude-${paneId.toLowerCase().replace(/:/g, "-")}`;
+}
+
+function ensureTaskCanRunAutomatically(task) {
+  ensureTaskCanStart(task);
+  if (task.specPath.endsWith("/issue.md")) {
+    throw new BoardActionError(`Task ${task.id} là thư mục tài liệu, vibe-issue chỉ chạy task có file spec`, 409);
+  }
+}
+
+async function startAutoRun({ repoRoot, task }) {
+  ensureRunningInsideHerdr();
+  ensureTaskCanRunAutomatically(task);
+  const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", `[AUTO] ${task.id}`, "--focus"]);
+  const paneId = created.result.root_pane.pane_id;
+  await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
+  const prompt = buildAutoRunPrompt(task);
+  await sendPrompt(paneId, prompt);
+  return { paneId, prompt, isPromptSent: true };
+}
+
 async function focusTask(task) {
   const paneId = task.agent?.paneId;
   if (!paneId) throw new BoardActionError(`Task ${task.id} chưa có phiên Claude nào trong herdr`, 409);
@@ -205,6 +231,9 @@ module.exports = {
   buildWorktreePath,
   buildStartPrompt,
   startTask,
+  startAutoRun,
+  buildAutoRunPrompt,
+  ensureTaskCanRunAutomatically,
   focusTask,
   cleanUpTaskWorktree,
 };

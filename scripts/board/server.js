@@ -5,7 +5,7 @@ const { loadSpecs } = require("./specs");
 const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
-const { BoardActionError, startTask, focusTask, cleanUpTaskWorktree } = require("./actions");
+const { BoardActionError, startTask, startAutoRun, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const HOST = "127.0.0.1";
 const DEFAULT_PORT = 4777;
@@ -106,8 +106,20 @@ async function handleStart(taskId) {
   }
 }
 
+async function handleStartAuto(taskId) {
+  if (startingTaskIds.has(taskId)) throw new BoardActionError(`Task ${taskId} đang được khởi động`, 409);
+  startingTaskIds.add(taskId);
+  try {
+    const { task } = await findTaskContext(taskId);
+    return await startAutoRun({ repoRoot, task });
+  } finally {
+    startingTaskIds.delete(taskId);
+  }
+}
+
 const ACTION_HANDLERS = {
   "/api/start": handleStart,
+  "/api/start-auto": handleStartAuto,
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),
 };
