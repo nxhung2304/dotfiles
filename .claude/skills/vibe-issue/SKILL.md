@@ -1,13 +1,13 @@
 ---
-name: ai-orchestrate
-description: Runs several issue tasks in parallel while the user is away. Each task moves through phase agents (plan → prepare → code → review → fix → finalize) in its own git worktree, each phase on the cheapest model that keeps quality (opus for planning and review, sonnet for code, haiku for mechanical steps). Uses the approved traits in ~/.ai-metrics/profile/profile.json to decide the way the user would, never merges, never touches Slack, and pings the user only when needed. Use when the user says "ai-orchestrate", "chạy song song các task", "giao nhiều task", or hands over several specs to work through unattended.
+name: vibe-issue
+description: Runs one or several issue tasks end to end while the user is away, so the user only tests and gives feedback. Each task moves through phase agents (plan → prepare → risk → code → review → fix → finalize) in its own git worktree, each phase on the cheapest model that keeps quality (opus for planning and review, sonnet for code, haiku for mechanical steps). Uses the approved traits in ~/.ai-metrics/profile/profile.json to decide the way the user would, never merges, never touches Slack, and pings the user only when needed. Use when the user says "vibe-issue", "vibe", "chạy song song các task", "giao nhiều task", or hands over several specs to work through unattended.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, Agent, ToolSearch, PushNotification
 ---
 
-# AI orchestrate
+# Vibe issue
 
-Purpose: take N tasks, run each through plan → implement → review in an isolated worktree, keep within a fixed budget, spend expensive models only where a mistake is costly, and keep the user informed without needing them.
+Purpose: take N tasks, run each through plan → risk check → implement → review in an isolated worktree, keep within a fixed budget, spend expensive models only where a mistake is costly, and keep the user informed without needing them.
 
 **Params (via ARGUMENTS: `<spec-filename>... [max-parallel=3] [max-review-rounds=2] [budget-tokens=<n>] [auto-approve-spec=false] [lang=en]`):**
 - `max-parallel` (default 3): tasks running at the same time. The rest wait in a queue.
@@ -32,6 +32,7 @@ Set `model` explicitly on every `Agent` call. Never leave it to inherit from the
 |---|---|---|
 | Plan (draft or revise a spec) | `opus` | A wrong plan makes every later phase wrong. The user already saw a weaker model write a poor spec. |
 | Prepare (worktree + branch) | `haiku` | Mechanical. `implement-prepare` already pins haiku. |
+| Risk check (`risk-issue`) | `opus` | Read-only. `risk-issue` already pins opus. |
 | Code (`implement-issue local=true`) | `sonnet` | Follows an approved checklist. |
 | Review (`review-issue`) | `opus` | Read-only, one pass per round. `review-issue` already pins opus. |
 | Fix MUST items | `sonnet` | Targeted edits from a concrete finding. |
@@ -76,13 +77,17 @@ Every phase agent gets: the task's spec filename, the worktree path (after Prepa
 2. If the spec is untracked: copy `specs/issues/<spec>.md` (and its issue folder if any) from the main checkout into the worktree at the same relative path.
 3. Return `{ worktree, branch }`.
 
-**Code** (`sonnet`): invoke `implement-issue` with `<spec> local=true` inside the worktree. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
+**Risk** (`opus`) — skip when the Plan phase already ran `risk-issue` on this spec in this run: invoke `risk-issue` with the spec path (so it never asks for one) and write its report to `~/.ai-metrics/orchestrator/<run-id>-<spec>-risk.md`. Return `{ missing, possible, risk_report_path }`.
+
+**Code** (`sonnet`): give it the risk report path, read it first, and guard against a listed risk only when that stays within the spec's checklist; never widen the scope for a risk. Then invoke `implement-issue` with `<spec> local=true` inside the worktree. Return `{ status, files_changed, tests_passed }`. Escalate per "Model routing".
+
+**Stage** (after Code and after every Fix, before Review): `review-issue` only sees committed or staged changes, so `local=true` work would look like an empty diff. In the worktree run `git add -A`, then `git reset -q -- <path>` for every spec path copied in by Prepare.
 
 **Review** (`opus`): invoke `review-issue` on the branch. Return `{ must_open, should_open, comment_log_path }`.
 
-**Fix** (`sonnet`, escalating): fix only the MUST items from `comment.log` (no SHOULD or NIT), then return to Review. Rounds are capped by `max-review-rounds`; stop earlier when a round has no MUST.
+**Fix** (`sonnet`, escalating): fix only the MUST items from `comment.log` (no SHOULD or NIT), then Stage, then return to Review. Rounds are capped by `max-review-rounds`; stop earlier when a round has no MUST.
 
-**Finalize** (`sonnet`): invoke `implement-finalize` with `thread_ts` null. If MUST items remain, add an "Open review items" section to the PR body listing them. If the spec was untracked, copy the final `comment.log` back to the main checkout path. Return `{ pr_url, files_committed }`.
+**Finalize** (`sonnet`): invoke `implement-finalize` with `thread_ts` null. If MUST items remain, add an "Open review items" section to the PR body listing them. If the risk report has Missing or Possible risks, add a "Risks to test" section listing each one with its test from the report. If the spec was untracked, copy the final `comment.log` back to the main checkout path. Return `{ pr_url, files_committed }`.
 
 A task may redo the Code phase at most once. A second failure → `failed`, stop that task, no PR.
 
@@ -119,7 +124,7 @@ Anything else (progress, one task finishing) goes to the state file and a one-li
 
 When no task is `queued` or `running`, report once, concisely, in this order:
 - **Kết luận**: N done, N need you, N failed, N blocked
-- per task: PR link, rounds used, open MUST count, worktree path, or the question waiting for the user
+- per task: PR link, rounds used, open MUST count, risks to test (from the risk report), worktree path, or the question waiting for the user
 - specs approved by `auto-approve-spec`, if any
 - budget used per model, and any escalation to `opus` with the reason
 - profile rules that were applied, and any case where the profile had nothing to say and an agent chose a default
