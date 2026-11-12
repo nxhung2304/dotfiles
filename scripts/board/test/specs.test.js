@@ -64,3 +64,10 @@ test("resolveDependencyToken reports duplicate spec numbers without a title hint
   assert.equal(resolution.unresolvedToken, "#017");
   assert.match(resolution.reason, /^ambiguous/);
 });
+
+test("toGithubWebUrl handles https and ssh remotes", () => {
+  const { toGithubWebUrl } = require("../repo-url");
+  assert.equal(toGithubWebUrl("https://github.com/rights-s/app.git\n"), "https://github.com/rights-s/app");
+  assert.equal(toGithubWebUrl("git@github.com:nxhung2304/dotfiles.git"), "https://github.com/nxhung2304/dotfiles");
+  assert.equal(toGithubWebUrl("https://gitlab.com/a/b"), null);
+});
