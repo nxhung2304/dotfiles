@@ -16,7 +16,7 @@
 - mise provides Node 22 and Python 3.13 — `.config/mise/config.toml`.
 
 ## Data problems in the mobile repo specs (Confirmed, `rights_vn-office_management-mobile/specs/issues`)
-- Duplicate numbers: 017, 018, 019, 020, 021, 022, 023 each have two files → number cannot be the task key.
+- Duplicate numbers: 017, 018, 019, 020, 021, 022 each have two different spec files → number cannot be the task key.
 - `Depends on` exists in only 14 of 33 specs, in 3 formats: `#018 (title)` (spec number), `#78` (GitHub issue), file slug.
 - `PR:` has 7 different spellings (Draft, Todo, Open, In Progress, Merged, `Merged (#59)`, a URL, `—`).
 - 3 specs are `Review: Pending`.
