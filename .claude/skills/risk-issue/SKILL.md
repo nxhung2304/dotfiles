@@ -76,7 +76,7 @@ For each pair of decisions that share a resource, a queue, a timeline or a calle
 
 ## STEP 6: Report
 
-Lead with the answer. One short paragraph per finding: what happens, why (which decisions / code), and — if the spec partly covers it — what part is already there. Order by severity: permanent breakage or data/state corruption first, then wrong state visible to the user, then degraded behaviour.
+Lead with the answer. Keep each finding to at most 3 short lines: what happens, cause with file:line or decision (plus what the spec already covers, if anything), and how to test. Give details only when the user asks. Order by severity: permanent breakage or data/state corruption first, then wrong state visible to the user, then degraded behaviour.
 
 Use this structure (translate the headings to the output language):
 
@@ -88,9 +88,7 @@ Use this structure (translate the headings to the output language):
 **Possible risks (guess)**
 - **<short title>** — confidence <low/medium/high>. <why suspected, file:line>. <what would confirm it>. Test: <how; "needs simulation" if so>.
 
-**Checked: not a risk / not applicable**
-- **<category>**: not a risk — <why it is safe, file:line>.
-- **<category>**: not applicable — <one-line reason>.
+Checked, no risk: <category>, <category> (<short reason if not obvious>), ...
 ```
 
-Every one of the 11 categories must appear in the report under exactly one of these sections; one line each for the last section. If nothing is missing, say so plainly and still list every category checked. Do not end with offers to fix, edit the spec, or do more work — the user decides next steps.
+Every one of the 11 categories must appear in the report under exactly one of these sections. Put all categories with no finding in one line: `Checked, no risk: <category names>`; add a reason only where it is not obvious. If nothing is missing, say so plainly and still list every category checked. Do not end with offers to fix, edit the spec, or do more work — the user decides next steps.
