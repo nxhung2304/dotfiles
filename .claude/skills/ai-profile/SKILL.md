@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Bash(python3:*), Bash(mkdir:*), Bash(ls:*)
 
 # AI profile
 
-Build and maintain a profile of the user's working behaviour from real evidence. It feeds the `ai-orchestrate` skill, which acts on the user's behalf while they are away. A wrong trait makes the orchestrator decide wrongly, so every trait needs a quote and the user's approval.
+Build and maintain a profile of the user's working behaviour from real evidence. It feeds the `vibe-issue` skill, which acts on the user's behalf while they are away. A wrong trait makes the orchestrator decide wrongly, so every trait needs a quote and the user's approval.
 
 **Language:** write `rule` and `profile.md` in Vietnamese unless ARGUMENTS say `lang: en`.
 
@@ -51,7 +51,7 @@ Build and maintain a profile of the user's working behaviour from real evidence.
    ```bash
    python3 ~/dotfiles/scripts/ai-metrics/ai_transcript.py <transcript paths...>
    ```
-   Ignore sessions that used `ai-score`, `ai-improve`, `ai-profile` or `ai-orchestrate`, or whose work is building `~/dotfiles/scripts/ai-metrics/`.
+   Ignore sessions that used `ai-score`, `ai-improve`, `ai-profile` or `vibe-issue`, or whose work is building `~/dotfiles/scripts/ai-metrics/`.
 
 4. Look only at what the user wrote and did, not at what the AI wrote. Signals worth extracting:
    - corrections ("sai", "làm lại", "không phải") and what the AI had just done
