@@ -94,3 +94,13 @@ test("findIssuesWithoutSpec keeps only open issues no spec mentions", () => {
   const openIssues = [{ number: 2, title: "tracked", url: "a" }, { number: 99, title: "new", url: "b" }];
   assert.deepEqual(findIssuesWithoutSpec(specs, openIssues), [{ number: 99, title: "new", url: "b" }]);
 });
+
+test("findUnlinkedWorktrees lists task worktrees whose branch matches no spec", () => {
+  const { findUnlinkedWorktrees } = require("../columns");
+  const state = {
+    ...liveState,
+    worktrees: [...liveState.worktrees, { path: "/repo.spike", branch: "spike/try-riverpod-3", isMain: false }],
+    agentsByWorktreePath: new Map([...liveState.agentsByWorktreePath, ["/repo.spike", [{ paneId: "p9", status: "idle" }]]]),
+  };
+  assert.deepEqual(findUnlinkedWorktrees(specs, state).map((worktree) => [worktree.branch, worktree.agent.paneId]), [["spike/try-riverpod-3", "p9"]]);
+});

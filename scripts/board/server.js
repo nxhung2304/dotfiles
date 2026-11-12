@@ -2,10 +2,10 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadSpecs } = require("./specs");
-const { buildBoard, findIssuesWithoutSpec } = require("./columns");
+const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
-const { BoardActionError, startTask, focusTask, closeTaskWorkspace } = require("./actions");
+const { BoardActionError, startTask, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const HOST = "127.0.0.1";
 const DEFAULT_PORT = 4777;
@@ -40,6 +40,7 @@ async function readBoardState() {
     specs,
     tasks: buildBoard(specs, liveState),
     issuesWithoutSpec: findIssuesWithoutSpec(specs, liveState.openIssues),
+    unlinkedWorktrees: findUnlinkedWorktrees(specs, liveState),
     warnings: liveState.warnings,
   };
 }
@@ -86,7 +87,9 @@ function readJsonBody(request) {
 }
 
 async function findTaskContext(taskId) {
-  const { specs, tasks } = await readBoardState();
+  const { specs, tasks, unlinkedWorktrees } = await readBoardState();
+  const unlinkedWorktree = unlinkedWorktrees.find((worktree) => `worktree:${worktree.path}` === taskId);
+  if (unlinkedWorktree) return { task: { id: taskId, ...unlinkedWorktree }, spec: null };
   const task = tasks.find((candidate) => candidate.id === taskId);
   if (!task) throw new BoardActionError(`Không tìm thấy task ${taskId}`, 404);
   return { task, spec: specs.find((candidate) => candidate.id === taskId) };
@@ -106,7 +109,7 @@ async function handleStart(taskId) {
 const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
-  "/api/close-workspace": async (taskId) => closeTaskWorkspace((await findTaskContext(taskId)).task),
+  "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),
 };
 
 async function handleAction(request, response, actionHandler) {
@@ -127,9 +130,9 @@ async function routeRequest(request, response) {
     return;
   }
   if (request.method === "GET" && pathname === "/api/board") {
-    const { tasks, issuesWithoutSpec, warnings } = await readBoardState();
+    const { tasks, issuesWithoutSpec, unlinkedWorktrees, warnings } = await readBoardState();
     const githubWebUrl = await githubWebUrlPromise;
-    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, issuesWithoutSpec, warnings });
+    sendJson(response, 200, { repoName: path.basename(repoRoot), githubWebUrl, tasks, issuesWithoutSpec, unlinkedWorktrees, warnings });
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];

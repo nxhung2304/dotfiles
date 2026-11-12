@@ -111,6 +111,26 @@
   .title { font-weight: 500; overflow-wrap: anywhere; }
   .meta { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
   .meta .blocked-by { color: var(--danger); }
+  .diff-stats { margin-top: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .diff-stats .insertions { color: var(--next); }
+  .diff-stats .deletions { color: var(--danger); }
+  .diff-stats .dirty { color: var(--warning-text); }
+  .preview {
+    margin-top: 6px;
+    padding: 6px var(--space-2);
+    border-left: 2px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  section.needs-you .preview { border-left-color: var(--needs-you); color: var(--text); }
+  .ref .signal { font-size: 11px; }
+  .ref .signal.bad { color: var(--danger); }
+  .ref .signal.good { color: var(--next); }
+  .ref .signal.waiting { color: var(--warning-text); }
   .meta a { color: var(--accent); text-decoration: none; }
   .meta a:hover { text-decoration: underline; }
   .refs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 6px; }
@@ -224,6 +244,17 @@
   let isDoneExpanded = false;
   let isIssuesWithoutSpecExpanded = false;
   let issuesWithoutSpec = [];
+  let unlinkedWorktrees = [];
+  const CHECK_SIGNALS = {
+    failing: { label: "CI lỗi", tone: "bad" },
+    pending: { label: "CI đang chạy", tone: "waiting" },
+    passing: { label: "CI đạt", tone: "good" },
+  };
+  const REVIEW_SIGNALS = {
+    CHANGES_REQUESTED: { label: "cần sửa", tone: "bad" },
+    REVIEW_REQUIRED: { label: "chờ review", tone: "waiting" },
+    APPROVED: { label: "đã duyệt", tone: "good" },
+  };
   const startingTaskIds = new Set();
 
   function createElement(tagName, className, text) {
@@ -324,7 +355,7 @@
       const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
       meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
     }
-    if (task.column === "needsYou") meta.append("Claude đang chờ anh trả lời");
+    if (task.column === "needsYou" && task.previewLines.length === 0) meta.append("Claude đang chờ anh trả lời");
     if (task.column === "inProgress") meta.append(task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude");
     return meta.childNodes.length > 0 ? meta : null;
   }
@@ -343,13 +374,14 @@
     return svg;
   }
 
-  function buildReference({ className, iconPaths, kind, number, url, stateLabel }) {
+  function buildReference({ className, iconPaths, kind, number, url, stateLabel, signals = [] }) {
     const link = createElement("a", `ref ${className}`);
     link.href = url;
     link.target = "_blank";
     link.title = `Mở ${kind} #${number} trên GitHub`;
     link.append(buildIcon(iconPaths), createElement("span", "kind", kind), `#${number}`);
     if (stateLabel) link.append(createElement("span", "state", `· ${stateLabel}`));
+    for (const signal of signals) link.append(createElement("span", `signal ${signal.tone}`, `· ${signal.label}`));
     return link;
   }
 
@@ -376,6 +408,9 @@
         number: pullRequest.number,
         url: pullRequest.url,
         stateLabel: state?.label,
+        signals: pullRequest.state === "OPEN"
+          ? [CHECK_SIGNALS[pullRequest.checks], REVIEW_SIGNALS[pullRequest.reviewDecision]].filter(Boolean)
+          : [],
       }));
     }
     if (references.length === 0) return null;
@@ -393,9 +428,15 @@
       return button;
     }
     if (task.column === "done" && task.worktree && !task.worktree.isMain) {
-      return buildButton("Đóng workspace", "", () =>
-        runAction("/api/close-workspace", task.id, () => `Đã đóng workspace của ${shortName(task.id)}.`),
+      const uncommittedFileCount = task.diffStats?.uncommittedFileCount ?? 0;
+      const button = buildButton("Dọn worktree", "", () =>
+        runAction("/api/clean-up", task.id, () => `Đã đóng workspace và xoá worktree của ${shortName(task.id)} (branch vẫn giữ).`),
       );
+      button.disabled = uncommittedFileCount > 0;
+      button.title = uncommittedFileCount > 0
+        ? `Còn ${uncommittedFileCount} file chưa commit, không dọn được`
+        : "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
+      return button;
     }
     return null;
   }
@@ -409,6 +450,58 @@
     return button;
   }
 
+  function buildDiffStats(diffStats) {
+    const parts = [];
+    if (diffStats.filesChanged > 0) {
+      parts.push(
+        createElement("span", "insertions", `+${diffStats.insertions}`),
+        " ",
+        createElement("span", "deletions", `−${diffStats.deletions}`),
+        ` · ${diffStats.filesChanged} file`,
+      );
+    }
+    if (diffStats.uncommittedFileCount > 0) {
+      if (parts.length > 0) parts.push(" · ");
+      parts.push(createElement("span", "dirty", `${diffStats.uncommittedFileCount} file chưa commit`));
+    }
+    if (parts.length === 0) return null;
+    const line = createElement("div", "diff-stats");
+    line.append(...parts);
+    return line;
+  }
+
+  function appendWorktreeDetails(body, item) {
+    const diffStatsLine = item.diffStats && item.column !== "done" ? buildDiffStats(item.diffStats) : null;
+    if (diffStatsLine) body.append(diffStatsLine);
+    if (item.previewLines?.length > 0) body.append(createElement("div", "preview", item.previewLines.join("\n")));
+  }
+
+  function buildUnlinkedWorktreeRow(worktree) {
+    const pseudoTask = { id: `worktree:${worktree.path}`, title: worktree.branch ?? worktree.path, agent: worktree.agent };
+    const row = createElement("div", worktree.agent ? "row clickable" : "row");
+    const body = createElement("div");
+    body.append(createElement("div", "title", pseudoTask.title));
+    const meta = createElement("div", "meta", worktree.agent ? `Claude: ${worktree.agent.status} · không khớp spec nào` : "không có phiên Claude · không khớp spec nào");
+    body.append(meta);
+    appendWorktreeDetails(body, worktree);
+    row.append(createElement("span", "number", ""), body);
+    if (worktree.agent) {
+      row.append(buildButton("Mở tab", "", () => focusTask(pseudoTask)));
+      row.addEventListener("click", () => focusTask(pseudoTask));
+    }
+    return row;
+  }
+
+  function buildUnlinkedWorktreesSection() {
+    const element = createElement("section", "unlinked");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", "Worktree chưa gắn task"), createElement("span", "count", String(unlinkedWorktrees.length)));
+    const list = createElement("div", "list");
+    list.append(...unlinkedWorktrees.map(buildUnlinkedWorktreeRow));
+    element.append(heading, list);
+    return element;
+  }
+
   function buildRow(task, isNext) {
     const row = createElement("div", isNext ? "row is-next" : "row");
     row.dataset.taskId = task.id;
@@ -418,6 +511,7 @@
     if (meta) body.append(meta);
     const references = buildReferences(task);
     if (references) body.append(references);
+    appendWorktreeDetails(body, task);
     row.append(createElement("span", "number", task.number ?? ""), body);
     const action = buildAction(task, isNext);
     if (action) row.append(action);
@@ -552,6 +646,7 @@
     const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
     if (!hasActiveTasks) board.append(buildIdleHint());
     for (const section of SECTIONS) {
+      if (section.key === "ready" && unlinkedWorktrees.length > 0) board.append(buildUnlinkedWorktreesSection());
       if (section.key === "done" && issuesWithoutSpec.length > 0) board.append(buildIssuesWithoutSpecSection());
       if (tasksIn(section.key).length > 0) board.append(buildSection(section));
     }
@@ -567,13 +662,14 @@
       document.getElementById("repo-name").textContent = body.repoName;
       document.title = `Board · ${body.repoName}`;
       document.getElementById("updated-at").textContent = new Date().toLocaleTimeString();
-      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.warnings, actionMessage]);
+      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.unlinkedWorktrees, body.warnings, actionMessage]);
       if (renderedJson === lastRenderedJson) return;
       lastRenderedJson = renderedJson;
       currentTasks = body.tasks;
       currentWarnings = body.warnings;
       githubWebUrl = body.githubWebUrl;
       issuesWithoutSpec = body.issuesWithoutSpec;
+      unlinkedWorktrees = body.unlinkedWorktrees;
       render();
     } catch (error) {
       document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;

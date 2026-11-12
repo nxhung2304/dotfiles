@@ -1,4 +1,5 @@
 const { runCommand, runJsonCommand } = require("./command");
+const { readWorktreeDetails } = require("./worktree-details");
 
 const HERDR_REFRESH_MS = 3_000;
 const PULL_REQUEST_REFRESH_MS = 60_000;
@@ -73,15 +74,30 @@ function createOpenIssueReader(repoRoot) {
   };
 }
 
+const FAILED_CHECK_RESULTS = ["FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"];
+const PASSED_CHECK_RESULTS = ["SUCCESS", "NEUTRAL", "SKIPPED"];
+
+function summarizeChecks(statusCheckRollup) {
+  if (!Array.isArray(statusCheckRollup) || statusCheckRollup.length === 0) return null;
+  const results = statusCheckRollup.map((check) => check.conclusion || check.state || check.status || "");
+  if (results.some((result) => FAILED_CHECK_RESULTS.includes(result))) return "failing";
+  if (results.every((result) => PASSED_CHECK_RESULTS.includes(result))) return "passing";
+  return "pending";
+}
+
+function summarizePullRequest({ statusCheckRollup, reviewDecision, ...pullRequest }) {
+  return { ...pullRequest, checks: summarizeChecks(statusCheckRollup), reviewDecision: reviewDecision || null };
+}
+
 function createPullRequestReader(repoRoot) {
   return async () => {
     try {
       const pullRequests = await runJsonCommand(
         "gh",
-        ["pr", "list", "--state", "all", "--limit", PULL_REQUEST_LIMIT, "--json", "number,state,isDraft,headRefName,url,mergedAt"],
+        ["pr", "list", "--state", "all", "--limit", PULL_REQUEST_LIMIT, "--json", "number,state,isDraft,headRefName,url,mergedAt,reviewDecision,statusCheckRollup"],
         { cwd: repoRoot },
       );
-      return { isAvailable: true, pullRequests };
+      return { isAvailable: true, pullRequests: pullRequests.map(summarizePullRequest) };
     } catch (error) {
       return { isAvailable: false, error: error.message, pullRequests: [] };
     }
@@ -101,9 +117,11 @@ function createLiveStateReader(repoRoot) {
       readOpenIssues(),
     ]);
     const worktrees = parseWorktreeList(worktreeOutput);
+    const agentsByWorktreePath = groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents);
     return {
       worktrees,
-      agentsByWorktreePath: groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents),
+      agentsByWorktreePath,
+      worktreeDetailsByPath: await readWorktreeDetails(repoRoot, worktrees, agentsByWorktreePath),
       pullRequests: pullRequestState.pullRequests,
       openIssues: openIssueState.openIssues,
       warnings: [herdr.error, pullRequestState.error, openIssueState.error].filter(Boolean),
@@ -111,4 +129,4 @@ function createLiveStateReader(repoRoot) {
   };
 }
 
-module.exports = { parseWorktreeList, groupClaudeAgentsByWorktree, createLiveStateReader };
+module.exports = { parseWorktreeList, groupClaudeAgentsByWorktree, summarizeChecks, createLiveStateReader };

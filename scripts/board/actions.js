@@ -186,12 +186,16 @@ async function focusTask(task) {
   await runCommand(NOTIFY_AGENT_SCRIPT, ["--focus", paneId]);
 }
 
-async function closeTaskWorkspace(task) {
-  ensureRunningInsideHerdr();
-  if (!task.worktree || task.worktree.isMain) {
-    throw new BoardActionError(`Task ${task.id} không có worktree riêng để đóng`, 409);
+async function cleanUpTaskWorktree(repoRoot, task) {
+  if (task.column !== COLUMN.done || !task.worktree || task.worktree.isMain) {
+    throw new BoardActionError(`Task ${task.id} chưa xong hoặc không có worktree riêng`, 409);
   }
-  await runCommand(WORKTREE_WORKSPACE_SCRIPT, ["close", task.worktree.path]);
+  const uncommittedFileCount = task.diffStats?.uncommittedFileCount ?? 0;
+  if (uncommittedFileCount > 0) {
+    throw new BoardActionError(`Worktree của ${task.id} còn ${uncommittedFileCount} file chưa commit`, 409);
+  }
+  if (process.env.HERDR_ENV) await runCommand(WORKTREE_WORKSPACE_SCRIPT, ["close", task.worktree.path]);
+  await runCommand("git", ["worktree", "remove", task.worktree.path], { cwd: repoRoot });
 }
 
 module.exports = {
@@ -200,5 +204,5 @@ module.exports = {
   buildStartPrompt,
   startTask,
   focusTask,
-  closeTaskWorkspace,
+  cleanUpTaskWorktree,
 };

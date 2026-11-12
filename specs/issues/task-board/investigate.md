@@ -62,3 +62,11 @@
 - Starting the command: `herdr pane send-text` + `send-keys enter` into the Claude pane, the same way `scripts/herdr/peer-pair:45-46` does.
 - Old spec status formats also mean done: `## **Status:** Merged` (001, 002) and `- ✅ Completed` (022).
 - 2026-11-12 Sources widened (user asked why tasks were missing): folder issue docs `specs/issues/<n>-<slug>/issue.md` (7 in the mobile repo) are tasks too; specs that exist only in a task worktree show as blocked with "merge first"; open GitHub issues without any spec are listed in a collapsed section with a copy-command button for `/github-issues-to-md`; `Depends on: PR #N` blocks until that PR is merged. `story.md` items stay off the board (77 open items, owned by `generate-issues`).
+- 2026-11-12 Features taken from similar tools (READMEs of langwatch/kanban-code, cline/kanban, BloopAI/vibe-kanban, epatel/claude-agents-dashboard; kanbots.dev and docs.cline.bot did not load):
+  - Last lines of the Claude pane on active rows (cline/kanban shows the latest message per card) → `herdr pane read`, chrome lines filtered.
+  - PR CI and review state on the PR link (kanban-code) → `statusCheckRollup`, `reviewDecision`.
+  - Diff size and uncommitted files per worktree (diff views in cline, vibe-kanban, epatel) → `git diff --shortstat <merge-base>`, `git status --porcelain`.
+  - Done → "Dọn worktree": close herdr workspace + `git worktree remove`, only when clean, branch kept (cleanup in all four).
+  - Worktrees that match no spec listed with "Mở tab" (kanban-code discovers orphan worktrees and sessions).
+  - Not taken: in-board diff viewer and line comments, embedded terminal, auto-commit/auto-PR, auto-start of dependents, cost tracking — they duplicate herdr/skills or skip the user's review.
+

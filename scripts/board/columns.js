@@ -89,10 +89,13 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
     agent,
     hasOpenDependencies: blockedBy.length > 0 || unresolvedDependencies.length > 0 || Boolean(spec.onlyInBranch),
   });
+  const worktreeDetail = worktree ? liveState.worktreeDetailsByPath?.get(worktree.path) ?? null : null;
   const { id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch } = spec;
   return {
     ...{ id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch: onlyInBranch ?? null },
     ...{ dependsOn, blockedBy, unresolvedDependencies, column, worktree, agent, pullRequest },
+    diffStats: worktreeDetail?.diffStats ?? null,
+    previewLines: worktreeDetail?.previewLines ?? [],
   };
 }
 
@@ -113,4 +116,15 @@ function findIssuesWithoutSpec(specs, openIssues) {
     .map((issue) => ({ number: issue.number, title: issue.title, url: issue.url }));
 }
 
-module.exports = { COLUMN, findSpecIdForBranch, deriveColumn, buildBoard, findIssuesWithoutSpec };
+function findUnlinkedWorktrees(specs, liveState) {
+  return liveState.worktrees
+    .filter((worktree) => !worktree.isMain && !findSpecIdForBranch(worktree.branch, specs))
+    .map((worktree) => ({
+      ...worktree,
+      agent: pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []),
+      diffStats: liveState.worktreeDetailsByPath?.get(worktree.path)?.diffStats ?? null,
+      previewLines: liveState.worktreeDetailsByPath?.get(worktree.path)?.previewLines ?? [],
+    }));
+}
+
+module.exports = { COLUMN, findSpecIdForBranch, deriveColumn, buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees };
