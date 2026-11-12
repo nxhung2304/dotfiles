@@ -1,6 +1,7 @@
 # Task board — investigation
 
 ## Related
+- [Handoff](./handoff.md)
 - [Original issue](./issue.md)
 - [Plan](./implement.md)
 

@@ -3,6 +3,7 @@
 ## Related
 - [Investigation](./investigate.md)
 - [Plan](./implement.md)
+- [Handoff](./handoff.md)
 
 ## Status
 - Discussion done (feature-discuss Q1–Q19), no GitHub issue yet.
