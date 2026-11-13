@@ -166,7 +166,9 @@
   .row-index { display: none; }
   .row.clickable { cursor: pointer; }
   .row.clickable:hover { background: var(--surface-hover); }
-  .row.nested { margin-left: calc(var(--depth) * 22px); padding-left: var(--space-3); border-left: 2px solid var(--border); }
+  .row.nested { padding-left: calc(var(--space-1) + var(--depth) * 24px); }
+  .group-toggle { min-height: 0; padding: 0 8px; border: none; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font-size: 12px; line-height: 20px; }
+  .group-toggle:hover { background: var(--accent-surface); color: var(--accent); border: none; }
   .row.related { background: var(--related); }
   .row.is-next .title::after { content: "Tiếp theo"; margin-left: var(--space-2); padding: 0 6px; border-radius: 999px; background: var(--accent-surface); color: var(--accent); font-size: 11px; font-weight: 500; vertical-align: 1px; }
   section.needs-you .row { background: var(--needs-you-surface); padding-left: var(--space-3); border-radius: var(--radius); border-top-color: transparent; margin-top: var(--space-2); box-shadow: inset 3px 0 0 var(--needs-you); }
@@ -288,7 +290,8 @@
   .task-table .cell-pr .refs { flex-wrap: nowrap; }
   .task-table .cell-title { min-width: 220px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
   .task-table tr.state-blocked .cell-title, .task-table tr.state-done .cell-title { color: var(--text-muted); font-weight: 400; }
-  .task-table .title-text.nested { margin-left: calc(var(--depth) * 18px); padding-left: var(--space-2); border-left: 2px solid var(--border); }
+  .task-table .title-text.nested { margin-left: calc(var(--depth) * 20px); }
+  .task-table .group-toggle { margin-top: 4px; }
   .task-table .cell-note { margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--danger); }
   .task-table .cell-state, .task-table .cell-claude, .task-table .cell-priority { white-space: nowrap; color: var(--text-muted); }
   .task-table .cell-priority { font-weight: 600; }
@@ -428,6 +431,7 @@
   const startingTaskIds = new Set();
   const autoApproveTaskIds = new Set();
   const expandedRowKeys = new Set();
+  const expandedGroupIds = new Set();
 
   function createElement(tagName, className, text) {
     const element = document.createElement(tagName);
@@ -762,7 +766,18 @@
     return link;
   }
 
-  function buildRow(task, isNext, depth = 0) {
+  function buildGroupToggle(task, descendantCount) {
+    const isExpanded = expandedGroupIds.has(task.id);
+    const toggle = buildButton(isExpanded ? `▾ Ẩn ${descendantCount} task` : `▸ ${descendantCount} task phụ thuộc`, "group-toggle", () => {
+      if (isExpanded) expandedGroupIds.delete(task.id);
+      else expandedGroupIds.add(task.id);
+      render();
+    });
+    toggle.setAttribute("aria-expanded", String(isExpanded));
+    return toggle;
+  }
+
+  function buildRow(task, isNext, depth = 0, descendantCount = 0) {
     const row = createElement("div", isNext ? "row is-next" : "row");
     if (depth > 0) {
       row.classList.add("nested");
@@ -779,6 +794,7 @@
     const tags = describeTags(task, isNext);
     const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
     if (toggle) detailLine.append(toggle);
+    if (descendantCount > 0) detailLine.append(buildGroupToggle(task, descendantCount));
     if (detailLine.childElementCount > 0) body.append(detailLine);
     if (panel) body.append(panel);
     const issueNumber = task.githubIssues[0];
@@ -866,15 +882,18 @@
     }
     const arranged = [];
     const visitedIds = new Set();
-    const visit = (task, depth) => {
-      if (visitedIds.has(task.id)) return;
+    const visit = (task, depth, isVisible) => {
+      if (visitedIds.has(task.id)) return 0;
       visitedIds.add(task.id);
-      arranged.push({ task, depth });
-      for (const child of childrenByParentId.get(task.id) ?? []) visit(child, depth + 1);
+      const item = { task, depth, descendantCount: 0, isVisible };
+      arranged.push(item);
+      const childrenVisible = isVisible && expandedGroupIds.has(task.id);
+      for (const child of childrenByParentId.get(task.id) ?? []) item.descendantCount += 1 + visit(child, depth + 1, childrenVisible);
+      return item.descendantCount;
     };
-    roots.forEach((task) => visit(task, 0));
-    tasks.forEach((task) => visit(task, 0));
-    return arranged;
+    roots.forEach((task) => visit(task, 0, true));
+    tasks.forEach((task) => visit(task, 0, true));
+    return arranged.filter((item) => item.isVisible);
   }
 
   function buildSection(section, { limit, moreLabel } = {}) {
@@ -885,9 +904,9 @@
     const heading = createElement("h2");
     heading.append(createElement("span", "", section.label), createElement("span", "count", String(allTasks.length)));
     const list = createElement("div", "list");
-    list.append(...tasks.map(({ task, depth }, index) => buildRow(task, section.key === "ready" && index === 0, depth)));
+    list.append(...tasks.map(({ task, depth, descendantCount }, index) => buildRow(task, section.key === "ready" && index === 0, depth, descendantCount)));
     element.append(heading, list);
-    if (allTasks.length > tasks.length) {
+    if (limit && allTasks.length > limit) {
       element.append(buildButton(moreLabel(allTasks.length), "toggle", () => selectTab("backlog")));
     }
     return element;
@@ -997,7 +1016,7 @@
     }
   }
 
-  function buildTableRow(task, section, depth = 0) {
+  function buildTableRow(task, section, depth = 0, descendantCount = 0) {
     const row = createElement("tr", `state-${section.className}`);
     row.dataset.taskId = task.id;
     const numberCell = createElement("td", "cell-number");
@@ -1005,6 +1024,7 @@
     const titleCell = createElement("td", "cell-title");
     titleCell.append(createElement("div", depth > 0 ? "title-text nested" : "title-text", task.title));
     titleCell.style.setProperty("--depth", String(depth));
+    if (descendantCount > 0) titleCell.append(buildGroupToggle(task, descendantCount));
     const stateCell = createElement("td", "cell-state");
     stateCell.append(createElement("span", `state-dot ${section.className}`), section.label);
     const problem = describeStatus(task);
@@ -1036,7 +1056,7 @@
     const sections = TAB_COLUMNS[selectedTab].map(findSection);
     const rows = sections.flatMap((section) => {
       const tasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
-      return arrangeByDependency(tasks).map(({ task, depth }) => buildTableRow(task, section, depth));
+      return arrangeByDependency(tasks).map(({ task, depth, descendantCount }) => buildTableRow(task, section, depth, descendantCount));
     });
     if (rows.length === 0) {
       board.append(createElement("div", "empty-hint", "Không có task nào trong mục này."));
