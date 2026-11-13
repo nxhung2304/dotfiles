@@ -74,6 +74,11 @@ function sendJson(response, httpStatus, body) {
   response.end(JSON.stringify(body));
 }
 
+function isRequestFromThisMachine(request) {
+  const address = (request.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
+  return address === "127.0.0.1" || address === "::1" || listLanAddresses().includes(address);
+}
+
 function isTrustedRequest(request) {
   const hostname = (request.headers.host ?? "").split(":")[0];
   if (!ALLOWED_HOSTNAMES.includes(hostname)) return false;
@@ -149,22 +154,22 @@ const ACTION_HANDLERS = {
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),
 };
 
-async function handleSpecSave(specId, { fileName, content, baseModifiedMs }) {
-  if (IS_LAN_MODE) throw new BoardActionError("Không sửa spec khi board chạy ở chế độ --lan", 403);
+async function handleSpecSave(specId, { fileName, content, baseModifiedMs }, request) {
+  if (!isRequestFromThisMachine(request)) throw new BoardActionError("Chỉ sửa spec được từ chính máy chạy board", 403);
   const { specs } = await readBoardState();
   const spec = specs.find((candidate) => candidate.id === specId);
   if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
   return writeSpecFile(repoRoot, spec, { fileName, content, baseModifiedMs });
 }
 
-async function handleDetail(searchParams) {
+async function handleDetail(searchParams, request) {
   if (searchParams.has("issue")) return readIssueDetail(repoRoot, Number(searchParams.get("issue")));
   const specId = searchParams.get("spec");
   const { specs } = await readBoardState();
   const spec = specs.find((candidate) => candidate.id === specId);
   if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
   const detail = readSpecDetail(repoRoot, spec, searchParams.get("file"));
-  return { ...detail, canEdit: detail.canEdit && !IS_LAN_MODE };
+  return { ...detail, canEdit: detail.canEdit && isRequestFromThisMachine(request) };
 }
 
 async function handleAction(request, response, actionHandler, maxBodyBytes) {
@@ -173,7 +178,7 @@ async function handleAction(request, response, actionHandler, maxBodyBytes) {
   }
   const requestBody = await readJsonBody(request, maxBodyBytes);
   if (typeof requestBody.taskId !== "string") throw new BoardActionError("Thiếu taskId", 400);
-  sendJson(response, 200, (await actionHandler(requestBody.taskId, requestBody)) ?? { isOk: true });
+  sendJson(response, 200, (await actionHandler(requestBody.taskId, requestBody, request)) ?? { isOk: true });
 }
 
 async function routeRequest(request, response) {
@@ -191,7 +196,7 @@ async function routeRequest(request, response) {
     return;
   }
   if (request.method === "GET" && pathname === "/api/detail") {
-    sendJson(response, 200, await handleDetail(new URL(request.url, `http://${HOST}`).searchParams));
+    sendJson(response, 200, await handleDetail(new URL(request.url, `http://${HOST}`).searchParams, request));
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];

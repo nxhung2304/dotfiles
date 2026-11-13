@@ -347,6 +347,8 @@
   .doc-files { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
   .doc-file { min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--surface); }
   .doc-file.active { border-color: var(--accent); background: var(--accent-surface); color: var(--accent); font-weight: 600; }
+  .markdown a.doc-link { color: var(--accent); cursor: pointer; }
+  .dead-link { color: var(--text-muted); }
   .drawer-message { color: var(--text-muted); font-size: 13px; }
   .drawer-message.error { color: var(--danger); }
   .issue-state { padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 20px; color: var(--on-state); background: var(--next); }
@@ -859,7 +861,7 @@
   }
 
 
-  const MARKDOWN_INLINE_PATTERN = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\(https?:\/\/[^)\s]+\))|(https?:\/\/[^\s)<]+)/g;
+  const MARKDOWN_INLINE_PATTERN = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\([^)\s]+\))|(https?:\/\/[^\s)<]+)/g;
   const MARKDOWN_TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
   function appendLink(parent, text, url) {
@@ -870,7 +872,17 @@
     parent.append(link);
   }
 
-  function appendInlineMarkdown(parent, text) {
+  function appendDocLink(parent, text, openDoc) {
+    const link = createElement("a", "doc-link", text);
+    link.href = "#";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      openDoc();
+    });
+    parent.append(link);
+  }
+
+  function appendInlineMarkdown(parent, text, resolveDocLink = () => null) {
     let lastIndex = 0;
     for (const match of text.matchAll(MARKDOWN_INLINE_PATTERN)) {
       parent.append(text.slice(lastIndex, match.index));
@@ -879,7 +891,11 @@
       else if (match[2]) parent.append(createElement("strong", "", token.slice(2, -2)));
       else if (match[3]) {
         const linkMatch = token.match(/^\[([^\]]+)\]\((.+)\)$/);
-        appendLink(parent, linkMatch[1], linkMatch[2]);
+        const [, linkText, target] = linkMatch;
+        const openDoc = /^https?:\/\//.test(target) ? null : resolveDocLink(target);
+        if (/^https?:\/\//.test(target)) appendLink(parent, linkText, target);
+        else if (openDoc) appendDocLink(parent, linkText, openDoc);
+        else parent.append(createElement("span", "dead-link", linkText));
       } else appendLink(parent, token, token);
       lastIndex = match.index + token.length;
     }
@@ -890,12 +906,12 @@
     return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
   }
 
-  function buildMarkdownTable(headerLine, bodyLines) {
+  function buildMarkdownTable(headerLine, bodyLines, resolveDocLink) {
     const table = createElement("table");
     const headRow = createElement("tr");
     for (const cell of splitTableCells(headerLine)) {
       const header = createElement("th");
-      appendInlineMarkdown(header, cell);
+      appendInlineMarkdown(header, cell, resolveDocLink);
       headRow.append(header);
     }
     const head = createElement("thead");
@@ -906,7 +922,7 @@
       const row = createElement("tr");
       for (const cell of splitTableCells(line)) {
         const data = createElement("td");
-        appendInlineMarkdown(data, cell);
+        appendInlineMarkdown(data, cell, resolveDocLink);
         row.append(data);
       }
       body.append(row);
@@ -915,7 +931,7 @@
     return table;
   }
 
-  function renderMarkdown(source) {
+  function renderMarkdown(source, resolveDocLink) {
     const root = createElement("div", "markdown");
     const lines = source.replace(/\r\n/g, "\n").split("\n");
     let paragraphLines = [];
@@ -923,7 +939,7 @@
     const flushParagraph = () => {
       if (paragraphLines.length === 0) return;
       const paragraph = createElement("p");
-      appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+      appendInlineMarkdown(paragraph, paragraphLines.join(" "), resolveDocLink);
       root.append(paragraph);
       paragraphLines = [];
     };
@@ -945,7 +961,7 @@
         flushParagraph();
         activeList = null;
         const element = createElement(`h${Math.min(heading[1].length, 4)}`);
-        appendInlineMarkdown(element, heading[2]);
+        appendInlineMarkdown(element, heading[2], resolveDocLink);
         root.append(element);
       } else if (/^\s*(---+|\*\*\*+)\s*$/.test(line)) {
         flushParagraph();
@@ -957,7 +973,7 @@
         const bodyLines = [];
         index += 2;
         while (index < lines.length && lines[index].includes("|") && lines[index].trim() !== "") bodyLines.push(lines[index++]);
-        root.append(buildMarkdownTable(line, bodyLines));
+        root.append(buildMarkdownTable(line, bodyLines, resolveDocLink));
         continue;
       } else if (listItem) {
         flushParagraph();
@@ -975,16 +991,16 @@
           box.disabled = true;
           box.checked = checkbox[1] !== " ";
           item.append(box, " ");
-          appendInlineMarkdown(item, checkbox[2]);
+          appendInlineMarkdown(item, checkbox[2], resolveDocLink);
         } else {
-          appendInlineMarkdown(item, listItem[3]);
+          appendInlineMarkdown(item, listItem[3], resolveDocLink);
         }
         activeList.element.append(item);
       } else if (/^>\s?/.test(line)) {
         flushParagraph();
         activeList = null;
         const quote = createElement("blockquote");
-        appendInlineMarkdown(quote, line.replace(/^>\s?/, ""));
+        appendInlineMarkdown(quote, line.replace(/^>\s?/, ""), resolveDocLink);
         root.append(quote);
       } else if (line.trim() === "") {
         flushParagraph();
@@ -1091,6 +1107,52 @@
     textarea.scrollTop = 0;
   }
 
+  function normalizeDocPath(docPath) {
+    const parts = [];
+    for (const part of docPath.split("/")) {
+      if (part === "" || part === ".") continue;
+      if (part === "..") parts.pop();
+      else parts.push(part);
+    }
+    return parts.join("/");
+  }
+
+  function findDocTarget(candidatePath) {
+    for (const task of currentTasks) {
+      const folder = task.specPath.endsWith("/issue.md") ? task.specPath.slice(0, -"/issue.md".length) : null;
+      if (candidatePath === task.specPath) return { task, fileName: null };
+      if (folder && candidatePath === folder) return { task, fileName: null };
+      if (folder && candidatePath.startsWith(`${folder}/`) && !candidatePath.slice(folder.length + 1).includes("/")) {
+        return { task, fileName: candidatePath.slice(folder.length + 1) };
+      }
+    }
+    return null;
+  }
+
+  function resolveSpecDocLink(target, detail, source) {
+    const withoutFragment = target.split(/[#?]/)[0];
+    if (!withoutFragment) return null;
+    const currentDir = detail.path.split("/").slice(0, -1).join("/");
+    for (const candidatePath of [normalizeDocPath(`${currentDir}/${withoutFragment}`), normalizeDocPath(withoutFragment)]) {
+      const docTarget = findDocTarget(candidatePath);
+      if (!docTarget) continue;
+      if (docTarget.task.id === detail.id) {
+        const fileName = docTarget.fileName ?? detail.files[0];
+        if (!detail.files.includes(fileName)) continue;
+        return () => {
+          if (!confirmDiscardEdit()) return;
+          drawerSpecFile = fileName;
+          loadDrawerSource(source);
+        };
+      }
+      return () => {
+        drawerSourceKey = "spec";
+        openDrawer({ ...taskDrawerContext(docTarget.task), specFile: docTarget.fileName });
+      };
+    }
+    return null;
+  }
+
   function renderSpecDetail(detail, source) {
     const wrapper = createElement("div");
     const header = createElement("div", "drawer-sub spec-toolbar", detail.path);
@@ -1109,7 +1171,7 @@
       }
       wrapper.append(chips);
     }
-    wrapper.append(header, renderMarkdown(detail.content));
+    wrapper.append(header, renderMarkdown(detail.content, (target) => resolveSpecDocLink(target, detail, source)));
     return wrapper;
   }
 
@@ -1151,7 +1213,7 @@
   function openDrawer(context) {
     if (!confirmDiscardEdit()) return;
     drawerContext = context;
-    drawerSpecFile = null;
+    drawerSpecFile = context.specFile ?? null;
     document.getElementById("drawer-title").textContent = context.title;
     const sub = document.getElementById("drawer-sub");
     sub.replaceChildren();
