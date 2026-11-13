@@ -285,7 +285,8 @@
   button.primary:active { background: #19722f; }
   button:disabled { opacity: 0.5; cursor: progress; }
   .actions { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
-  .clean-up-blocked { color: var(--needs-you); font-size: 12px; white-space: nowrap; }
+  button.clean-up-blocked { border: none; background: none; min-height: 0; padding: 0; color: var(--needs-you); font-size: 12px; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 3px; }
+  button.clean-up-blocked:hover { background: none; text-decoration-style: solid; }
   .auto-group { display: inline-flex; align-items: stretch; }
   .auto-group > button { border-radius: var(--radius); }
   .auto-group > button:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
@@ -832,7 +833,9 @@
         : "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
       if (uncommittedFileCount === 0) return button;
       const group = createElement("div", "actions");
-      group.append(createElement("span", "clean-up-blocked", `còn ${uncommittedFileCount} file chưa commit`), button);
+      const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task)));
+      openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có)";
+      group.append(openWorktree, button);
       return group;
     }
     return null;
