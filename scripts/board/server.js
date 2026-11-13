@@ -8,7 +8,7 @@ const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
 const { readSpecDetail, writeSpecFile, readIssueDetail } = require("./details");
-const { BoardActionError, startTask, startAutoRun, startSpecCreation, resumeTaskSession, focusTask, cleanUpTaskWorktree } = require("./actions");
+const { BoardActionError, startTask, startAutoRun, startSpecCreation, startIssueCreation, resumeTaskSession, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const IS_LAN_MODE = process.env.BOARD_LAN === "1";
 const HOST = IS_LAN_MODE ? "0.0.0.0" : "127.0.0.1";
@@ -179,6 +179,7 @@ const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
   "/api/create-spec": handleCreateSpec,
+  "/api/create-issue": async (taskId) => startIssueCreation({ repoRoot, task: (await findTaskContext(taskId)).task }),
   "/api/resume": async (taskId, body) =>
     resumeTaskSession({ repoRoot, task: toResumableTask((await findTaskContext(taskId)).task), reviewUncommitted: body.reviewUncommitted === true }),
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),

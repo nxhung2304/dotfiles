@@ -216,15 +216,34 @@ async function startAutoRun({ repoRoot, task, autoApproveSpec }) {
   return { paneId, prompt, isPromptSent: true };
 }
 
-async function startSpecCreation({ repoRoot, issueNumbers, repoSlug }) {
+async function openRepoClaudeWithPrompt({ repoRoot, label, prompt }) {
   ensureRunningInsideHerdr();
-  const label = issueNumbers.length === 1 ? `[SPEC] #${issueNumbers[0]}` : `[SPEC] #${issueNumbers[0]} +${issueNumbers.length - 1}`;
   const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", label, "--focus"]);
   const paneId = created.result.root_pane.pane_id;
   await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
-  const prompt = buildCreateSpecPrompt(issueNumbers, repoSlug);
   await sendPrompt(paneId, prompt);
   return { paneId, prompt, isPromptSent: true };
+}
+
+async function startSpecCreation({ repoRoot, issueNumbers, repoSlug }) {
+  const label = issueNumbers.length === 1 ? `[SPEC] #${issueNumbers[0]}` : `[SPEC] #${issueNumbers[0]} +${issueNumbers.length - 1}`;
+  return openRepoClaudeWithPrompt({ repoRoot, label, prompt: buildCreateSpecPrompt(issueNumbers, repoSlug) });
+}
+
+function buildCreateIssuePrompt(specPath) {
+  return [
+    `Create a GitHub issue for the local spec ${specPath}, only for this file.`,
+    "Follow the md-to-github-issues steps: pick the right gh account, check the repo, create missing labels, then gh issue create with the spec as the body.",
+    "Before running gh issue create, show me the title, labels and body and wait for my OK.",
+    'After it is created, write the issue number into the spec\'s "GitHub Issue:" line.',
+    "If the spec is not Approved, stop and tell me instead.",
+  ].join(" ");
+}
+
+async function startIssueCreation({ repoRoot, task }) {
+  if (task.githubIssues.length > 0) throw new BoardActionError(`Task ${task.id} đã có issue GitHub`, 409);
+  if (task.onlyInBranch) throw new BoardActionError(`Spec ${task.id} chỉ có trên branch ${task.onlyInBranch}, hãy merge về trước`, 409);
+  return openRepoClaudeWithPrompt({ repoRoot, label: `[ISSUE] ${task.id}`, prompt: buildCreateIssuePrompt(task.specPath) });
 }
 
 function buildAgentStartArgs(paneId, sessionId) {
@@ -301,6 +320,8 @@ module.exports = {
   startTask,
   startAutoRun,
   startSpecCreation,
+  startIssueCreation,
+  buildCreateIssuePrompt,
   resumeTaskSession,
   buildAgentStartArgs,
   buildAutoRunPrompt,

@@ -59,3 +59,11 @@ test("buildUncommittedReviewPrompt lists every file and forbids deleting without
   assert.match(prompt, /- \?\? notes\.md/);
   assert.match(prompt, /hỏi tôi trước/);
 });
+
+test("buildCreateIssuePrompt targets one spec and waits for approval before posting", () => {
+  const { buildCreateIssuePrompt, startIssueCreation } = require("../actions");
+  const prompt = buildCreateIssuePrompt("specs/issues/101-x.md");
+  assert.match(prompt, /specs\/issues\/101-x\.md, only for this file/);
+  assert.match(prompt, /wait for my OK/);
+  return assert.rejects(startIssueCreation({ repoRoot: "/repo", task: { id: "101-x", githubIssues: [101], onlyInBranch: null } }), /đã có issue GitHub/);
+});

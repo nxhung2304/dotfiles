@@ -145,6 +145,12 @@
   #banner .banner-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   #banner button, #toast button { min-height: 22px; padding: 0 8px; border: none; background: none; color: inherit; font-size: 12px; opacity: 0.75; }
   #banner button:hover, #toast button:hover { background: rgba(0, 0, 0, 0.06); opacity: 1; }
+  .filter-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .filter-bar button { min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; color: var(--text-muted); }
+  .filter-bar button.active { background: var(--text); border-color: var(--text); color: var(--surface); }
+  .filter-bar button .count { margin-left: 6px; background: rgba(129, 139, 152, 0.22); color: inherit; }
+  .sync-tag { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--warning-text); font-size: 12px; }
+  .sync-tag button { min-height: 20px; padding: 0 8px; font-size: 11.5px; }
   #toast {
     position: fixed;
     right: var(--space-6);
@@ -517,7 +523,6 @@
     { key: "backlog", label: "Backlog" },
     { key: "done", label: "Đã xong" },
     { key: "worktrees", label: "Worktree chưa gắn task", isExtra: true },
-    { key: "issues", label: "Issue GitHub chưa có spec", isExtra: true },
   ];
   const SHORT_TITLE_LENGTH = 32;
   const SECTIONS = [
@@ -1478,6 +1483,29 @@
     return arranged.filter((item) => item.isVisible);
   }
 
+  const creatingIssueTaskIds = new Set();
+
+  async function createIssueForTask(task) {
+    creatingIssueTaskIds.add(task.id);
+    actionMessage = `Đang mở tab Claude để tạo issue cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-issue", task.id, () => `Đã mở tab [ISSUE] ${shortName(task.id)}, xem và đồng ý trong tab đó.`);
+    creatingIssueTaskIds.delete(task.id);
+    render();
+  }
+
+  function buildMissingIssueTag(task) {
+    const tag = createElement("span", "sync-tag");
+    tag.append(createElement("span", "", "chưa có issue"));
+    const isBusy = creatingIssueTaskIds.has(task.id);
+    const button = buildButton(isBusy ? "đang mở…" : "Tạo issue", "", () => createIssueForTask(task));
+    button.disabled = isBusy;
+    button.title = "Mở Claude để tạo issue GitHub từ spec này. Claude sẽ cho anh xem nội dung và chờ anh đồng ý trước khi đăng.";
+    tag.append(button);
+    return tag;
+  }
+
   const TASK_TABLE_COLUMNS = ["#", "Task", "Claude", "PR", ""];
 
   function buildTaskRows(task, section, isNext, depth, descendantCount) {
@@ -1498,6 +1526,7 @@
     const problem = describeStatus(task);
     for (const reason of problem?.querySelectorAll(".blocked-by") ?? []) subLine.append(createElement("span", "blocked-by", reason.textContent));
     if (toggle) subLine.append(toggle);
+    if (isMissingIssue(task) && BACKLOG_COLUMNS.includes(task.column)) subLine.append(buildMissingIssueTag(task));
     if (descendantCount > 0) subLine.append(buildGroupToggle(task, descendantCount));
     if (subLine.childElementCount > 0) titleCell.append(subLine);
 
@@ -1529,8 +1558,8 @@
     return [row, detailRow];
   }
 
-  function buildSection(section, { limit, moreLabel } = {}) {
-    const allTasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
+  function buildSection(section, { limit, moreLabel, filter = () => true } = {}) {
+    const allTasks = (section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key)).filter(filter);
     const arrangedTasks = arrangeByDependency(allTasks);
     const tasks = limit ? arrangedTasks.slice(0, limit) : arrangedTasks;
     const element = createElement("section", section.className ?? "");
@@ -1659,9 +1688,9 @@
     return SECTIONS.find((section) => section.key === key);
   }
 
-  function appendTaskSections(board, keys) {
+  function appendTaskSections(board, keys, filter) {
     for (const key of keys) {
-      if (tasksIn(key).length > 0) board.append(buildSection(findSection(key)));
+      if (tasksIn(key).some(filter ?? (() => true))) board.append(buildSection(findSection(key), { filter }));
     }
   }
 
@@ -1677,9 +1706,48 @@
     }
   }
 
+  const BACKLOG_COLUMNS = ["ready", "todo"];
+  const BACKLOG_FILTERS = [
+    { key: "all", label: "Tất cả", count: () => countTab("backlog") },
+    { key: "missingSpec", label: "Thiếu spec", count: () => issuesWithoutSpec.length, hint: "Issue GitHub đang mở nhưng chưa có spec local" },
+    { key: "missingIssue", label: "Thiếu issue", count: () => countBacklogTasksWithoutIssue(), hint: "Spec local chưa có issue GitHub" },
+  ];
+  let backlogFilter = "all";
+
+  function isMissingIssue(task) {
+    return task.githubIssues.length === 0;
+  }
+
+  function countBacklogTasksWithoutIssue() {
+    return BACKLOG_COLUMNS.flatMap(tasksIn).filter(isMissingIssue).length;
+  }
+
+  function buildBacklogFilterBar() {
+    const bar = createElement("div", "filter-bar");
+    for (const filter of BACKLOG_FILTERS) {
+      const button = createElement("button", filter.key === backlogFilter ? "active" : "", filter.label);
+      button.append(createElement("span", "count", String(filter.count())));
+      if (filter.hint) button.title = filter.hint;
+      button.addEventListener("click", () => {
+        backlogFilter = filter.key;
+        render();
+      });
+      bar.append(button);
+    }
+    return bar;
+  }
+
   function buildBacklogTab(board) {
-    appendTaskSections(board, ["ready", "todo"]);
-    if (board.childElementCount === 0) board.append(createElement("div", "empty-hint", "Backlog trống."));
+    const hasSyncGap = issuesWithoutSpec.length > 0 || countBacklogTasksWithoutIssue() > 0;
+    if (!hasSyncGap) backlogFilter = "all";
+    if (hasSyncGap) board.append(buildBacklogFilterBar());
+    if (backlogFilter !== "missingSpec") appendTaskSections(board, BACKLOG_COLUMNS, backlogFilter === "missingIssue" ? isMissingIssue : undefined);
+    if (backlogFilter !== "missingIssue" && issuesWithoutSpec.length > 0) {
+      const wrapper = createElement("div", "side-notes");
+      wrapper.append(buildIssuesWithoutSpecSection());
+      board.append(wrapper);
+    }
+    if (board.querySelector("section") === null) board.append(createElement("div", "empty-hint", "Backlog trống."));
   }
 
   function buildDoneTab(board) {
@@ -1691,9 +1759,8 @@
     if (tabKey === "running") {
       return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0);
     }
-    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length;
+    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length;
     if (tabKey === "worktrees") return unlinkedWorktrees.length;
-    if (tabKey === "issues") return issuesWithoutSpec.length;
     return tasksIn("done").length;
   }
 
@@ -1717,13 +1784,7 @@
     board.append(wrapper);
   }
 
-  function buildIssuesTab(board) {
-    const wrapper = createElement("div", "side-notes");
-    wrapper.append(buildIssuesWithoutSpecSection());
-    board.append(wrapper);
-  }
-
-  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab, worktrees: buildWorktreesTab, issues: buildIssuesTab };
+  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab, worktrees: buildWorktreesTab };
 
   function describeNeedsYouReason(task) {
     if (task.autoRun?.problem) return task.autoRun.problem;
