@@ -129,16 +129,43 @@
   }
 
   #banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
     margin-bottom: var(--space-4);
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
     border-left: 3px solid var(--warning-text);
     border-radius: var(--radius);
     background: var(--warning-surface);
     color: var(--warning-text);
-    font-size: 13px;
+    font-size: 12.5px;
     white-space: pre-line;
   }
   #banner:empty { display: none; }
+  #banner .banner-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  #banner button, #toast button { min-height: 22px; padding: 0 8px; border: none; background: none; color: inherit; font-size: 12px; opacity: 0.75; }
+  #banner button:hover, #toast button:hover { background: rgba(0, 0, 0, 0.06); opacity: 1; }
+  #toast {
+    position: fixed;
+    right: var(--space-6);
+    bottom: var(--space-6);
+    z-index: 30;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    max-width: min(420px, calc(100vw - 32px));
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--text);
+    color: var(--surface);
+    box-shadow: 0 6px 20px rgba(31, 35, 40, 0.25);
+    font-size: 13px;
+    white-space: pre-line;
+  }
+  #toast.error { background: var(--needs-you); border-color: var(--needs-you); color: #fff; }
+  #toast:empty { display: none; }
+  #toast .toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
   section { margin-bottom: 20px; --state: transparent; }
   section.needs-you { --state: var(--needs-you); }
@@ -465,6 +492,7 @@
     <main id="board"></main>
   </div>
 </div>
+<div id="toast" role="status" aria-live="polite"></div>
 <div id="drawer-backdrop"></div>
 <aside id="drawer" aria-label="Chi tiết" inert>
   <header class="drawer-head">
@@ -632,8 +660,7 @@
     lastRenderedJson = "";
     render();
     const autoApproveSpec = !task.isApproved && autoApproveTaskIds.has(task.id);
-    const approvalNote = autoApproveSpec ? " Spec sẽ được tự duyệt nếu agent review không thấy vấn đề." : "";
-    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)} và gửi /vibe-issue. Claude sẽ tự tạo worktree khi chạy.${approvalNote}`, { autoApproveSpec });
+    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)}.`, { autoApproveSpec });
     startingTaskIds.delete(task.id);
   }
 
@@ -1540,7 +1567,7 @@
     render();
     await runAction("/api/create-spec", `issues:${issueNumbers.join(",")}`, () => {
       selectedIssueNumbers.clear();
-      return `Đã mở một tab [SPEC] và gửi lệnh tạo spec cho ${issueNumbers.map((number) => `#${number}`).join(", ")}. Spec xuất hiện trên board khi Claude lưu xong.`;
+      return `Đã mở tab [SPEC] cho ${issueNumbers.map((number) => `#${number}`).join(", ")}.`;
     });
     isCreatingSpecs = false;
     render();
@@ -1756,6 +1783,53 @@
     document.getElementById("focus").replaceChildren(buildFocus());
   }
 
+  const TOAST_AUTO_HIDE_MS = 5000;
+  let toastHideTimer = null;
+  let dismissedWarningsKey = "";
+
+  function isPersistentMessage(message) {
+    return message.startsWith("Lỗi:") || message.includes("chưa gửi được");
+  }
+
+  function dismissToast() {
+    window.clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    actionMessage = "";
+    lastRenderedJson = "";
+    render();
+  }
+
+  function renderToast() {
+    const toast = document.getElementById("toast");
+    const isSame = toast.dataset.message === actionMessage;
+    if (isSame) return;
+    toast.dataset.message = actionMessage;
+    toast.replaceChildren();
+    toast.classList.remove("error");
+    window.clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    if (!actionMessage) return;
+    const isPersistent = isPersistentMessage(actionMessage);
+    toast.classList.toggle("error", isPersistent);
+    const closeButton = createElement("button", "", "Đóng");
+    closeButton.addEventListener("click", dismissToast);
+    toast.append(createElement("span", "toast-text", actionMessage), closeButton);
+    if (!isPersistent && !actionMessage.endsWith("…")) toastHideTimer = window.setTimeout(dismissToast, TOAST_AUTO_HIDE_MS);
+  }
+
+  function renderBanner() {
+    const banner = document.getElementById("banner");
+    banner.replaceChildren();
+    const warningsKey = currentWarnings.join("\n");
+    if (!warningsKey || warningsKey === dismissedWarningsKey) return;
+    const closeButton = createElement("button", "", "Đóng");
+    closeButton.addEventListener("click", () => {
+      dismissedWarningsKey = warningsKey;
+      renderBanner();
+    });
+    banner.append(createElement("div", "banner-text", warningsKey), closeButton);
+  }
+
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
@@ -1764,7 +1838,8 @@
     renderTabs();
     renderSummary();
     renderFocus();
-    document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
+    renderBanner();
+    renderToast();
   }
 
   async function refreshBoard() {
@@ -1787,7 +1862,8 @@
       previousNeedsYouCount = needsYouCount;
       render();
     } catch (error) {
-      document.getElementById("banner").textContent = `Không đọc được board: ${error.message}`;
+      const banner = document.getElementById("banner");
+      banner.replaceChildren(createElement("div", "banner-text", `Không đọc được board: ${error.message}`));
     }
   }
 
