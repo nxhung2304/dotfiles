@@ -102,11 +102,13 @@
 
   .side-notes:empty { display: none; }
   .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
-  .side-notes .row { grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
-  .side-notes .row > button { grid-column: 2; justify-self: start; }
-  .side-notes .title { font-size: 14px; }
-  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
-  .side-notes .row:has(> .number:empty) > button { grid-column: 1; }
+  .side-notes .row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-2); padding: 7px 0; align-items: start; }
+  .side-notes .row > button { align-self: start; }
+  .side-notes button { min-height: 22px; padding: 0 8px; font-size: 12px; }
+  .side-notes .title { font-size: 13px; font-weight: 500; line-height: 1.35; }
+  .side-notes .number { font-size: 12px; }
+  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr) auto; }
+  .side-notes .meta { font-size: 11.5px; }
 
   .side-column { display: contents; }
   .side-left { order: 1; }
