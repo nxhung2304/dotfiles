@@ -328,6 +328,9 @@
   }
   #drawer.open { transform: none; visibility: visible; }
   .drawer-head { padding: var(--space-4) var(--space-6) 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .drawer-back { display: block; max-width: 100%; min-height: 24px; margin: 0 0 var(--space-2) -6px; padding: 0 6px; border: none; background: none; color: var(--accent); font-size: 12px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+  .drawer-back[hidden] { display: none; }
+  .drawer-back:hover { background: var(--accent-surface); }
   .drawer-title-row { display: flex; align-items: flex-start; gap: var(--space-3); }
   .drawer-title-row h2 { flex: 1; margin: 0; font-size: 18px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
   .drawer-close { min-height: 28px; padding: 0 8px; border-color: transparent; background: none; color: var(--text-muted); }
@@ -433,6 +436,7 @@
 <div id="drawer-backdrop"></div>
 <aside id="drawer" aria-label="Chi tiết" inert>
   <header class="drawer-head">
+    <button class="drawer-back" id="drawer-back" hidden></button>
     <div class="drawer-title-row">
       <h2 id="drawer-title"></h2>
       <button class="drawer-close" id="drawer-close" aria-label="Đóng">✕</button>
@@ -1020,6 +1024,7 @@
   let drawerRequestId = 0;
   let drawerSpecFile = null;
   let drawerEdit = null;
+  let drawerHistory = [];
   let showAllIssuesWithoutSpec = false;
 
   function confirmDiscardEdit() {
@@ -1033,6 +1038,7 @@
   function closeDrawer() {
     if (!confirmDiscardEdit()) return;
     drawerContext = null;
+    drawerHistory = [];
     document.getElementById("drawer").classList.remove("open");
     document.getElementById("drawer-backdrop").classList.remove("open");
     document.getElementById("drawer").inert = true;
@@ -1141,13 +1147,17 @@
         if (!detail.files.includes(fileName)) continue;
         return () => {
           if (!confirmDiscardEdit()) return;
+          drawerHistory.push(snapshotDrawer());
           drawerSpecFile = fileName;
           loadDrawerSource(source);
+          renderDrawerBack();
         };
       }
       return () => {
+        if (!confirmDiscardEdit()) return;
+        drawerHistory.push(snapshotDrawer());
         drawerSourceKey = "spec";
-        openDrawer({ ...taskDrawerContext(docTarget.task), specFile: docTarget.fileName });
+        openDrawer({ ...taskDrawerContext(docTarget.task), specFile: docTarget.fileName }, { isFollowingLink: true });
       };
     }
     return null;
@@ -1210,19 +1220,51 @@
     loadDrawerSource(source);
   }
 
-  function openDrawer(context) {
-    if (!confirmDiscardEdit()) return;
-    drawerContext = context;
-    drawerSpecFile = context.specFile ?? null;
+  function snapshotDrawer() {
+    return { context: drawerContext, sourceKey: drawerSourceKey, specFile: drawerSpecFile };
+  }
+
+  function describeSnapshot(snapshot) {
+    return snapshot.specFile ? `${snapshot.context.title} · ${snapshot.specFile}` : snapshot.context.title;
+  }
+
+  function renderDrawerBack() {
+    const backButton = document.getElementById("drawer-back");
+    const previous = drawerHistory[drawerHistory.length - 1];
+    backButton.hidden = !previous;
+    backButton.textContent = previous ? `← Quay lại: ${describeSnapshot(previous)}` : "";
+  }
+
+  function setDrawerHeader(context) {
     document.getElementById("drawer-title").textContent = context.title;
     const sub = document.getElementById("drawer-sub");
     sub.replaceChildren();
     if (context.issueNumber && githubWebUrl) appendLink(sub, `#${context.issueNumber} trên GitHub ↗`, `${githubWebUrl}/issues/${context.issueNumber}`);
+  }
+
+  function goBackInDrawer() {
+    if (!confirmDiscardEdit()) return;
+    const previous = drawerHistory.pop();
+    if (!previous) return;
+    drawerContext = previous.context;
+    drawerSpecFile = previous.specFile;
+    setDrawerHeader(previous.context);
+    showDrawerSource(previous.sourceKey);
+    renderDrawerBack();
+  }
+
+  function openDrawer(context, { isFollowingLink = false } = {}) {
+    if (!confirmDiscardEdit()) return;
+    if (!isFollowingLink) drawerHistory = [];
+    drawerContext = context;
+    drawerSpecFile = context.specFile ?? null;
+    setDrawerHeader(context);
     const drawer = document.getElementById("drawer");
     drawer.inert = false;
     drawer.classList.add("open");
     document.getElementById("drawer-backdrop").classList.add("open");
     showDrawerSource(drawerSourceKey);
+    renderDrawerBack();
     document.getElementById("drawer-close").focus();
   }
 
@@ -1249,6 +1291,10 @@
   }
 
   document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  document.getElementById("drawer-back").addEventListener("click", goBackInDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.altKey && event.key === "ArrowLeft" && drawerContext && drawerHistory.length > 0) goBackInDrawer();
+  });
   document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && drawerContext) closeDrawer();
