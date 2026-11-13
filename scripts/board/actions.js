@@ -238,7 +238,20 @@ async function findShellPaneInWorktree(worktreePath) {
   return pane ?? null;
 }
 
-async function resumeTaskSession({ repoRoot, task }) {
+function buildUncommittedReviewPrompt(statusLines) {
+  return [
+    `Worktree này còn ${statusLines.length} file chưa commit, trong khi PR của task đã merge:`,
+    ...statusLines.map((line) => `- ${line}`),
+    "Xem từng file (git diff) rồi cho tôi biết file nào nên commit, stash hoặc bỏ. Đừng tự xoá hay revert, hỏi tôi trước.",
+  ].join("\n");
+}
+
+async function readUncommittedStatusLines(worktreePath) {
+  const output = await runCommand("git", ["status", "--short"], { cwd: worktreePath });
+  return String(output ?? "").split("\n").filter(Boolean);
+}
+
+async function resumeTaskSession({ repoRoot, task, reviewUncommitted = false }) {
   ensureRunningInsideHerdr();
   if (!task.worktree || task.worktree.isMain) throw new BoardActionError(`Task ${task.id} chưa có worktree riêng`, 409);
   if (task.agent) throw new BoardActionError(`Task ${task.id} đã có phiên Claude`, 409);
@@ -253,7 +266,14 @@ async function resumeTaskSession({ repoRoot, task }) {
     paneId = created.result.root_pane.pane_id;
   }
   await runCommand("herdr", buildAgentStartArgs(paneId, session?.sessionId ?? null));
-  return { paneId, sessionId: session?.sessionId ?? null, reason: session?.reason ?? "new" };
+  const resumed = { paneId, sessionId: session?.sessionId ?? null, reason: session?.reason ?? "new" };
+  if (!reviewUncommitted) return resumed;
+  const statusLines = await readUncommittedStatusLines(task.worktree.path);
+  if (statusLines.length === 0) return { ...resumed, isPromptSent: false };
+  const readyPaneId = await waitForClaudePane(task.worktree.path);
+  if (!readyPaneId) return { ...resumed, isPromptSent: false };
+  await sendPrompt(readyPaneId, buildUncommittedReviewPrompt(statusLines));
+  return { ...resumed, isPromptSent: true };
 }
 
 async function focusTask(task) {
@@ -285,6 +305,7 @@ module.exports = {
   buildAgentStartArgs,
   buildAutoRunPrompt,
   buildCreateSpecPrompt,
+  buildUncommittedReviewPrompt,
   ensureTaskCanRunAutomatically,
   focusTask,
   cleanUpTaskWorktree,

@@ -674,17 +674,18 @@
     return Boolean(task.worktree && !task.worktree.isMain && !task.autoRun);
   }
 
-  async function resumeSession(task) {
+  async function resumeSession(task, options) {
     const label = currentTasks.some((candidate) => candidate.id === task.id) ? shortName(task.id) : task.title;
     resumingTaskIds.add(task.id);
     actionMessage = `Đang mở Claude cho ${label}…`;
     lastRenderedJson = "";
     render();
     await runAction("/api/resume", task.id, (result) => {
-      if (!result.sessionId) return `Đã mở Claude mới cho ${label} (không tìm thấy session cũ trong worktree này).`;
+      const promptNote = result.isPromptSent ? " Đã gửi sẵn prompt kiểm tra file chưa commit." : "";
+      if (!result.sessionId) return `Đã mở Claude mới cho ${label} (không tìm thấy session cũ trong worktree này).${promptNote}`;
       const why = result.reason === "created-pr" ? "session đã tạo PR" : "session gần nhất";
-      return `Đã mở Claude và resume ${why} của ${label} (${result.sessionId.slice(0, 8)}).`;
-    });
+      return `Đã mở Claude và resume ${why} của ${label} (${result.sessionId.slice(0, 8)}).${promptNote}`;
+    }, options);
     resumingTaskIds.delete(task.id);
     render();
   }
@@ -833,8 +834,8 @@
         : "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
       if (uncommittedFileCount === 0) return button;
       const group = createElement("div", "actions");
-      const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task)));
-      openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có)";
+      const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task, { reviewUncommitted: true })));
+      openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có) và nhờ nó xem các file chưa commit";
       group.append(openWorktree, button);
       return group;
     }

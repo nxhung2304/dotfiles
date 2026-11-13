@@ -179,7 +179,8 @@ const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
   "/api/create-spec": handleCreateSpec,
-  "/api/resume": async (taskId) => resumeTaskSession({ repoRoot, task: toResumableTask((await findTaskContext(taskId)).task) }),
+  "/api/resume": async (taskId, body) =>
+    resumeTaskSession({ repoRoot, task: toResumableTask((await findTaskContext(taskId)).task), reviewUncommitted: body.reviewUncommitted === true }),
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
   [SPEC_SAVE_PATH]: handleSpecSave,
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),

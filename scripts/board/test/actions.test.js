@@ -50,3 +50,12 @@ test("buildAgentStartArgs passes --resume after the separator only when a sessio
   assert.deepEqual(buildAgentStartArgs("w1:1", null), ["agent", "start", "claude-w1-1", "--kind", "claude", "--pane", "w1:1"]);
   assert.deepEqual(buildAgentStartArgs("w1:1", "abc"), ["agent", "start", "claude-w1-1", "--kind", "claude", "--pane", "w1:1", "--", "--resume", "abc"]);
 });
+
+test("buildUncommittedReviewPrompt lists every file and forbids deleting without asking", () => {
+  const { buildUncommittedReviewPrompt } = require("../actions");
+  const prompt = buildUncommittedReviewPrompt([" M Makefile", "?? notes.md"]);
+  assert.match(prompt, /còn 2 file chưa commit/);
+  assert.match(prompt, /- {2}M Makefile|-  M Makefile/);
+  assert.match(prompt, /- \?\? notes\.md/);
+  assert.match(prompt, /hỏi tôi trước/);
+});
