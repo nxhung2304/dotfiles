@@ -77,6 +77,7 @@
     color: var(--text-muted);
   }
   .tabs button:hover { color: var(--text); background: rgba(129, 139, 152, 0.12); border-color: transparent; }
+  .tabs button:not(.extra) + button.extra { margin-top: var(--space-3); }
   .tabs button.active { background: var(--surface); border-color: var(--border); color: var(--text); font-weight: 600; }
   .tabs .count { margin-left: 0; padding: 0 6px; border-radius: 999px; background: rgba(129, 139, 152, 0.18); font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text); }
   .tabs .count.needs-you { background: var(--needs-you); color: var(--on-state); font-weight: 650; }
@@ -115,8 +116,6 @@
   .side-column { display: contents; }
   .side-left { order: 1; }
   .page-main { order: 2; }
-  .side-notes { display: flex; flex-direction: column; gap: var(--space-6); margin-top: var(--space-6); }
-  .side-notes:empty { display: none; }
   @media (min-width: 1100px) {
     .layout { max-width: none; grid-template-columns: 264px minmax(0, 980px); gap: 40px; justify-content: center; }
     .side-column { display: flex; flex-direction: column; gap: var(--space-6); position: sticky; top: var(--space-6); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
@@ -464,7 +463,6 @@
     <div id="banner"></div>
     <div id="focus"></div>
     <main id="board"></main>
-    <aside class="side-notes" id="side-notes"></aside>
   </div>
 </div>
 <div id="drawer-backdrop"></div>
@@ -490,6 +488,8 @@
     { key: "running", label: "Đang chạy" },
     { key: "backlog", label: "Backlog" },
     { key: "done", label: "Đã xong" },
+    { key: "worktrees", label: "Worktree chưa gắn task", isExtra: true },
+    { key: "issues", label: "Issue GitHub chưa có spec", isExtra: true },
   ];
   const SHORT_TITLE_LENGTH = 32;
   const SECTIONS = [
@@ -1665,6 +1665,8 @@
       return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0);
     }
     if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length;
+    if (tabKey === "worktrees") return unlinkedWorktrees.length;
+    if (tabKey === "issues") return issuesWithoutSpec.length;
     return tasksIn("done").length;
   }
 
@@ -1672,7 +1674,9 @@
     const tabs = document.getElementById("tabs");
     tabs.replaceChildren();
     for (const tab of TABS) {
-      const button = createElement("button", tab.key === selectedTab ? "active" : "", tab.label);
+      if (tab.isExtra && countTab(tab.key) === 0) continue;
+      const className = [tab.key === selectedTab ? "active" : "", tab.isExtra ? "extra" : ""].filter(Boolean).join(" ");
+      const button = createElement("button", className, tab.label);
       const hasNeedsYou = tab.key === "running" && tasksIn("needsYou").length > 0;
       button.append(createElement("span", hasNeedsYou ? "count needs-you" : "count", String(countTab(tab.key))));
       button.addEventListener("click", () => selectTab(tab.key));
@@ -1680,7 +1684,19 @@
     }
   }
 
-  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
+  function buildWorktreesTab(board) {
+    const wrapper = createElement("div", "side-notes");
+    wrapper.append(buildUnlinkedWorktreesSection());
+    board.append(wrapper);
+  }
+
+  function buildIssuesTab(board) {
+    const wrapper = createElement("div", "side-notes");
+    wrapper.append(buildIssuesWithoutSpecSection());
+    board.append(wrapper);
+  }
+
+  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab, worktrees: buildWorktreesTab, issues: buildIssuesTab };
 
   function describeNeedsYouReason(task) {
     if (task.autoRun?.problem) return task.autoRun.problem;
@@ -1740,20 +1756,13 @@
     document.getElementById("focus").replaceChildren(buildFocus());
   }
 
-  function renderSideNotes() {
-    const sideNotes = document.getElementById("side-notes");
-    sideNotes.replaceChildren();
-    if (unlinkedWorktrees.length > 0) sideNotes.append(buildUnlinkedWorktreesSection());
-    if (issuesWithoutSpec.length > 0) sideNotes.append(buildIssuesWithoutSpecSection());
-  }
-
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
+    if (TABS.find((tab) => tab.key === selectedTab)?.isExtra && countTab(selectedTab) === 0) selectedTab = TABS[0].key;
     TAB_BUILDERS[selectedTab](board);
     renderTabs();
     renderSummary();
-    renderSideNotes();
     renderFocus();
     document.getElementById("banner").textContent = [actionMessage, ...currentWarnings].filter(Boolean).join("\n");
   }
