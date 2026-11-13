@@ -124,6 +124,11 @@ async function findTaskContext(taskId) {
   return { task, spec: specs.find((candidate) => candidate.id === taskId) };
 }
 
+function toResumableTask(task) {
+  if (task.worktree) return task;
+  return { ...task, worktree: { path: task.path, isMain: task.isMain }, pullRequest: null };
+}
+
 async function handleStart(taskId) {
   if (startingTaskIds.has(taskId)) throw new BoardActionError(`Task ${taskId} đang được khởi động`, 409);
   startingTaskIds.add(taskId);
@@ -174,7 +179,7 @@ const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
   "/api/create-spec": handleCreateSpec,
-  "/api/resume": async (taskId) => resumeTaskSession({ repoRoot, task: (await findTaskContext(taskId)).task }),
+  "/api/resume": async (taskId) => resumeTaskSession({ repoRoot, task: toResumableTask((await findTaskContext(taskId)).task) }),
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
   [SPEC_SAVE_PATH]: handleSpecSave,
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),

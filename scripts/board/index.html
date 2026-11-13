@@ -107,7 +107,9 @@
   .side-notes button { min-height: 22px; padding: 0 8px; font-size: 12px; }
   .side-notes .title { font-size: 13px; font-weight: 500; line-height: 1.35; }
   .side-notes .number { font-size: 12px; }
-  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr) auto; }
+  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
+  .side-notes .row:has(> .number:empty) > button { justify-self: start; }
+  .side-notes .row .meta { align-items: center; }
   .side-notes .meta { font-size: 11.5px; }
 
   .side-column { display: contents; }
@@ -189,10 +191,22 @@
   .detail-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-3); margin-top: 5px; }
   .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); font-size: 12px; color: var(--text-muted); }
   .meta .blocked-by { color: var(--danger); }
-  .agent-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--text-faint); }
+  .agent-status { display: inline-flex; align-items: center; gap: 6px; padding: 0 9px 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; cursor: default; }
+  .agent-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); flex: none; }
+  .agent-status:hover { background: #e6eaee; }
+  .agent-status.working { background: var(--accent-surface); color: #0550ae; }
   .agent-status.working::before { background: var(--accent); }
+  .agent-status.working:hover { background: #b6e3ff; }
+  .agent-status.blocked { background: var(--needs-you-surface); color: var(--needs-you); }
   .agent-status.blocked::before { background: var(--needs-you); }
-  .agent-status.blocked { color: var(--needs-you); font-weight: 500; }
+  .agent-status.blocked:hover { background: #ffddc2; }
+  section.needs-you .agent-status.blocked { background: var(--surface); border: 1px solid var(--needs-you-border); }
+  .agent-status.done, .agent-status.idle { background: #dafbe1; color: #116329; }
+  .agent-status.done::before, .agent-status.idle::before { background: var(--next); }
+  .agent-status.done:hover, .agent-status.idle:hover { background: #b8f0c4; }
+  .agent-status.idle { background: var(--surface-2); color: var(--text); }
+  .agent-status.idle::before { background: var(--text-faint); }
+  .agent-status.idle:hover { background: #e6eaee; }
   .row-toggle { min-height: 0; padding: 0 2px; border: none; background: none; color: var(--text-muted); font-size: 12px; }
   .row-toggle:hover { background: none; color: var(--accent); text-decoration: underline; }
   .row-details { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
@@ -270,8 +284,14 @@
   button:active { background: #e6eaee; }
   button.primary:active { background: #19722f; }
   button:disabled { opacity: 0.5; cursor: progress; }
-  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
-  .auto-approve { flex-basis: 100%; display: flex; gap: 6px; justify-content: flex-end; align-items: center; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+  .actions { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
+  .auto-group { display: inline-flex; align-items: stretch; }
+  .auto-group > button { border-radius: var(--radius); }
+  .auto-group > button:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .auto-approve { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 1px solid var(--border); border-left: none; border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface-2); color: var(--text); font-size: 12.5px; white-space: nowrap; cursor: pointer; }
+  .auto-approve:hover { background: #eef1f4; border-color: var(--border-strong); }
+  .auto-approve:has(input:checked) { background: var(--accent-surface); border-color: var(--accent); color: #0550ae; }
+  .auto-approve input { margin: 0; }
   .toggle { border: none; background: none; color: var(--accent); min-height: 0; border-radius: 0; }
   .toggle:hover { background: var(--surface-hover); text-decoration: underline; }
   .empty-hint {
@@ -286,17 +306,19 @@
   .table-scroll { overflow-x: auto; border: 1px solid var(--rule, var(--border)); border-radius: var(--radius-lg); }
   .task-table { width: 100%; min-width: 760px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
   .task-table th:nth-child(1) { width: 60px; }
-  .task-table th:nth-child(3) { width: 170px; }
-  .task-table th:nth-child(4) { width: 240px; }
-  .task-table th:nth-child(5) { width: 210px; }
+  .task-table th:nth-child(3) { width: 150px; }
+  .task-table th:nth-child(4) { width: 220px; }
+  .task-table th:nth-child(5) { width: 300px; }
   .task-table th { padding: 6px var(--space-2); border-bottom: 1px solid var(--border); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
   .task-table td { padding: 9px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
   .task-table .cell-number { padding-left: var(--space-3); white-space: nowrap; }
   .task-table .cell-title { min-width: 220px; }
   .task-table .title-text { display: inline; font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
-  .task-table .title-text.nested { display: block; margin-left: calc(var(--depth) * 20px); }
-  .task-table .cell-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-3); margin-top: 3px; margin-left: calc(var(--depth, 0) * 20px); font-size: 12px; }
-  .task-table .cell-claude { color: var(--text-muted); }
+  .task-table .title-text.nested { display: block; margin-left: calc(var(--depth) * 24px); }
+  .task-table .title-text.nested::before { content: "↳"; margin-right: 6px; color: var(--text-faint); font-weight: 400; }
+  .task-table .cell-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-3); margin-top: 3px; font-size: 12px; }
+  .task-table .cell-sub.nested { margin-left: calc(var(--depth) * 24px + 18px); }
+  .task-table .cell-claude { color: var(--text-muted); white-space: nowrap; }
   .task-table .cell-pr .ref { white-space: nowrap; }
   .task-table .cell-pr .refs { gap: 4px; }
   .task-table .cell-action { text-align: right; }
@@ -419,7 +441,6 @@
     .row { grid-template-columns: 40px minmax(0, 1fr); padding-right: var(--space-3); }
     .row > :nth-child(3) { grid-column: 2; justify-self: start; }
     .actions { justify-content: flex-start; max-width: none; }
-    .auto-approve { justify-content: flex-start; }
     button { min-height: 40px; }
   }
   @media (prefers-reduced-motion: no-preference) {
@@ -632,8 +653,17 @@
     if (task.priority === "P3") meta.append(createElement("span", "tag p3", "P3"));
   }
 
+  const AGENT_STATUS_HINTS = {
+    working: "Claude đang làm việc",
+    blocked: "Claude đang chờ anh trả lời hoặc duyệt",
+    idle: "Claude đang rảnh, chờ lệnh tiếp theo",
+    done: "Claude đã xong lượt làm việc này",
+  };
+
   function buildAgentStatus(text, status) {
-    return createElement("span", `agent-status ${status ?? ""}`.trim(), text);
+    const element = createElement("span", `agent-status ${status ?? ""}`.trim(), text);
+    element.title = AGENT_STATUS_HINTS[status] ?? "Chưa có phiên Claude nào đang chạy";
+    return element;
   }
 
   const resumingTaskIds = new Set();
@@ -643,14 +673,15 @@
   }
 
   async function resumeSession(task) {
+    const label = currentTasks.some((candidate) => candidate.id === task.id) ? shortName(task.id) : task.title;
     resumingTaskIds.add(task.id);
-    actionMessage = `Đang mở Claude cho ${shortName(task.id)}…`;
+    actionMessage = `Đang mở Claude cho ${label}…`;
     lastRenderedJson = "";
     render();
     await runAction("/api/resume", task.id, (result) => {
-      if (!result.sessionId) return `Đã mở Claude mới cho ${shortName(task.id)} (không tìm thấy session cũ trong worktree này).`;
+      if (!result.sessionId) return `Đã mở Claude mới cho ${label} (không tìm thấy session cũ trong worktree này).`;
       const why = result.reason === "created-pr" ? "session đã tạo PR" : "session gần nhất";
-      return `Đã mở Claude và resume ${why} của ${shortName(task.id)} (${result.sessionId.slice(0, 8)}).`;
+      return `Đã mở Claude và resume ${why} của ${label} (${result.sessionId.slice(0, 8)}).`;
     });
     resumingTaskIds.delete(task.id);
     render();
@@ -767,8 +798,8 @@
       if (checkbox.checked) autoApproveTaskIds.add(task.id);
       else autoApproveTaskIds.delete(task.id);
     });
-    label.title = "Chỉ tự duyệt khi agent review không thấy vấn đề chặn và không còn câu hỏi mở. Nếu không, dừng chờ anh duyệt.";
-    label.append(checkbox, " tự duyệt spec");
+    label.title = "Tự duyệt spec: chỉ duyệt khi agent review không thấy vấn đề chặn và không còn câu hỏi mở. Nếu không, dừng chờ anh duyệt.";
+    label.append(checkbox, "tự duyệt");
     return label;
   }
 
@@ -783,8 +814,10 @@
       autoButton.disabled = startingTaskIds.size > 0;
       autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
       const group = createElement("div", "actions");
-      group.append(button, autoButton);
-      if (!task.isApproved) group.append(buildAutoApproveToggle(task));
+      const autoGroup = createElement("div", "auto-group");
+      autoGroup.append(autoButton);
+      if (!task.isApproved) autoGroup.append(buildAutoApproveToggle(task));
+      group.append(button, autoGroup);
       return group;
     }
     if (task.column === "done" && task.worktree && !task.worktree.isMain) {
@@ -862,7 +895,11 @@
     body.append(worktree.issueNumber
       ? buildOpenableTitle("title", pseudoTask.title, { title: pseudoTask.title, taskId: null, issueNumber: worktree.issueNumber })
       : createElement("div", "title", pseudoTask.title));
-    const meta = createElement("div", "meta", worktree.agent ? `Claude: ${worktree.agent.status} · không khớp spec nào` : "không có phiên Claude · không khớp spec nào");
+    const meta = createElement("div", "meta");
+    if (worktree.agent) meta.append(buildAgentStatus(`Claude: ${worktree.agent.status}`, worktree.agent.status));
+    else meta.append(buildAgentStatus("chưa có phiên Claude"));
+    const isIssueWithoutSpec = issuesWithoutSpec.some((issue) => issue.number === worktree.issueNumber);
+    meta.append(isIssueWithoutSpec ? `issue #${worktree.issueNumber} chưa có spec, tạo spec để gắn vào board` : "không khớp spec nào");
     body.append(meta);
     const { toggle, panel } = buildRowDetails(pseudoTask.id, buildWorktreeDetailNodes(worktree));
     if (toggle) meta.append(toggle);
@@ -873,6 +910,11 @@
       row.addEventListener("click", (event) => {
         if (!event.target.closest("a, button")) focusTask(pseudoTask);
       });
+    } else {
+      const resumeButton = buildButton(resumingTaskIds.has(pseudoTask.id) ? "Đang mở…" : "Mở lại Claude", "", () => resumeSession(pseudoTask));
+      resumeButton.disabled = resumingTaskIds.has(pseudoTask.id);
+      resumeButton.title = "Mở Claude trong worktree này, resume session gần nhất nếu có";
+      row.append(resumeButton);
     }
     return row;
   }
@@ -1415,7 +1457,7 @@
     titleCell.append(titleElement);
     const tags = describeTags(task, isNext);
     const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
-    const subLine = createElement("div", "cell-sub");
+    const subLine = createElement("div", depth > 0 ? "cell-sub nested" : "cell-sub");
     subLine.style.setProperty("--depth", String(depth));
     const problem = describeStatus(task);
     for (const reason of problem?.querySelectorAll(".blocked-by") ?? []) subLine.append(createElement("span", "blocked-by", reason.textContent));
