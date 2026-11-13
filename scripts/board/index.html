@@ -100,12 +100,14 @@
 
   .side-right:empty { display: none; }
   .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
-  .side-right .row { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
-  .side-right .row > .number:empty { display: none; }
-  .side-right .row > :last-child:not(:first-child) { justify-self: start; }
+  .side-right .row { grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
+  .side-right .row > button { grid-column: 2; justify-self: start; }
+  .side-right .title { font-size: 14px; }
+  .side-right .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
+  .side-right .row:has(> .number:empty) > button { grid-column: 1; }
 
   @media (min-width: 1200px) {
-    .layout { max-width: none; grid-template-columns: 216px minmax(0, 820px) 296px; gap: 28px; justify-content: center; }
+    .layout { max-width: none; grid-template-columns: 200px minmax(0, 940px) 300px; gap: 40px; justify-content: center; }
     .side { position: sticky; top: var(--space-6); align-self: start; }
     .tabs { flex-direction: column; padding: 0; border: none; background: none; gap: 2px; }
     .tabs button { justify-content: flex-start; min-height: 34px; padding: 0 10px; }
@@ -128,7 +130,7 @@
   }
   #banner:empty { display: none; }
 
-  section { margin-bottom: 28px; --state: transparent; }
+  section { margin-bottom: 20px; --state: transparent; }
   section.needs-you { --state: var(--needs-you); }
   section.in-progress { --state: var(--accent); }
   section.review, section.ready, section.blocked, section.done { --state: var(--border-strong); }
@@ -140,7 +142,7 @@
     gap: var(--space-2);
     margin: 0;
     padding: var(--space-2) 0;
-    border-bottom: 2px solid var(--rule, var(--border));
+    border-bottom: 1px solid var(--rule, var(--border));
     font-size: 14px;
     font-weight: 650;
     color: var(--text);
@@ -157,7 +159,7 @@
     grid-template-columns: 44px minmax(0, 1fr) auto;
     gap: var(--space-3);
     align-items: start;
-    padding: 14px var(--space-2) 14px var(--space-1);
+    padding: 10px var(--space-2) 10px var(--space-1);
     border-top: 1px solid var(--border);
   }
   .row:first-child { border-top: none; }
@@ -258,7 +260,7 @@
   button:active { background: #e6eaee; }
   button.primary:active { background: #19722f; }
   button:disabled { opacity: 0.5; cursor: progress; }
-  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 260px; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
   .auto-approve { flex-basis: 100%; display: flex; gap: 6px; justify-content: flex-end; align-items: center; font-size: 12px; color: var(--text-muted); cursor: pointer; }
   .toggle { border: none; background: none; color: var(--accent); min-height: 0; border-radius: 0; }
   .toggle:hover { background: var(--surface-hover); text-decoration: underline; }
@@ -806,17 +808,8 @@
     const row = createElement("div", "row");
     const body = createElement("div");
     body.append(createElement("div", "title", issue.title));
-    const references = createElement("div", "refs");
-    references.append(buildReference({
-      className: "issue",
-      iconPaths: ISSUE_ICON_PATHS,
-      kind: "Issue",
-      number: issue.number,
-      url: issue.url,
-    }));
-    body.append(references);
     const command = `/github-issues-to-md ${issue.number} ${githubWebUrl?.replace("https://github.com/", "") ?? ""}`.trim();
-    const copyButton = buildButton("Copy lệnh tạo spec", "", async () => {
+    const copyButton = buildButton("Copy lệnh", "", async () => {
       try {
         await navigator.clipboard.writeText(command);
         actionMessage = `Đã copy: ${command}`;
@@ -826,7 +819,7 @@
       lastRenderedJson = "";
       render();
     });
-    row.append(createElement("span", "number", ""), body, copyButton);
+    row.append(buildIssueNumberLink(issue.number, issue.url), body, copyButton);
     return row;
   }
 
