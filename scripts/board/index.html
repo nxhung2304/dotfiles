@@ -339,6 +339,9 @@
   .drawer-tabs button:hover { background: none; color: var(--text); }
   .drawer-tabs button.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 600; }
   .drawer-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-6) 48px; }
+  .doc-files { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .doc-file { min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--surface); }
+  .doc-file.active { border-color: var(--accent); background: var(--accent-surface); color: var(--accent); font-weight: 600; }
   .drawer-message { color: var(--text-muted); font-size: 13px; }
   .drawer-message.error { color: var(--danger); }
   .issue-state { padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 20px; color: var(--on-state); background: var(--next); }
@@ -436,6 +439,7 @@
   const BOARD_REFRESH_MS = 3000;
   const WORK_IN_PROGRESS_LIMIT = 3;
   const READY_PREVIEW_COUNT = 3;
+  const ISSUES_WITHOUT_SPEC_PREVIEW_COUNT = 3;
   const VIEW_MODE_STORAGE_KEY = "task-board-view-mode";
   const VIEW_MODES = [{ key: "list", label: "Danh sách" }, { key: "table", label: "Bảng" }];
   const TAB_COLUMNS = { running: ["needsYou", "inProgress", "review"], backlog: ["ready", "todo"], done: ["done"] };
@@ -810,7 +814,9 @@
     const pseudoTask = { id: `worktree:${worktree.path}`, title: worktree.branch ?? worktree.path, agent: worktree.agent };
     const row = createElement("div", worktree.agent ? "row clickable" : "row");
     const body = createElement("div");
-    body.append(createElement("div", "title", pseudoTask.title));
+    body.append(worktree.issueNumber
+      ? buildOpenableTitle("title", pseudoTask.title, { title: pseudoTask.title, taskId: null, issueNumber: worktree.issueNumber })
+      : createElement("div", "title", pseudoTask.title));
     const meta = createElement("div", "meta", worktree.agent ? `Claude: ${worktree.agent.status} · không khớp spec nào` : "không có phiên Claude · không khớp spec nào");
     body.append(meta);
     const { toggle, panel } = buildRowDetails(pseudoTask.id, buildWorktreeDetailNodes(worktree));
@@ -991,6 +997,8 @@
   let drawerContext = null;
   let drawerSourceKey = "spec";
   let drawerRequestId = 0;
+  let drawerSpecFile = null;
+  let showAllIssuesWithoutSpec = false;
 
   function closeDrawer() {
     drawerContext = null;
@@ -1018,10 +1026,23 @@
     return wrapper;
   }
 
-  function renderSpecDetail(detail) {
+  function renderSpecDetail(detail, source) {
     const wrapper = createElement("div");
-    wrapper.append(createElement("div", "drawer-sub", detail.path), renderMarkdown(detail.content));
-    wrapper.firstChild.style.marginBottom = "var(--space-4)";
+    const header = createElement("div", "drawer-sub", detail.path);
+    header.style.marginBottom = "var(--space-4)";
+    if (detail.files.length > 1) {
+      const chips = createElement("div", "doc-files");
+      for (const fileName of detail.files) {
+        const chip = createElement("button", fileName === detail.fileName ? "doc-file active" : "doc-file", fileName);
+        chip.addEventListener("click", () => {
+          drawerSpecFile = fileName;
+          loadDrawerSource(source);
+        });
+        chips.append(chip);
+      }
+      wrapper.append(chips);
+    }
+    wrapper.append(header, renderMarkdown(detail.content));
     return wrapper;
   }
 
@@ -1030,11 +1051,12 @@
     const requestId = ++drawerRequestId;
     body.replaceChildren(createElement("p", "drawer-message", "Đang tải…"));
     try {
-      const response = await fetch(source.url);
+      const fileQuery = source.key === "spec" && drawerSpecFile ? `&file=${encodeURIComponent(drawerSpecFile)}` : "";
+      const response = await fetch(`${source.url}${fileQuery}`);
       const detail = await response.json();
       if (!response.ok) throw new Error(detail.error);
       if (requestId !== drawerRequestId) return;
-      body.replaceChildren(source.key === "github" ? renderIssueDetail(detail) : renderSpecDetail(detail));
+      body.replaceChildren(source.key === "github" ? renderIssueDetail(detail) : renderSpecDetail(detail, source));
       body.scrollTop = 0;
     } catch (error) {
       if (requestId !== drawerRequestId) return;
@@ -1060,6 +1082,7 @@
 
   function openDrawer(context) {
     drawerContext = context;
+    drawerSpecFile = null;
     document.getElementById("drawer-title").textContent = context.title;
     const sub = document.getElementById("drawer-sub");
     sub.replaceChildren();
@@ -1273,8 +1296,16 @@
       createElement("span", "count", String(issuesWithoutSpec.length)),
     );
     const list = createElement("div", "list");
-    list.append(...issuesWithoutSpec.map(buildIssueWithoutSpecRow));
+    const visibleIssues = showAllIssuesWithoutSpec ? issuesWithoutSpec : issuesWithoutSpec.slice(0, ISSUES_WITHOUT_SPEC_PREVIEW_COUNT);
+    list.append(...visibleIssues.map(buildIssueWithoutSpecRow));
     element.append(heading, list);
+    if (issuesWithoutSpec.length > ISSUES_WITHOUT_SPEC_PREVIEW_COUNT) {
+      const label = showAllIssuesWithoutSpec ? "Thu gọn" : `Xem cả ${issuesWithoutSpec.length} issue`;
+      element.append(buildButton(label, "toggle", () => {
+        showAllIssuesWithoutSpec = !showAllIssuesWithoutSpec;
+        render();
+      }));
+    }
     return element;
   }
 

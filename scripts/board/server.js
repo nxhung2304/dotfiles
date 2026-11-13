@@ -152,7 +152,7 @@ async function handleDetail(searchParams) {
   const { specs } = await readBoardState();
   const spec = specs.find((candidate) => candidate.id === specId);
   if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
-  return readSpecDetail(repoRoot, spec);
+  return readSpecDetail(repoRoot, spec, searchParams.get("file"));
 }
 
 async function handleAction(request, response, actionHandler) {

@@ -11,15 +11,26 @@ class DetailNotFoundError extends Error {
   }
 }
 
-function readSpecDetail(repoRoot, spec) {
-  const specFile = path.join(spec.sourceRoot ?? repoRoot, spec.specPath);
+const DOC_FILE_PATTERN = /^[\w.-]+\.md$/;
+
+function listSpecFiles(specDir, mainFileName) {
+  const siblingNames = fs.readdirSync(specDir).filter((name) => DOC_FILE_PATTERN.test(name) && name !== mainFileName).sort();
+  return [mainFileName, ...siblingNames];
+}
+
+function readSpecDetail(repoRoot, spec, requestedFileName = null) {
+  const mainFile = path.join(spec.sourceRoot ?? repoRoot, spec.specPath);
+  const files = spec.isFolderSpec ? listSpecFiles(path.dirname(mainFile), path.basename(mainFile)) : [path.basename(mainFile)];
+  if (requestedFileName !== null && !files.includes(requestedFileName)) throw new DetailNotFoundError(`Không có file ${requestedFileName} trong spec này`);
+  const fileName = requestedFileName ?? files[0];
+  const specFile = path.join(path.dirname(mainFile), fileName);
   let content;
   try {
     content = fs.readFileSync(specFile, "utf8");
   } catch {
     throw new DetailNotFoundError(`Không đọc được file spec ${spec.specPath}`);
   }
-  return { source: "spec", id: spec.id, title: spec.title, path: spec.specPath, content };
+  return { source: "spec", id: spec.id, title: spec.title, path: path.join(path.dirname(spec.specPath), fileName), files, fileName, content };
 }
 
 async function readIssueDetail(repoRoot, issueNumber, runJson = runJsonCommand) {

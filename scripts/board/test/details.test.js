@@ -37,3 +37,26 @@ test("readIssueDetail rejects a non-numeric issue number before running gh", asy
   await assert.rejects(() => readIssueDetail("/repo", Number.NaN, async () => { wasCalled = true; }), (error) => error.httpStatus === 404);
   assert.equal(wasCalled, false);
 });
+
+test("readSpecDetail lists sibling docs of a folder spec and reads a chosen one", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "board-detail-"));
+  const folder = path.join(root, "specs", "issues", "003-c");
+  fs.mkdirSync(folder, { recursive: true });
+  fs.writeFileSync(path.join(folder, "issue.md"), "main");
+  fs.writeFileSync(path.join(folder, "investigate.md"), "notes");
+  fs.writeFileSync(path.join(folder, "image.png"), "x");
+  const spec = { id: "003-c", title: "C", specPath: path.join("specs", "issues", "003-c", "issue.md"), isFolderSpec: true };
+  assert.deepEqual(readSpecDetail(root, spec).files, ["issue.md", "investigate.md"]);
+  assert.equal(readSpecDetail(root, spec, "investigate.md").content, "notes");
+});
+
+test("readSpecDetail refuses a file that is not a doc of the spec", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "board-detail-"));
+  const folder = path.join(root, "specs", "issues", "004-d");
+  fs.mkdirSync(folder, { recursive: true });
+  fs.writeFileSync(path.join(folder, "issue.md"), "main");
+  const spec = { id: "004-d", title: "D", specPath: path.join("specs", "issues", "004-d", "issue.md"), isFolderSpec: true };
+  for (const name of ["../../../etc/passwd", "secret.md", "issue.md/../x.md"]) {
+    assert.throws(() => readSpecDetail(root, spec, name), (error) => error.httpStatus === 404);
+  }
+});

@@ -131,6 +131,7 @@ function findUnlinkedWorktrees(specs, liveState) {
     .filter((worktree) => !worktree.isMain && findIssueNumberInBranch(worktree.branch) && !findSpecIdForBranch(worktree.branch, specs))
     .map((worktree) => ({
       ...worktree,
+      issueNumber: findIssueNumberInBranch(worktree.branch),
       agent: pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []),
       diffStats: liveState.worktreeDetailsByPath?.get(worktree.path)?.diffStats ?? null,
       previewLines: liveState.worktreeDetailsByPath?.get(worktree.path)?.previewLines ?? [],
