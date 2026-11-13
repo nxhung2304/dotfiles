@@ -176,12 +176,8 @@
   .row-index { display: none; }
   .row.clickable { cursor: pointer; }
   .row.clickable:hover { background: var(--surface-hover); }
-  .row.nested { padding-left: calc(var(--space-1) + var(--depth) * 24px); }
   .group-toggle { min-height: 0; padding: 0 8px; border: none; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font-size: 12px; line-height: 20px; }
   .group-toggle:hover { background: var(--accent-surface); color: var(--accent); border: none; }
-  .row.related { background: var(--related); }
-  .row.is-next .title::after { content: "Tiếp theo"; margin-left: var(--space-2); padding: 0 6px; border-radius: 999px; background: var(--accent-surface); color: var(--accent); font-size: 11px; font-weight: 500; vertical-align: 1px; }
-  section.needs-you .row { background: var(--needs-you-surface); padding-left: var(--space-3); border-radius: var(--radius); border-top-color: transparent; margin-top: var(--space-2); box-shadow: inset 3px 0 0 var(--needs-you); }
   .row > .actions, .row > button { align-self: center; }
   section.blocked .row .title, section.done .row .title { color: var(--text-muted); font-weight: 400; }
   .number { justify-self: start; margin-top: 1px; font-family: var(--font-mono); font-size: 13px; line-height: 20px; color: var(--accent); }
@@ -286,28 +282,42 @@
   }
 
 
-  .view-switch { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: var(--space-3); }
-  .view-switch button { min-height: 26px; padding: 0 var(--space-3); border-color: transparent; background: none; color: var(--text-muted); }
-  .view-switch button.active { background: var(--surface-2); border-color: var(--border); color: var(--text); font-weight: 600; }
-  .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .task-table th { padding: var(--space-2); border-bottom: 1px solid var(--border-strong); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-  .task-table td { padding: 10px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .table-scroll { overflow-x: auto; }
+  .task-table { width: 100%; min-width: 760px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+  .task-table th:nth-child(1) { width: 60px; }
+  .task-table th:nth-child(3) { width: 170px; }
+  .task-table th:nth-child(4) { width: 240px; }
+  .task-table th:nth-child(5) { width: 210px; }
+  .task-table th { padding: 6px var(--space-2); border-bottom: 1px solid var(--border); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .task-table th:first-child { border-top-left-radius: var(--radius); }
+  .task-table th:last-child { border-top-right-radius: var(--radius); }
+  .task-table td { padding: 9px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .task-table .cell-number { padding-left: var(--space-3); white-space: nowrap; }
+  .task-table .cell-title { min-width: 220px; }
+  .task-table .title-text { display: inline; font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .task-table .title-text.nested { display: block; margin-left: calc(var(--depth) * 20px); }
+  .task-table .cell-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-3); margin-top: 3px; margin-left: calc(var(--depth, 0) * 20px); font-size: 12px; }
+  .task-table .cell-claude { color: var(--text-muted); }
+  .task-table .cell-pr .ref { white-space: nowrap; }
+  .task-table .cell-pr .refs { gap: 4px; }
+  .task-table .cell-action { text-align: right; }
+  .task-table .cell-action .actions { justify-content: flex-end; width: auto; }
+  .task-table tr.task-row:hover { background: var(--surface-hover); }
   .task-table tr.clickable { cursor: pointer; }
-  .task-table tbody tr:hover { background: var(--surface-hover); }
+  .task-table tr.related { background: var(--related); }
+  .task-table tr.is-next .title-text::after { content: "Tiếp theo"; margin-left: var(--space-2); padding: 0 6px; border-radius: 999px; background: var(--accent-surface); color: var(--accent); font-size: 11px; font-weight: 500; vertical-align: 1px; }
+  .task-table tr.state-blocked .title-text, .task-table tr.state-done .title-text { color: var(--text-muted); font-weight: 400; }
   .task-table tr.state-needs-you { background: var(--needs-you-surface); box-shadow: inset 3px 0 0 var(--needs-you); }
-  .task-table .cell-number { width: 1%; white-space: nowrap; }
-  .task-table .cell-pr, .task-table .cell-pr .ref { white-space: nowrap; }
-  .task-table .cell-pr .refs { flex-wrap: nowrap; }
-  .task-table .cell-title { min-width: 220px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-  .task-table tr.state-blocked .cell-title, .task-table tr.state-done .cell-title { color: var(--text-muted); font-weight: 400; }
-  .task-table .title-text.nested { margin-left: calc(var(--depth) * 20px); }
-  .task-table .group-toggle { margin-top: 4px; }
-  .task-table .cell-note { margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--danger); }
-  .task-table .cell-state, .task-table .cell-claude, .task-table .cell-priority { white-space: nowrap; color: var(--text-muted); }
-  .task-table .cell-priority { font-weight: 600; }
-  .task-table .cell-action { text-align: right; white-space: nowrap; }
-  .task-table .cell-action .actions { width: auto; flex-wrap: nowrap; }
-  .task-table .cell-action .auto-approve { display: none; }
+  .task-table tr.detail-row td { padding-top: 0; background: var(--surface); }
+  .task-table tr.state-needs-you + tr.detail-row td { background: var(--needs-you-surface); }
+  .task-table tbody tr:last-child td { border-bottom: none; }
+  .task-table .blocked-by { color: var(--danger); }
+  .resume-link { min-height: 0; padding: 0; border: none; background: none; color: var(--needs-you); font-size: 12px; font-weight: 500; text-align: left; }
+  .resume-link:hover { background: none; text-decoration: underline; }
+  .resume-link:disabled { color: var(--text-muted); text-decoration: none; }
+  .select-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  .select-all { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .side-notes .row.selectable { grid-template-columns: 16px 36px minmax(0, 1fr); }
   .state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--border-strong); }
   .state-dot.needs-you { background: var(--needs-you); }
   .state-dot.in-progress { background: var(--accent); }
@@ -431,7 +441,6 @@
   <div class="page-main">
     <div id="banner"></div>
     <div id="focus"></div>
-    <div class="view-switch" id="view-switch"></div>
     <main id="board"></main>
   </div>
 </div>
@@ -453,9 +462,6 @@
   const WORK_IN_PROGRESS_LIMIT = 3;
   const READY_PREVIEW_COUNT = 3;
   const ISSUES_WITHOUT_SPEC_PREVIEW_COUNT = 3;
-  const VIEW_MODE_STORAGE_KEY = "task-board-view-mode";
-  const VIEW_MODES = [{ key: "list", label: "Danh sách" }, { key: "table", label: "Bảng" }];
-  const TAB_COLUMNS = { running: ["needsYou", "inProgress", "review"], backlog: ["ready", "todo"], done: ["done"] };
   const SELECTED_TAB_STORAGE_KEY = "task-board-selected-tab";
   const TABS = [
     { key: "running", label: "Đang chạy" },
@@ -512,7 +518,6 @@
   let currentWarnings = [];
   let githubWebUrl = null;
   let selectedTab = readSavedTab();
-  let viewMode = readSavedViewMode();
   let previousNeedsYouCount = 0;
   let issuesWithoutSpec = [];
   let unlinkedWorktrees = [];
@@ -618,7 +623,7 @@
       ...task.dependsOn,
       ...currentTasks.filter((candidate) => candidate.dependsOn.includes(task.id)).map((candidate) => candidate.id),
     ]);
-    document.querySelectorAll(".row").forEach((row) => {
+    document.querySelectorAll("tr[data-task-id]").forEach((row) => {
       row.classList.toggle("related", isOn && relatedIds.has(row.dataset.taskId));
     });
   }
@@ -632,12 +637,40 @@
     return createElement("span", `agent-status ${status ?? ""}`.trim(), text);
   }
 
+  const resumingTaskIds = new Set();
+
+  function canResumeSession(task) {
+    return Boolean(task.worktree && !task.worktree.isMain && !task.autoRun);
+  }
+
+  async function resumeSession(task) {
+    resumingTaskIds.add(task.id);
+    actionMessage = `Đang mở Claude cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/resume", task.id, (result) => {
+      if (!result.sessionId) return `Đã mở Claude mới cho ${shortName(task.id)} (không tìm thấy session cũ trong worktree này).`;
+      const why = result.reason === "created-pr" ? "session đã tạo PR" : "session gần nhất";
+      return `Đã mở Claude và resume ${why} của ${shortName(task.id)} (${result.sessionId.slice(0, 8)}).`;
+    });
+    resumingTaskIds.delete(task.id);
+    render();
+  }
+
+  function buildResumeButton(task) {
+    const isBusy = resumingTaskIds.has(task.id);
+    const button = buildButton(isBusy ? "đang mở…" : "chưa có phiên Claude · mở lại", "resume-link", () => resumeSession(task));
+    button.disabled = isBusy;
+    button.title = "Mở Claude trong worktree này. Nếu có session cũ (ưu tiên session đã tạo PR) thì resume lại.";
+    return button;
+  }
+
   function describeClaudeStatus(task) {
     if (task.agent) {
       const phase = task.autoRun ? ` · ${AUTO_RUN_PHASE_LABELS[task.autoRun.phase] ?? task.autoRun.phase}` : "";
       return buildAgentStatus(`Claude: ${task.agent.status}${phase}`, task.agent.status);
     }
-    if (task.column === "inProgress") return buildAgentStatus("chưa có phiên Claude");
+    if (task.column === "inProgress") return canResumeSession(task) ? buildResumeButton(task) : buildAgentStatus("chưa có phiên Claude");
     if (task.column === "needsYou" && !task.autoRun?.problem) return buildAgentStatus("Claude đang chờ anh trả lời", "blocked");
     return null;
   }
@@ -1313,41 +1346,6 @@
     return toggle;
   }
 
-  function buildRow(task, isNext, depth = 0, descendantCount = 0) {
-    const row = createElement("div", isNext ? "row is-next" : "row");
-    if (depth > 0) {
-      row.classList.add("nested");
-      row.style.setProperty("--depth", String(depth));
-    }
-    row.dataset.taskId = task.id;
-    const body = createElement("div");
-    body.append(buildOpenableTitle("title", task.title, taskDrawerContext(task)));
-    const detailLine = createElement("div", "detail-line");
-    const status = describeStatus(task);
-    if (status) detailLine.append(status);
-    const references = buildReferences(task);
-    if (references) detailLine.append(references);
-    const tags = describeTags(task, isNext);
-    const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
-    if (toggle) detailLine.append(toggle);
-    if (descendantCount > 0) detailLine.append(buildGroupToggle(task, descendantCount));
-    if (detailLine.childElementCount > 0) body.append(detailLine);
-    if (panel) body.append(panel);
-    const issueNumber = task.githubIssues[0];
-    row.append(buildIssueNumberLink(issueNumber, githubWebUrl && issueNumber ? `${githubWebUrl}/issues/${issueNumber}` : null), body);
-    const action = buildAction(task, isNext);
-    if (action) row.append(action);
-    row.addEventListener("mouseenter", () => highlightRelated(task, true));
-    row.addEventListener("mouseleave", () => highlightRelated(task, false));
-    if (task.agent) {
-      row.classList.add("clickable");
-      row.addEventListener("click", (event) => {
-        if (!event.target.closest("a, button")) focusTask(task);
-      });
-    }
-    return row;
-  }
-
   function sortDoneByRecency(tasks) {
     return [...tasks].sort((first, second) => {
       const firstMerged = first.pullRequest?.mergedAt ?? "";
@@ -1363,35 +1361,6 @@
       return TABS.some((tab) => tab.key === savedTab) ? savedTab : TABS[0].key;
     } catch {
       return TABS[0].key;
-    }
-  }
-
-  function readSavedViewMode() {
-    try {
-      const saved = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-      return VIEW_MODES.some((mode) => mode.key === saved) ? saved : VIEW_MODES[0].key;
-    } catch {
-      return VIEW_MODES[0].key;
-    }
-  }
-
-  function selectViewMode(modeKey) {
-    viewMode = modeKey;
-    try {
-      window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, modeKey);
-    } catch {
-      console.warn("[board] cannot remember the view mode");
-    }
-    render();
-  }
-
-  function renderViewSwitch() {
-    const container = document.getElementById("view-switch");
-    container.replaceChildren();
-    for (const mode of VIEW_MODES) {
-      const button = createElement("button", mode.key === viewMode ? "active" : "", mode.label);
-      button.addEventListener("click", () => selectViewMode(mode.key));
-      container.append(button);
     }
   }
 
@@ -1432,6 +1401,57 @@
     return arranged.filter((item) => item.isVisible);
   }
 
+  const TASK_TABLE_COLUMNS = ["#", "Task", "Claude", "PR", ""];
+
+  function buildTaskRows(task, section, isNext, depth, descendantCount) {
+    const row = createElement("tr", ["task-row", `state-${section.className}`, isNext && "is-next"].filter(Boolean).join(" "));
+    row.dataset.taskId = task.id;
+    const issueNumber = task.githubIssues[0];
+    const numberCell = createElement("td", "cell-number");
+    numberCell.append(buildIssueNumberLink(issueNumber, githubWebUrl && issueNumber ? `${githubWebUrl}/issues/${issueNumber}` : null));
+
+    const titleCell = createElement("td", "cell-title");
+    const titleElement = buildOpenableTitle(depth > 0 ? "title-text nested" : "title-text", task.title, taskDrawerContext(task));
+    titleElement.style.setProperty("--depth", String(depth));
+    titleCell.append(titleElement);
+    const tags = describeTags(task, isNext);
+    const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
+    const subLine = createElement("div", "cell-sub");
+    subLine.style.setProperty("--depth", String(depth));
+    const problem = describeStatus(task);
+    for (const reason of problem?.querySelectorAll(".blocked-by") ?? []) subLine.append(createElement("span", "blocked-by", reason.textContent));
+    if (toggle) subLine.append(toggle);
+    if (descendantCount > 0) subLine.append(buildGroupToggle(task, descendantCount));
+    if (subLine.childElementCount > 0) titleCell.append(subLine);
+
+    const claudeCell = createElement("td", "cell-claude");
+    const claudeStatus = describeClaudeStatus(task);
+    if (claudeStatus) claudeCell.append(claudeStatus);
+    const pullRequestCell = createElement("td", "cell-pr");
+    const references = buildReferences(task);
+    if (references) pullRequestCell.append(references);
+    const actionCell = createElement("td", "cell-action");
+    const action = buildAction(task, isNext);
+    if (action) actionCell.append(action);
+
+    row.append(numberCell, titleCell, claudeCell, pullRequestCell, actionCell);
+    row.addEventListener("mouseenter", () => highlightRelated(task, true));
+    row.addEventListener("mouseleave", () => highlightRelated(task, false));
+    if (task.agent) {
+      row.classList.add("clickable");
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a, button, [role=button]")) focusTask(task);
+      });
+    }
+    if (!panel) return [row];
+    const detailRow = createElement("tr", "detail-row");
+    const detailCell = createElement("td", "");
+    detailCell.colSpan = TASK_TABLE_COLUMNS.length - 1;
+    detailCell.append(panel);
+    detailRow.append(createElement("td", ""), detailCell);
+    return [row, detailRow];
+  }
+
   function buildSection(section, { limit, moreLabel } = {}) {
     const allTasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
     const arrangedTasks = arrangeByDependency(allTasks);
@@ -1439,39 +1459,85 @@
     const element = createElement("section", section.className ?? "");
     const heading = createElement("h2");
     heading.append(createElement("span", "", section.label), createElement("span", "count", String(allTasks.length)));
-    const list = createElement("div", "list");
-    list.append(...tasks.map(({ task, depth, descendantCount }, index) => buildRow(task, section.key === "ready" && index === 0, depth, descendantCount)));
-    element.append(heading, list);
+    const table = createElement("table", "task-table");
+    const headRow = createElement("tr");
+    for (const label of TASK_TABLE_COLUMNS) headRow.append(createElement("th", "", label));
+    const head = createElement("thead");
+    head.append(headRow);
+    const body = createElement("tbody");
+    tasks.forEach(({ task, depth, descendantCount }, index) => {
+      body.append(...buildTaskRows(task, section, section.key === "ready" && index === 0, depth, descendantCount));
+    });
+    table.append(head, body);
+    const scroller = createElement("div", "table-scroll");
+    scroller.append(table);
+    element.append(heading, scroller);
     if (limit && allTasks.length > limit) {
       element.append(buildButton(moreLabel(allTasks.length), "toggle", () => selectTab("backlog")));
     }
     return element;
   }
 
-  async function createSpecFromIssue(issue) {
-    const specTaskId = `issue:${issue.number}`;
-    startingTaskIds.add(specTaskId);
-    actionMessage = `Đang mở tab Claude cho issue #${issue.number}…`;
+  const selectedIssueNumbers = new Set();
+  let isCreatingSpecs = false;
+
+  async function createSpecsFromSelection() {
+    const issueNumbers = [...selectedIssueNumbers];
+    if (issueNumbers.length === 0) return;
+    isCreatingSpecs = true;
+    actionMessage = `Đang mở tab Claude cho ${issueNumbers.length} issue…`;
     lastRenderedJson = "";
     render();
-    await runAction("/api/create-spec", specTaskId, () => `Đã mở tab [SPEC] #${issue.number} và gửi lệnh tạo spec. Spec xuất hiện trên board khi Claude lưu xong.`);
-    startingTaskIds.delete(specTaskId);
+    await runAction("/api/create-spec", `issues:${issueNumbers.join(",")}`, () => {
+      selectedIssueNumbers.clear();
+      return `Đã mở một tab [SPEC] và gửi lệnh tạo spec cho ${issueNumbers.map((number) => `#${number}`).join(", ")}. Spec xuất hiện trên board khi Claude lưu xong.`;
+    });
+    isCreatingSpecs = false;
     render();
   }
 
   function buildIssueWithoutSpecRow(issue) {
-    const row = createElement("div", "row");
+    const row = createElement("div", "row selectable");
+    const checkbox = createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedIssueNumbers.has(issue.number);
+    checkbox.setAttribute("aria-label", `Chọn issue #${issue.number}`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedIssueNumbers.add(issue.number);
+      else selectedIssueNumbers.delete(issue.number);
+      render();
+    });
     const body = createElement("div");
     body.append(buildOpenableTitle("title", issue.title, { title: issue.title, taskId: null, issueNumber: issue.number }));
-    const specTaskId = `issue:${issue.number}`;
-    const createButton = buildButton(startingTaskIds.has(specTaskId) ? "Đang mở…" : "Tạo spec", "", () => createSpecFromIssue(issue));
-    createButton.disabled = startingTaskIds.has(specTaskId);
-    createButton.title = "Mở một tab Claude mới để lấy issue này về thành file spec trong specs/issues";
-    row.append(buildIssueNumberLink(issue.number, issue.url), body, createButton);
+    row.append(checkbox, buildIssueNumberLink(issue.number, issue.url), body);
     return row;
   }
 
+  function buildIssueSelectionBar() {
+    const bar = createElement("div", "select-bar");
+    const label = createElement("label", "select-all");
+    const checkbox = createElement("input");
+    checkbox.type = "checkbox";
+    const selectedCount = selectedIssueNumbers.size;
+    checkbox.checked = selectedCount > 0 && selectedCount === issuesWithoutSpec.length;
+    checkbox.indeterminate = selectedCount > 0 && selectedCount < issuesWithoutSpec.length;
+    checkbox.addEventListener("change", () => {
+      selectedIssueNumbers.clear();
+      if (checkbox.checked) issuesWithoutSpec.forEach((issue) => selectedIssueNumbers.add(issue.number));
+      render();
+    });
+    label.append(checkbox, " Chọn tất cả");
+    const createButton = buildButton(isCreatingSpecs ? "Đang mở…" : `Tạo spec (${selectedCount})`, "", createSpecsFromSelection);
+    createButton.disabled = selectedCount === 0 || isCreatingSpecs;
+    createButton.title = "Mở một tab Claude mới để lấy các issue đã chọn về thành file spec trong specs/issues";
+    bar.append(label, createButton);
+    return bar;
+  }
+
   function buildIssuesWithoutSpecSection() {
+    for (const number of [...selectedIssueNumbers]) {
+      if (!issuesWithoutSpec.some((issue) => issue.number === number)) selectedIssueNumbers.delete(number);
+    }
     const element = createElement("section", "without-spec");
     const heading = createElement("h2");
     heading.append(
@@ -1481,7 +1547,7 @@
     const list = createElement("div", "list");
     const visibleIssues = showAllIssuesWithoutSpec ? issuesWithoutSpec : issuesWithoutSpec.slice(0, ISSUES_WITHOUT_SPEC_PREVIEW_COUNT);
     list.append(...visibleIssues.map(buildIssueWithoutSpecRow));
-    element.append(heading, list);
+    element.append(heading, buildIssueSelectionBar(), list);
     if (issuesWithoutSpec.length > ISSUES_WITHOUT_SPEC_PREVIEW_COUNT) {
       const label = showAllIssuesWithoutSpec ? "Thu gọn" : `Xem cả ${issuesWithoutSpec.length} issue`;
       element.append(buildButton(label, "toggle", () => {
@@ -1564,63 +1630,6 @@
     }
   }
 
-  function buildTableRow(task, section, depth = 0, descendantCount = 0) {
-    const row = createElement("tr", `state-${section.className}`);
-    row.dataset.taskId = task.id;
-    const numberCell = createElement("td", "cell-number");
-    numberCell.append(buildIssueNumberLink(task.githubIssues[0], githubWebUrl && task.githubIssues[0] ? `${githubWebUrl}/issues/${task.githubIssues[0]}` : null));
-    const titleCell = createElement("td", "cell-title");
-    titleCell.append(buildOpenableTitle(depth > 0 ? "title-text nested" : "title-text", task.title, taskDrawerContext(task)));
-    titleCell.style.setProperty("--depth", String(depth));
-    if (descendantCount > 0) titleCell.append(buildGroupToggle(task, descendantCount));
-    const stateCell = createElement("td", "cell-state");
-    stateCell.append(createElement("span", `state-dot ${section.className}`), section.label);
-    const problem = describeStatus(task);
-    const claudeCell = createElement("td", "cell-claude");
-    const claudeStatus = describeClaudeStatus(task);
-    if (claudeStatus) claudeCell.append(claudeStatus);
-    if (task.column === "todo" || task.autoRun?.problem || task.onlyInBranch) {
-      const reasons = [...(problem?.querySelectorAll(".blocked-by") ?? [])].map((node) => node.textContent);
-      if (reasons.length > 0) titleCell.append(createElement("div", "cell-note", reasons.join(" · ")));
-    }
-    const pullRequestCell = createElement("td", "cell-pr");
-    const references = buildReferences(task);
-    if (references) pullRequestCell.append(references);
-    const priorityCell = createElement("td", "cell-priority", task.priority === "P2" ? "" : task.priority);
-    const actionCell = createElement("td", "cell-action");
-    const action = buildAction(task, task.column === "ready" && task === tasksIn("ready")[0]);
-    if (action) actionCell.append(action);
-    row.append(numberCell, titleCell, stateCell, claudeCell, pullRequestCell, priorityCell, actionCell);
-    if (task.agent) {
-      row.classList.add("clickable");
-      row.addEventListener("click", (event) => {
-        if (!event.target.closest("a, button")) focusTask(task);
-      });
-    }
-    return row;
-  }
-
-  function buildTableView(board) {
-    const sections = TAB_COLUMNS[selectedTab].map(findSection);
-    const rows = sections.flatMap((section) => {
-      const tasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
-      return arrangeByDependency(tasks).map(({ task, depth, descendantCount }) => buildTableRow(task, section, depth, descendantCount));
-    });
-    if (rows.length === 0) {
-      board.append(createElement("div", "empty-hint", "Không có task nào trong mục này."));
-      return;
-    }
-    const table = createElement("table", "task-table");
-    const head = createElement("thead");
-    const headRow = createElement("tr");
-    for (const label of ["#", "Task", "Trạng thái", "Claude", "PR", "Ưu tiên", ""]) headRow.append(createElement("th", "", label));
-    head.append(headRow);
-    const bodyElement = createElement("tbody");
-    bodyElement.append(...rows);
-    table.append(head, bodyElement);
-    board.append(table);
-  }
-
   const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
 
   function describeNeedsYouReason(task) {
@@ -1692,9 +1701,8 @@
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
-    (viewMode === "table" ? buildTableView : TAB_BUILDERS[selectedTab])(board);
+    TAB_BUILDERS[selectedTab](board);
     renderTabs();
-    renderViewSwitch();
     renderSummary();
     renderSideNotes();
     renderFocus();

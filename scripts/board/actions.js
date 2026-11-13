@@ -4,6 +4,7 @@ const { runCommand, runJsonCommand } = require("./command");
 const { SPECS_RELATIVE_DIR } = require("./specs");
 const { COLUMN } = require("./columns");
 const { groupClaudeAgentsByWorktree } = require("./live-state");
+const { findResumableSession } = require("./sessions");
 
 const HERDR_SCRIPTS_DIR = path.resolve(__dirname, "..", "herdr");
 const WORKTREE_WORKSPACE_SCRIPT = path.join(HERDR_SCRIPTS_DIR, "worktree-workspace");
@@ -187,8 +188,10 @@ function buildAutoRunPrompt(task, autoApproveSpec = false) {
   return `/vibe-issue ${task.id} max-parallel=1${autoApproveFlag}`;
 }
 
-function buildCreateSpecPrompt(issueNumber, repoSlug) {
-  return `/github-issues-to-md ${issueNumber} ${repoSlug ?? ""}`.trim();
+function buildCreateSpecPrompt(issueNumbers, repoSlug) {
+  if (issueNumbers.length === 1) return `/github-issues-to-md ${issueNumbers[0]} ${repoSlug ?? ""}`.trim();
+  const issueList = issueNumbers.map((number) => `#${number}`).join(", ");
+  return `Invoke the github-issues-to-md skill once for each of these GitHub issues of ${repoSlug ?? "this repo"}, one after another: ${issueList}. Then list the spec folders you created.`;
 }
 
 function buildAgentNameForPane(paneId) {
@@ -213,14 +216,44 @@ async function startAutoRun({ repoRoot, task, autoApproveSpec }) {
   return { paneId, prompt, isPromptSent: true };
 }
 
-async function startSpecCreation({ repoRoot, issueNumber, repoSlug }) {
+async function startSpecCreation({ repoRoot, issueNumbers, repoSlug }) {
   ensureRunningInsideHerdr();
-  const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", `[SPEC] #${issueNumber}`, "--focus"]);
+  const label = issueNumbers.length === 1 ? `[SPEC] #${issueNumbers[0]}` : `[SPEC] #${issueNumbers[0]} +${issueNumbers.length - 1}`;
+  const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", label, "--focus"]);
   const paneId = created.result.root_pane.pane_id;
   await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
-  const prompt = buildCreateSpecPrompt(issueNumber, repoSlug);
+  const prompt = buildCreateSpecPrompt(issueNumbers, repoSlug);
   await sendPrompt(paneId, prompt);
   return { paneId, prompt, isPromptSent: true };
+}
+
+function buildAgentStartArgs(paneId, sessionId) {
+  const baseArgs = ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId];
+  return sessionId ? [...baseArgs, "--", "--resume", sessionId] : baseArgs;
+}
+
+async function findShellPaneInWorktree(worktreePath) {
+  const { result } = await runJsonCommand("herdr", ["pane", "list"]);
+  const pane = result.panes.find((candidate) => candidate.cwd === worktreePath);
+  return pane ?? null;
+}
+
+async function resumeTaskSession({ repoRoot, task }) {
+  ensureRunningInsideHerdr();
+  if (!task.worktree || task.worktree.isMain) throw new BoardActionError(`Task ${task.id} chưa có worktree riêng`, 409);
+  if (task.agent) throw new BoardActionError(`Task ${task.id} đã có phiên Claude`, 409);
+  const session = findResumableSession({ worktreePath: task.worktree.path, pullRequestNumber: task.pullRequest?.number ?? null });
+  const existingPane = await findShellPaneInWorktree(task.worktree.path);
+  let paneId = existingPane?.pane_id;
+  if (existingPane) {
+    await runCommand("herdr", ["workspace", "focus", existingPane.workspace_id]);
+  } else {
+    const label = `[WT] ${path.basename(task.worktree.path).replace(`${path.basename(repoRoot)}.`, "")}`;
+    const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", task.worktree.path, "--label", label, "--focus"]);
+    paneId = created.result.root_pane.pane_id;
+  }
+  await runCommand("herdr", buildAgentStartArgs(paneId, session?.sessionId ?? null));
+  return { paneId, sessionId: session?.sessionId ?? null, reason: session?.reason ?? "new" };
 }
 
 async function focusTask(task) {
@@ -248,6 +281,8 @@ module.exports = {
   startTask,
   startAutoRun,
   startSpecCreation,
+  resumeTaskSession,
+  buildAgentStartArgs,
   buildAutoRunPrompt,
   buildCreateSpecPrompt,
   ensureTaskCanRunAutomatically,

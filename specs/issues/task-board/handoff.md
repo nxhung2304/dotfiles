@@ -41,6 +41,9 @@ Also fixed: "Worktree chưa gắn task" lists only branches with a real issue nu
 - Views: list and table (remembered), dependent tasks fold under their parent with a count, side lists (unlinked worktrees, issues without spec) live in the left column.
 - Detail drawer (click a task title): local spec docs of the spec folder and the GitHub issue (`GET /api/detail?spec=<id>[&file=<name>.md]` or `?issue=<n>`, `details.js`).
 - Spec edit (`POST /api/spec-save`): only `.md` files listed for that spec, refuses when the file changed since it was opened (mtime), refuses branch-only specs, disabled with `board --lan`. Checked against a real server with a throwaway repo (save, stale save, bad name, `--lan`).
+- Sections are tables (columns: issue number, task, Claude, PR, action); the list/table switch is gone. Rows keep the "Chi tiết" fold, dependency fold and indent.
+- "chưa có phiên Claude" on an in-progress task with its own worktree is a button (`POST /api/resume`, `sessions.js`): it opens a Claude tab in that worktree with `herdr agent start ... -- --resume <id>`, picking the session whose transcript mentions the task's PR URL, else the newest session of that worktree, else a fresh Claude. Checked on the real mobile board with task 93: Claude opened with its previous conversation and the agent reports the same session id.
+- "Issue GitHub chưa có spec": tick issues (or "Chọn tất cả") then "Tạo spec (N)" opens one `[SPEC]` tab (`POST /api/create-spec`, id `issues:96,84`). One issue sends `/github-issues-to-md N owner/repo`; several send a plain instruction to run the skill once per issue (not yet run on real issues).
 - `board --lan` listens on all interfaces and accepts the machine's own IPs as Host. Anyone on the network can then start Claude tasks from the board, so use it on trusted networks only.
 
 ## Open decisions

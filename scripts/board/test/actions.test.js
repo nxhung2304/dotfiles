@@ -38,8 +38,15 @@ test("buildAutoRunPrompt adds auto-approve-spec only when asked and the spec is 
   assert.equal(buildAutoRunPrompt(approvedSpecTask, true), "/vibe-issue 89-firebase-crashlytics max-parallel=1");
 });
 
-test("buildCreateSpecPrompt asks to fetch the issue into a local spec, with the repo when known", () => {
+test("buildCreateSpecPrompt uses the skill command for one issue and a list instruction for several", () => {
   const { buildCreateSpecPrompt } = require("../actions");
-  assert.equal(buildCreateSpecPrompt(96, "owner/repo"), "/github-issues-to-md 96 owner/repo");
-  assert.equal(buildCreateSpecPrompt(96, null), "/github-issues-to-md 96");
+  assert.equal(buildCreateSpecPrompt([96], "owner/repo"), "/github-issues-to-md 96 owner/repo");
+  assert.equal(buildCreateSpecPrompt([96], null), "/github-issues-to-md 96");
+  assert.match(buildCreateSpecPrompt([96, 84], "owner/repo"), /github-issues-to-md skill once for each .*owner\/repo.*#96, #84/);
+});
+
+test("buildAgentStartArgs passes --resume after the separator only when a session is known", () => {
+  const { buildAgentStartArgs } = require("../actions");
+  assert.deepEqual(buildAgentStartArgs("w1:1", null), ["agent", "start", "claude-w1-1", "--kind", "claude", "--pane", "w1:1"]);
+  assert.deepEqual(buildAgentStartArgs("w1:1", "abc"), ["agent", "start", "claude-w1-1", "--kind", "claude", "--pane", "w1:1", "--", "--resume", "abc"]);
 });
