@@ -115,7 +115,8 @@
   .side-column { display: contents; }
   .side-left { order: 1; }
   .page-main { order: 2; }
-  .side-notes { order: 3; }
+  .side-notes { display: flex; flex-direction: column; gap: var(--space-6); margin-top: var(--space-6); }
+  .side-notes:empty { display: none; }
   @media (min-width: 1100px) {
     .layout { max-width: none; grid-template-columns: 264px minmax(0, 980px); gap: 40px; justify-content: center; }
     .side-column { display: flex; flex-direction: column; gap: var(--space-6); position: sticky; top: var(--space-6); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
@@ -458,12 +459,12 @@
     <nav class="tabs" id="tabs"></nav>
     <div class="summary" id="summary"></div>
   </aside>
-  <aside class="side-notes" id="side-notes"></aside>
   </div>
   <div class="page-main">
     <div id="banner"></div>
     <div id="focus"></div>
     <main id="board"></main>
+    <aside class="side-notes" id="side-notes"></aside>
   </div>
 </div>
 <div id="drawer-backdrop"></div>
@@ -1744,7 +1745,6 @@
     sideNotes.replaceChildren();
     if (unlinkedWorktrees.length > 0) sideNotes.append(buildUnlinkedWorktreesSection());
     if (issuesWithoutSpec.length > 0) sideNotes.append(buildIssuesWithoutSpecSection());
-    if (sideNotes.childElementCount === 0) sideNotes.append(createElement("div", "side-note", "Không có worktree hay issue GitHub nào cần để ý."));
   }
 
   function render() {
