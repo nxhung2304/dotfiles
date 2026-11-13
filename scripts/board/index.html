@@ -272,6 +272,31 @@
     font-size: 13px;
   }
 
+
+  .view-switch { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: var(--space-3); }
+  .view-switch button { min-height: 26px; padding: 0 var(--space-3); border-color: transparent; background: none; color: var(--text-muted); }
+  .view-switch button.active { background: var(--surface-2); border-color: var(--border); color: var(--text); font-weight: 600; }
+  .task-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .task-table th { padding: var(--space-2); border-bottom: 1px solid var(--border-strong); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .task-table td { padding: 10px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .task-table tr.clickable { cursor: pointer; }
+  .task-table tbody tr:hover { background: var(--surface-hover); }
+  .task-table tr.state-needs-you { background: var(--needs-you-surface); box-shadow: inset 3px 0 0 var(--needs-you); }
+  .task-table .cell-number { width: 1%; white-space: nowrap; }
+  .task-table .cell-pr, .task-table .cell-pr .ref { white-space: nowrap; }
+  .task-table .cell-pr .refs { flex-wrap: nowrap; }
+  .task-table .cell-title { min-width: 220px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .task-table tr.state-blocked .cell-title, .task-table tr.state-done .cell-title { color: var(--text-muted); font-weight: 400; }
+  .task-table .cell-note { margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--danger); }
+  .task-table .cell-state, .task-table .cell-claude, .task-table .cell-priority { white-space: nowrap; color: var(--text-muted); }
+  .task-table .cell-priority { font-weight: 600; }
+  .task-table .cell-action { text-align: right; white-space: nowrap; }
+  .task-table .cell-action .actions { width: auto; flex-wrap: nowrap; }
+  .task-table .cell-action .auto-approve { display: none; }
+  .state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--border-strong); }
+  .state-dot.needs-you { background: var(--needs-you); }
+  .state-dot.in-progress { background: var(--accent); }
+
   .focus {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -316,6 +341,7 @@
   <div class="page-main">
     <div id="banner"></div>
     <div id="focus"></div>
+    <div class="view-switch" id="view-switch"></div>
     <main id="board"></main>
   </div>
   <aside class="side side-right" id="side-notes"></aside>
@@ -324,6 +350,9 @@
   const BOARD_REFRESH_MS = 3000;
   const WORK_IN_PROGRESS_LIMIT = 3;
   const READY_PREVIEW_COUNT = 3;
+  const VIEW_MODE_STORAGE_KEY = "task-board-view-mode";
+  const VIEW_MODES = [{ key: "list", label: "Danh sách" }, { key: "table", label: "Bảng" }];
+  const TAB_COLUMNS = { running: ["needsYou", "inProgress", "review"], backlog: ["ready", "todo"], done: ["done"] };
   const SELECTED_TAB_STORAGE_KEY = "task-board-selected-tab";
   const TABS = [
     { key: "running", label: "Đang chạy" },
@@ -380,6 +409,7 @@
   let currentWarnings = [];
   let githubWebUrl = null;
   let selectedTab = readSavedTab();
+  let viewMode = readSavedViewMode();
   let previousNeedsYouCount = 0;
   let issuesWithoutSpec = [];
   let unlinkedWorktrees = [];
@@ -778,6 +808,35 @@
     }
   }
 
+  function readSavedViewMode() {
+    try {
+      const saved = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+      return VIEW_MODES.some((mode) => mode.key === saved) ? saved : VIEW_MODES[0].key;
+    } catch {
+      return VIEW_MODES[0].key;
+    }
+  }
+
+  function selectViewMode(modeKey) {
+    viewMode = modeKey;
+    try {
+      window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, modeKey);
+    } catch {
+      console.warn("[board] cannot remember the view mode");
+    }
+    render();
+  }
+
+  function renderViewSwitch() {
+    const container = document.getElementById("view-switch");
+    container.replaceChildren();
+    for (const mode of VIEW_MODES) {
+      const button = createElement("button", mode.key === viewMode ? "active" : "", mode.label);
+      button.addEventListener("click", () => selectViewMode(mode.key));
+      container.append(button);
+    }
+  }
+
   function selectTab(tabKey) {
     selectedTab = tabKey;
     try {
@@ -908,6 +967,60 @@
     }
   }
 
+  function buildTableRow(task, section) {
+    const row = createElement("tr", `state-${section.className}`);
+    row.dataset.taskId = task.id;
+    const numberCell = createElement("td", "cell-number");
+    numberCell.append(buildIssueNumberLink(task.githubIssues[0], githubWebUrl && task.githubIssues[0] ? `${githubWebUrl}/issues/${task.githubIssues[0]}` : null));
+    const titleCell = createElement("td", "cell-title", task.title);
+    const stateCell = createElement("td", "cell-state");
+    stateCell.append(createElement("span", `state-dot ${section.className}`), section.label);
+    const problem = describeStatus(task);
+    const claudeCell = createElement("td", "cell-claude");
+    const claudeStatus = describeClaudeStatus(task);
+    if (claudeStatus) claudeCell.append(claudeStatus);
+    if (task.column === "todo" || task.autoRun?.problem || task.onlyInBranch) {
+      const reasons = [...(problem?.querySelectorAll(".blocked-by") ?? [])].map((node) => node.textContent);
+      if (reasons.length > 0) titleCell.append(createElement("div", "cell-note", reasons.join(" · ")));
+    }
+    const pullRequestCell = createElement("td", "cell-pr");
+    const references = buildReferences(task);
+    if (references) pullRequestCell.append(references);
+    const priorityCell = createElement("td", "cell-priority", task.priority === "P2" ? "" : task.priority);
+    const actionCell = createElement("td", "cell-action");
+    const action = buildAction(task, task.column === "ready" && task === tasksIn("ready")[0]);
+    if (action) actionCell.append(action);
+    row.append(numberCell, titleCell, stateCell, claudeCell, pullRequestCell, priorityCell, actionCell);
+    if (task.agent) {
+      row.classList.add("clickable");
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a, button")) focusTask(task);
+      });
+    }
+    return row;
+  }
+
+  function buildTableView(board) {
+    const sections = TAB_COLUMNS[selectedTab].map(findSection);
+    const rows = sections.flatMap((section) => {
+      const tasks = section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key);
+      return tasks.map((task) => buildTableRow(task, section));
+    });
+    if (rows.length === 0) {
+      board.append(createElement("div", "empty-hint", "Không có task nào trong mục này."));
+      return;
+    }
+    const table = createElement("table", "task-table");
+    const head = createElement("thead");
+    const headRow = createElement("tr");
+    for (const label of ["#", "Task", "Trạng thái", "Claude", "PR", "Ưu tiên", ""]) headRow.append(createElement("th", "", label));
+    head.append(headRow);
+    const bodyElement = createElement("tbody");
+    bodyElement.append(...rows);
+    table.append(head, bodyElement);
+    board.append(table);
+  }
+
   const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab };
 
   function describeNeedsYouReason(task) {
@@ -979,8 +1092,9 @@
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
-    TAB_BUILDERS[selectedTab](board);
+    (viewMode === "table" ? buildTableView : TAB_BUILDERS[selectedTab])(board);
     renderTabs();
+    renderViewSwitch();
     renderSummary();
     renderSideNotes();
     renderFocus();
