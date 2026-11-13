@@ -1,4 +1,5 @@
 const http = require("node:http");
+const os = require("node:os");
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -8,11 +9,19 @@ const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
 const { BoardActionError, startTask, startAutoRun, focusTask, cleanUpTaskWorktree } = require("./actions");
 
-const HOST = "127.0.0.1";
+const IS_LAN_MODE = process.env.BOARD_LAN === "1";
+const HOST = IS_LAN_MODE ? "0.0.0.0" : "127.0.0.1";
 const DEFAULT_PORT = 4777;
 const MAX_REQUEST_BODY_BYTES = 10_000;
 const PAGE_PATH = path.join(__dirname, "index.html");
-const ALLOWED_HOSTNAMES = ["127.0.0.1", "localhost"];
+function listLanAddresses() {
+  return Object.values(os.networkInterfaces())
+    .flat()
+    .filter((address) => address && address.family === "IPv4" && !address.internal)
+    .map((address) => address.address);
+}
+
+const ALLOWED_HOSTNAMES = ["127.0.0.1", "localhost", ...(IS_LAN_MODE ? listLanAddresses() : [])];
 
 const repoRoot = process.argv[2] ?? process.cwd();
 const port = Number.parseInt(process.env.BOARD_PORT ?? "", 10) || DEFAULT_PORT;
@@ -181,5 +190,6 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(port, HOST, () => {
-  console.log(`[board] ${path.basename(repoRoot)} → http://${HOST}:${port}`);
+  const addresses = IS_LAN_MODE ? ["127.0.0.1", ...listLanAddresses()] : [HOST];
+  console.log(`[board] ${path.basename(repoRoot)} → ${addresses.map((address) => `http://${address}:${port}`).join("  ")}`);
 });

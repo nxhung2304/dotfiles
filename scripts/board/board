@@ -4,6 +4,14 @@ set -euo pipefail
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 readonly PORT=${BOARD_PORT:-4777}
 
+should_open=true
+for argument in "$@"; do
+    case $argument in
+        --no-open) should_open=false ;;
+        --lan) export BOARD_LAN=1 ;;
+    esac
+done
+
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
     echo "board: run inside a git repository" >&2
     exit 1
@@ -18,7 +26,7 @@ if [[ -z ${HERDR_ENV:-} ]]; then
     echo "board: not inside herdr, starting tasks from the board will not work" >&2
 fi
 
-if [[ ${1:-} != --no-open ]] && command -v open >/dev/null; then
+if [[ $should_open == true ]] && command -v open >/dev/null; then
     (sleep 1 && open "http://127.0.0.1:$PORT") &
 fi
 
