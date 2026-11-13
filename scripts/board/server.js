@@ -8,7 +8,7 @@ const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
 const { readSpecDetail, writeSpecFile, readIssueDetail } = require("./details");
-const { BoardActionError, startTask, startAutoRun, focusTask, cleanUpTaskWorktree } = require("./actions");
+const { BoardActionError, startTask, startAutoRun, startSpecCreation, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const IS_LAN_MODE = process.env.BOARD_LAN === "1";
 const HOST = IS_LAN_MODE ? "0.0.0.0" : "127.0.0.1";
@@ -135,6 +135,24 @@ async function handleStart(taskId) {
   }
 }
 
+async function handleCreateSpec(taskId) {
+  const issueNumber = Number(/^issue:(\d+)$/.exec(taskId)?.[1]);
+  if (!Number.isInteger(issueNumber)) throw new BoardActionError("Mã issue không hợp lệ", 400);
+  if (startingTaskIds.has(taskId)) throw new BoardActionError(`Issue #${issueNumber} đang được mở tab`, 409);
+  startingTaskIds.add(taskId);
+  try {
+    const { issuesWithoutSpec } = await readBoardState();
+    if (!issuesWithoutSpec.some((issue) => issue.number === issueNumber)) {
+      throw new BoardActionError(`Issue #${issueNumber} không nằm trong danh sách chưa có spec`, 404);
+    }
+    const githubWebUrl = await githubWebUrlPromise;
+    const repoSlug = githubWebUrl?.replace("https://github.com/", "") ?? null;
+    return await startSpecCreation({ repoRoot, issueNumber, repoSlug });
+  } finally {
+    startingTaskIds.delete(taskId);
+  }
+}
+
 async function handleStartAuto(taskId, { autoApproveSpec }) {
   if (startingTaskIds.has(taskId)) throw new BoardActionError(`Task ${taskId} đang được khởi động`, 409);
   startingTaskIds.add(taskId);
@@ -149,6 +167,7 @@ async function handleStartAuto(taskId, { autoApproveSpec }) {
 const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
+  "/api/create-spec": handleCreateSpec,
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
   [SPEC_SAVE_PATH]: handleSpecSave,
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),

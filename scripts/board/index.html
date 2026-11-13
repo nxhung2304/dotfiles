@@ -1446,22 +1446,26 @@
     return element;
   }
 
+  async function createSpecFromIssue(issue) {
+    const specTaskId = `issue:${issue.number}`;
+    startingTaskIds.add(specTaskId);
+    actionMessage = `Đang mở tab Claude cho issue #${issue.number}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-spec", specTaskId, () => `Đã mở tab [SPEC] #${issue.number} và gửi lệnh tạo spec. Spec xuất hiện trên board khi Claude lưu xong.`);
+    startingTaskIds.delete(specTaskId);
+    render();
+  }
+
   function buildIssueWithoutSpecRow(issue) {
     const row = createElement("div", "row");
     const body = createElement("div");
     body.append(buildOpenableTitle("title", issue.title, { title: issue.title, taskId: null, issueNumber: issue.number }));
-    const command = `/github-issues-to-md ${issue.number} ${githubWebUrl?.replace("https://github.com/", "") ?? ""}`.trim();
-    const copyButton = buildButton("Copy lệnh", "", async () => {
-      try {
-        await navigator.clipboard.writeText(command);
-        actionMessage = `Đã copy: ${command}`;
-      } catch (error) {
-        actionMessage = `Không copy được, gõ tay: ${command}`;
-      }
-      lastRenderedJson = "";
-      render();
-    });
-    row.append(buildIssueNumberLink(issue.number, issue.url), body, copyButton);
+    const specTaskId = `issue:${issue.number}`;
+    const createButton = buildButton(startingTaskIds.has(specTaskId) ? "Đang mở…" : "Tạo spec", "", () => createSpecFromIssue(issue));
+    createButton.disabled = startingTaskIds.has(specTaskId);
+    createButton.title = "Mở một tab Claude mới để lấy issue này về thành file spec trong specs/issues";
+    row.append(buildIssueNumberLink(issue.number, issue.url), body, createButton);
     return row;
   }
 

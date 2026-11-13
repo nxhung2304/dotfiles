@@ -187,6 +187,10 @@ function buildAutoRunPrompt(task, autoApproveSpec = false) {
   return `/vibe-issue ${task.id} max-parallel=1${autoApproveFlag}`;
 }
 
+function buildCreateSpecPrompt(issueNumber, repoSlug) {
+  return `/github-issues-to-md ${issueNumber} ${repoSlug ?? ""}`.trim();
+}
+
 function buildAgentNameForPane(paneId) {
   return `claude-${paneId.toLowerCase().replace(/:/g, "-")}`;
 }
@@ -205,6 +209,16 @@ async function startAutoRun({ repoRoot, task, autoApproveSpec }) {
   const paneId = created.result.root_pane.pane_id;
   await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
   const prompt = buildAutoRunPrompt(task, autoApproveSpec);
+  await sendPrompt(paneId, prompt);
+  return { paneId, prompt, isPromptSent: true };
+}
+
+async function startSpecCreation({ repoRoot, issueNumber, repoSlug }) {
+  ensureRunningInsideHerdr();
+  const created = await runJsonCommand("herdr", ["workspace", "create", "--cwd", repoRoot, "--label", `[SPEC] #${issueNumber}`, "--focus"]);
+  const paneId = created.result.root_pane.pane_id;
+  await runCommand("herdr", ["agent", "start", buildAgentNameForPane(paneId), "--kind", "claude", "--pane", paneId]);
+  const prompt = buildCreateSpecPrompt(issueNumber, repoSlug);
   await sendPrompt(paneId, prompt);
   return { paneId, prompt, isPromptSent: true };
 }
@@ -233,7 +247,9 @@ module.exports = {
   buildStartPrompt,
   startTask,
   startAutoRun,
+  startSpecCreation,
   buildAutoRunPrompt,
+  buildCreateSpecPrompt,
   ensureTaskCanRunAutomatically,
   focusTask,
   cleanUpTaskWorktree,

@@ -37,3 +37,9 @@ test("buildAutoRunPrompt adds auto-approve-spec only when asked and the spec is 
   assert.equal(buildAutoRunPrompt(unapprovedTask, false), "/vibe-issue 89-firebase-crashlytics max-parallel=1");
   assert.equal(buildAutoRunPrompt(approvedSpecTask, true), "/vibe-issue 89-firebase-crashlytics max-parallel=1");
 });
+
+test("buildCreateSpecPrompt asks to fetch the issue into a local spec, with the repo when known", () => {
+  const { buildCreateSpecPrompt } = require("../actions");
+  assert.equal(buildCreateSpecPrompt(96, "owner/repo"), "/github-issues-to-md 96 owner/repo");
+  assert.equal(buildCreateSpecPrompt(96, null), "/github-issues-to-md 96");
+});

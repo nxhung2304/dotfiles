@@ -4,6 +4,7 @@ const { readRunFiles, findActiveAutoRuns } = require("./auto-runs");
 
 const HERDR_REFRESH_MS = 3_000;
 const PULL_REQUEST_REFRESH_MS = 60_000;
+const FAILED_READ_RETRY_MS = 10_000;
 const PULL_REQUEST_LIMIT = "200";
 const CLAUDE_AGENT_LABEL = "claude";
 
@@ -49,12 +50,19 @@ async function addAutoRunPreviews(autoRunBySpecId) {
   return autoRunBySpecId;
 }
 
-function createCachedReader(readFresh, refreshMs) {
+function createCachedReader(readFresh, refreshMs, { keepLastGood = false } = {}) {
   let cachedResult = null;
   let cachedAt = 0;
+  let lastGoodResult = null;
   return async () => {
-    if (cachedResult && Date.now() - cachedAt < refreshMs) return cachedResult;
-    cachedResult = await readFresh();
+    const needsEarlyRetry = cachedResult && (cachedResult.isAvailable === false || cachedResult.isStale);
+    if (cachedResult && Date.now() - cachedAt < (needsEarlyRetry ? FAILED_READ_RETRY_MS : refreshMs)) return cachedResult;
+    const freshResult = await readFresh();
+    if (freshResult.isAvailable !== false) lastGoodResult = freshResult;
+    const shouldReuseLastGood = freshResult.isAvailable === false && keepLastGood && lastGoodResult;
+    cachedResult = shouldReuseLastGood
+      ? { ...lastGoodResult, isStale: true, error: `${freshResult.error} (đang hiện dữ liệu của lần đọc trước)` }
+      : freshResult;
     cachedAt = Date.now();
     return cachedResult;
   };
@@ -120,8 +128,8 @@ function createPullRequestReader(repoRoot) {
 
 function createLiveStateReader(repoRoot) {
   const readHerdr = createCachedReader(readHerdrSnapshot, HERDR_REFRESH_MS);
-  const readPullRequests = createCachedReader(createPullRequestReader(repoRoot), PULL_REQUEST_REFRESH_MS);
-  const readOpenIssues = createCachedReader(createOpenIssueReader(repoRoot), PULL_REQUEST_REFRESH_MS);
+  const readPullRequests = createCachedReader(createPullRequestReader(repoRoot), PULL_REQUEST_REFRESH_MS, { keepLastGood: true });
+  const readOpenIssues = createCachedReader(createOpenIssueReader(repoRoot), PULL_REQUEST_REFRESH_MS, { keepLastGood: true });
 
   return async () => {
     const [worktreeOutput, herdr, pullRequestState, openIssueState] = await Promise.all([
@@ -145,4 +153,4 @@ function createLiveStateReader(repoRoot) {
   };
 }
 
-module.exports = { parseWorktreeList, groupClaudeAgentsByWorktree, summarizeChecks, createLiveStateReader };
+module.exports = { createCachedReader, parseWorktreeList, groupClaudeAgentsByWorktree, summarizeChecks, createLiveStateReader };
