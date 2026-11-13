@@ -158,6 +158,7 @@
     color: var(--text);
   }
   section.needs-you h2 { color: var(--needs-you); }
+  .page-main section h2 { border-bottom: none; padding: 0 0 var(--space-2); }
   section .toggle { display: block; margin: 0; padding: var(--space-2) var(--space-4); width: 100%; border-top: 1px solid var(--border); text-align: left; }
   section h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--state); flex: none; }
   section.unlinked h2::before, section.without-spec h2::before { display: none; }
@@ -282,15 +283,13 @@
   }
 
 
-  .table-scroll { overflow-x: auto; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--rule, var(--border)); border-radius: var(--radius-lg); }
   .task-table { width: 100%; min-width: 760px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
   .task-table th:nth-child(1) { width: 60px; }
   .task-table th:nth-child(3) { width: 170px; }
   .task-table th:nth-child(4) { width: 240px; }
   .task-table th:nth-child(5) { width: 210px; }
   .task-table th { padding: 6px var(--space-2); border-bottom: 1px solid var(--border); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-  .task-table th:first-child { border-top-left-radius: var(--radius); }
-  .task-table th:last-child { border-top-right-radius: var(--radius); }
   .task-table td { padding: 9px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
   .task-table .cell-number { padding-left: var(--space-3); white-space: nowrap; }
   .task-table .cell-title { min-width: 220px; }
