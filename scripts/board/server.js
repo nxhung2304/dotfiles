@@ -7,13 +7,15 @@ const { loadSpecs } = require("./specs");
 const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
-const { readSpecDetail, readIssueDetail } = require("./details");
+const { readSpecDetail, writeSpecFile, readIssueDetail } = require("./details");
 const { BoardActionError, startTask, startAutoRun, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const IS_LAN_MODE = process.env.BOARD_LAN === "1";
 const HOST = IS_LAN_MODE ? "0.0.0.0" : "127.0.0.1";
 const DEFAULT_PORT = 4777;
 const MAX_REQUEST_BODY_BYTES = 10_000;
+const MAX_SPEC_BODY_BYTES = 1_000_000;
+const SPEC_SAVE_PATH = "/api/spec-save";
 const PAGE_PATH = path.join(__dirname, "index.html");
 function listLanAddresses() {
   return Object.values(os.networkInterfaces())
@@ -84,13 +86,13 @@ function isTrustedRequest(request) {
   }
 }
 
-function readJsonBody(request) {
+function readJsonBody(request, maxBytes = MAX_REQUEST_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let receivedBytes = 0;
     request.on("data", (chunk) => {
       receivedBytes += chunk.length;
-      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+      if (receivedBytes > maxBytes) {
         reject(new BoardActionError("Request quá lớn", 413));
         request.destroy();
         return;
@@ -143,8 +145,17 @@ const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
   "/api/focus": async (taskId) => focusTask((await findTaskContext(taskId)).task),
+  [SPEC_SAVE_PATH]: handleSpecSave,
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),
 };
+
+async function handleSpecSave(specId, { fileName, content, baseModifiedMs }) {
+  if (IS_LAN_MODE) throw new BoardActionError("Không sửa spec khi board chạy ở chế độ --lan", 403);
+  const { specs } = await readBoardState();
+  const spec = specs.find((candidate) => candidate.id === specId);
+  if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
+  return writeSpecFile(repoRoot, spec, { fileName, content, baseModifiedMs });
+}
 
 async function handleDetail(searchParams) {
   if (searchParams.has("issue")) return readIssueDetail(repoRoot, Number(searchParams.get("issue")));
@@ -152,14 +163,15 @@ async function handleDetail(searchParams) {
   const { specs } = await readBoardState();
   const spec = specs.find((candidate) => candidate.id === specId);
   if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
-  return readSpecDetail(repoRoot, spec, searchParams.get("file"));
+  const detail = readSpecDetail(repoRoot, spec, searchParams.get("file"));
+  return { ...detail, canEdit: detail.canEdit && !IS_LAN_MODE };
 }
 
-async function handleAction(request, response, actionHandler) {
+async function handleAction(request, response, actionHandler, maxBodyBytes) {
   if (!(request.headers["content-type"] ?? "").startsWith("application/json")) {
     throw new BoardActionError("Cần Content-Type application/json", 415);
   }
-  const requestBody = await readJsonBody(request);
+  const requestBody = await readJsonBody(request, maxBodyBytes);
   if (typeof requestBody.taskId !== "string") throw new BoardActionError("Thiếu taskId", 400);
   sendJson(response, 200, (await actionHandler(requestBody.taskId, requestBody)) ?? { isOk: true });
 }
@@ -184,7 +196,7 @@ async function routeRequest(request, response) {
   }
   const actionHandler = ACTION_HANDLERS[pathname];
   if (request.method === "POST" && actionHandler) {
-    await handleAction(request, response, actionHandler);
+    await handleAction(request, response, actionHandler, pathname === SPEC_SAVE_PATH ? MAX_SPEC_BODY_BYTES : undefined);
     return;
   }
   sendJson(response, 404, { error: "Not found" });

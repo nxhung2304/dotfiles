@@ -37,6 +37,12 @@ A local web board for `specs/issues` that shows which task needs the user, what 
 5. "Mở tab" works. "Dọn worktree" refuses the main checkout (409) as designed. Actual removal not tried: no done task has its own worktree.
 Also fixed: "Worktree chưa gắn task" lists only branches with a real issue number.
 
+## Board UI added after the verification run
+- Views: list and table (remembered), dependent tasks fold under their parent with a count, side lists (unlinked worktrees, issues without spec) live in the left column.
+- Detail drawer (click a task title): local spec docs of the spec folder and the GitHub issue (`GET /api/detail?spec=<id>[&file=<name>.md]` or `?issue=<n>`, `details.js`).
+- Spec edit (`POST /api/spec-save`): only `.md` files listed for that spec, refuses when the file changed since it was opened (mtime), refuses branch-only specs, disabled with `board --lan`. Checked against a real server with a throwaway repo (save, stale save, bad name, `--lan`).
+- `board --lan` listens on all interfaces and accepts the machine's own IPs as Host. Anyone on the network can then start Claude tasks from the board, so use it on trusted networks only.
+
 ## Open decisions
 - Run `node ~/dotfiles/scripts/board/migrate-specs.js <mobile repo> --write` on a feature branch of the mobile repo? Dry run is clean except `timesheet-api-permission-check` (free-text dependency, left for a hand edit). Waiting for the user.
 - Open a PR for the dotfiles branch? Not asked yet.

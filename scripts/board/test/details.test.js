@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { readSpecDetail, readIssueDetail } = require("../details");
+const { readSpecDetail, writeSpecFile, readIssueDetail } = require("../details");
 
 test("readSpecDetail reads the spec file from the repo root", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "board-detail-"));
@@ -59,4 +59,38 @@ test("readSpecDetail refuses a file that is not a doc of the spec", () => {
   for (const name of ["../../../etc/passwd", "secret.md", "issue.md/../x.md"]) {
     assert.throws(() => readSpecDetail(root, spec, name), (error) => error.httpStatus === 404);
   }
+});
+
+function createFolderSpec(name, files) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "board-write-"));
+  const folder = path.join(root, "specs", "issues", name);
+  fs.mkdirSync(folder, { recursive: true });
+  for (const [fileName, content] of Object.entries(files)) fs.writeFileSync(path.join(folder, fileName), content);
+  return { root, folder, spec: { id: name, title: name, specPath: path.join("specs", "issues", name, "issue.md"), isFolderSpec: true } };
+}
+
+test("writeSpecFile saves the new content when the file is unchanged since it was read", () => {
+  const { root, folder, spec } = createFolderSpec("005-e", { "issue.md": "old" });
+  const { modifiedMs } = readSpecDetail(root, spec);
+  const result = writeSpecFile(root, spec, { fileName: "issue.md", content: "new", baseModifiedMs: modifiedMs });
+  assert.equal(fs.readFileSync(path.join(folder, "issue.md"), "utf8"), "new");
+  assert.equal(typeof result.modifiedMs, "number");
+  assert.deepEqual(fs.readdirSync(folder), ["issue.md"]);
+});
+
+test("writeSpecFile refuses to overwrite a file changed after it was read", () => {
+  const { root, folder, spec } = createFolderSpec("006-f", { "issue.md": "old" });
+  const { modifiedMs } = readSpecDetail(root, spec);
+  fs.writeFileSync(path.join(folder, "issue.md"), "changed elsewhere");
+  fs.utimesSync(path.join(folder, "issue.md"), new Date(), new Date(Date.now() + 5000));
+  assert.throws(() => writeSpecFile(root, spec, { fileName: "issue.md", content: "mine", baseModifiedMs: modifiedMs }), (error) => error.httpStatus === 409);
+  assert.equal(fs.readFileSync(path.join(folder, "issue.md"), "utf8"), "changed elsewhere");
+});
+
+test("writeSpecFile refuses branch-only specs, unknown files and non-text content", () => {
+  const { root, spec } = createFolderSpec("007-g", { "issue.md": "x" });
+  const { modifiedMs } = readSpecDetail(root, spec);
+  assert.throws(() => writeSpecFile(root, { ...spec, sourceRoot: root }, { fileName: "issue.md", content: "y", baseModifiedMs: modifiedMs }), (error) => error.httpStatus === 409);
+  assert.throws(() => writeSpecFile(root, spec, { fileName: "../../../x.md", content: "y", baseModifiedMs: modifiedMs }), (error) => error.httpStatus === 404);
+  assert.throws(() => writeSpecFile(root, spec, { fileName: "issue.md", content: 5, baseModifiedMs: modifiedMs }), (error) => error.httpStatus === 400);
 });

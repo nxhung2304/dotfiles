@@ -339,6 +339,11 @@
   .drawer-tabs button:hover { background: none; color: var(--text); }
   .drawer-tabs button.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 600; }
   .drawer-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-6) 48px; }
+  .spec-toolbar { justify-content: space-between; }
+  .spec-toolbar button { min-height: 24px; }
+  .spec-editor { display: grid; gap: var(--space-3); }
+  .spec-textarea { width: 100%; min-height: 58vh; padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); color: var(--text); font: 12.5px/1.55 var(--font-mono); tab-size: 2; resize: vertical; }
+  .spec-editor-actions { display: flex; align-items: center; gap: var(--space-2); }
   .doc-files { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
   .doc-file { min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--surface); }
   .doc-file.active { border-color: var(--accent); background: var(--accent-surface); color: var(--accent); font-weight: 600; }
@@ -998,9 +1003,19 @@
   let drawerSourceKey = "spec";
   let drawerRequestId = 0;
   let drawerSpecFile = null;
+  let drawerEdit = null;
   let showAllIssuesWithoutSpec = false;
 
+  function confirmDiscardEdit() {
+    if (!drawerEdit) return true;
+    const isDirty = drawerEdit.textarea.value !== drawerEdit.original;
+    if (isDirty && !window.confirm("Bỏ các thay đổi chưa lưu?")) return false;
+    drawerEdit = null;
+    return true;
+  }
+
   function closeDrawer() {
+    if (!confirmDiscardEdit()) return;
     drawerContext = null;
     document.getElementById("drawer").classList.remove("open");
     document.getElementById("drawer-backdrop").classList.remove("open");
@@ -1026,15 +1041,67 @@
     return wrapper;
   }
 
+  async function saveSpecEdit(detail, source, controls) {
+    controls.save.disabled = true;
+    controls.message.textContent = "Đang lưu…";
+    controls.message.className = "drawer-message";
+    try {
+      await postAction("/api/spec-save", drawerContext.taskId, {
+        fileName: detail.fileName,
+        content: drawerEdit.textarea.value,
+        baseModifiedMs: detail.modifiedMs,
+      });
+      drawerEdit = null;
+      actionMessage = `Đã lưu ${detail.path}`;
+      lastRenderedJson = "";
+      refreshBoard();
+      await loadDrawerSource(source);
+    } catch (error) {
+      controls.save.disabled = false;
+      controls.message.textContent = `Không lưu được: ${error.message}`;
+      controls.message.className = "drawer-message error";
+    }
+  }
+
+  function startSpecEdit(detail, source) {
+    const textarea = createElement("textarea", "spec-textarea");
+    textarea.value = detail.content;
+    textarea.spellcheck = false;
+    drawerEdit = { textarea, original: detail.content };
+    const message = createElement("span", "drawer-message");
+    const controls = { message };
+    controls.save = buildButton("Lưu", "primary", () => saveSpecEdit(detail, source, controls));
+    const cancel = buildButton("Huỷ", "", () => {
+      if (!confirmDiscardEdit()) return;
+      loadDrawerSource(source);
+    });
+    textarea.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+        event.preventDefault();
+        saveSpecEdit(detail, source, controls);
+      }
+    });
+    const actions = createElement("div", "spec-editor-actions");
+    actions.append(controls.save, cancel, message);
+    const editor = createElement("div", "spec-editor");
+    editor.append(createElement("div", "drawer-sub", `Đang sửa ${detail.path} · ⌘S để lưu`), textarea, actions);
+    document.getElementById("drawer-body").replaceChildren(editor);
+    textarea.focus();
+    textarea.setSelectionRange(0, 0);
+    textarea.scrollTop = 0;
+  }
+
   function renderSpecDetail(detail, source) {
     const wrapper = createElement("div");
-    const header = createElement("div", "drawer-sub", detail.path);
+    const header = createElement("div", "drawer-sub spec-toolbar", detail.path);
+    if (detail.canEdit) header.append(buildButton("Sửa", "", () => startSpecEdit(detail, source)));
     header.style.marginBottom = "var(--space-4)";
     if (detail.files.length > 1) {
       const chips = createElement("div", "doc-files");
       for (const fileName of detail.files) {
         const chip = createElement("button", fileName === detail.fileName ? "doc-file active" : "doc-file", fileName);
         chip.addEventListener("click", () => {
+          if (!confirmDiscardEdit()) return;
           drawerSpecFile = fileName;
           loadDrawerSource(source);
         });
@@ -1065,6 +1132,7 @@
   }
 
   function showDrawerSource(sourceKey) {
+    if (!confirmDiscardEdit()) return;
     const sources = buildDrawerSources(drawerContext);
     const source = sources.find((candidate) => candidate.key === sourceKey) ?? sources[0];
     drawerSourceKey = source.key;
@@ -1081,6 +1149,7 @@
   }
 
   function openDrawer(context) {
+    if (!confirmDiscardEdit()) return;
     drawerContext = context;
     drawerSpecFile = null;
     document.getElementById("drawer-title").textContent = context.title;
