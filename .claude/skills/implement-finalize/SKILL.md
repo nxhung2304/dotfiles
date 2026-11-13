@@ -1,10 +1,12 @@
 ---
 name: implement-finalize
+model: haiku
 allowed-tools: Skill, Read, Write, Edit, Bash(git *), Bash(mkdir *), mcp__claude_ai_Slack__*, Bash(cat:*), Bash(gh pr:*), Bash(gh auth:*), Bash(gh api:*)
 description: Commit, create the PR, update status, notify Slack.
 ---
 
 1. Commit (only add files that actually changed)
+    - Run inside the worktree entered by the orchestrator. Never stage a `specs` symlink (check with `git ls-files -s specs` / `git status`); only real files
     - Use the commit skill with ARGUMENTS `format=short footer=true auto=true`
 
 2. Update the status in the spec file to "PR: Draft"
@@ -24,7 +26,7 @@ To:
 
 4. Create a Draft PR with the `gh` CLI
     - Select GitHub account first: if the project `CLAUDE.md` has `github-account: <user>` and `gh api user -q .login` differs → `gh auth switch --hostname github.com --user <user>`
-    - `gh pr create --draft --base <base-branch> --head <branch-name> --title "<title>" --body "<body>"` — base is the branch prepare checked out from (`develop`, fallback `main`)
+    - `gh pr create --draft --base <base-branch> --head <branch-name> --title "<title>" --body "<body>"` — base is `base_branch` returned by prepare
     - `pr_url` = the URL printed by `gh pr create`
     - Title: [title]
     - Body: invoke the `pr-desc` skill (after push, before `gh pr create`) and use its printed content, then append:

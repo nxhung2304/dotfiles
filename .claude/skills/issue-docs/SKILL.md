@@ -40,13 +40,24 @@ Match the language and style of a recent folder under `specs/issues/`.
 | **issue.md** | There is an original request and no existing issue file covers it | The original request/issue verbatim (user input or `gh issue view <n>`), a status line, and scope decided so far |
 | **investigate.md** | Something was actually investigated | Findings labelled **Confirmed** (cite file:line or log), **Unconfirmed**, or **Cannot confirm** (say what's needed); open questions. Bug: symptom, repro, root cause. Feature: current state, constraints, options considered. |
 | **implement.md** | A plan exists | Affected files/modules, concrete steps (by phase if several), order and dependencies, risks. No verification steps. |
-| **testcases.md** | Test cases were discussed, or implementation is about to start | Two checklists: **Auto-generatable tests** (unit, mocks, simulated events) and **Tests required on a real device / environment** |
+| **testcases.md** | Test cases were discussed, or implementation is about to start | Two checklists: **Auto-generatable tests** (unit, mocks, simulated events) and **Tests required on a real device / environment**, written in the runnable format below |
 | **report.md** | A report for the leader was finalized in the conversation, or the user asks for the file | The final report as-is. Never draft it here — that's the `report` skill's job. |
 
 For each file:
 - **Doesn't exist and is needed** → create it.
 - **Already exists** → don't recreate it. Update only the parts the new findings change, and keep everything the user wrote.
 - **Not needed yet** → skip it. A later stage (or a later run of this skill) adds it.
+
+### testcases.md — runnable format
+
+Goal: the tester only reads the file, copies, runs and compares. No need to look anything up or guess.
+- **Setup** (once per session): what to start, where, which account and test data. One copy-paste command per step, with the expected result right after it.
+- **Shared commands**: when cases need to prepare, inspect, or change data outside the app (backend console, database, admin tool, simulator), define each action once, with a bold name, as one self-contained line (includes `cd`, no placeholders to fill in). Prefer acting on "the latest matching record" over asking for an id. Limit them to the test data. Every command that changes shared state (memberships, settings, flags) gets a paired restore command.
+- **Each case**: numbered steps. Each step is a command to run (by its bold name) or an action in the app using the exact UI labels. Put the expected result right after the step that produces it. Finish with a check command and the output that means pass.
+- Before writing, run the read-only commands once to confirm they work and print what the file says. If a command that changes data was not run, say so in the reply.
+- Expected results describe the current code. When a change alters a case, rewrite its expected result in place and mark the case "needs re-run". Do not append a note under the outdated text.
+- If a translated copy of the file exists (e.g. `testcases-<lang>.md`), apply the same change to it in the same edit.
+- Skip the shared-command parts when the tests need no outside data or environment.
 
 ## Step 4 — Link the files
 

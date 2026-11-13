@@ -1,5 +1,6 @@
 ---
 name: implement-code
+model: claude-opus-5-5
 allowed-tools: Agent, Read, Write, Edit, Grep, Glob, Bash
 description: Execute the Implementation Checklist.
 ---

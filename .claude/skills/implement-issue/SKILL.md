@@ -1,6 +1,6 @@
 ---
 name: implement-issue
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, Agent, mcp__claude_ai_Slack__*
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, Agent, EnterWorktree, ExitWorktree, ToolSearch, mcp__claude_ai_Slack__*
 description: Orchestrator for the full implement-an-issue flow. Does not code directly. Pass `local=true` to skip commit, push, PR and Slack.
 disable-model-invocation: true
 ---
@@ -15,9 +15,10 @@ Purpose: coordinate the full flow of implementing an issue from its spec, end to
 RUN ALL OF THE FOLLOWING STEPS IN ONE EXECUTION — DO NOT STOP TO REPORT IN BETWEEN:
 
 ## STEP 1: Prepare
-Invoke the `implement-prepare` skill with the spec filename from ARGUMENTS. It pulls, checks "Review: Approved", creates the branch, and notifies Slack if configured.
+Invoke the `implement-prepare` skill with the spec filename from ARGUMENTS. It checks "Review: Approved", creates the branch in a separate worktree, and notifies Slack if configured.
 If `local=true`, explicitly skip its Slack notification step (do not send anything, regardless of `slack-channel-id` config).
-Keep its returned `{ branch_name, issue_number, title, thread_ts }` — you'll need `thread_ts` for step 4.
+Keep its returned `{ branch_name, worktree_path, base_branch, issue_number, title, thread_ts }` — you'll need `thread_ts` for step 4.
+Then call `EnterWorktree` with `path: <worktree_path>` (load it via ToolSearch if deferred) so every later step, including subagents, runs inside the worktree. Do not call `ExitWorktree` with `remove`; the worktree stays for review fixes (the user removes it with `git worktree remove`).
 
 ## STEP 2: Code
 Invoke the `implement-code` skill. It reads the spec's Implementation Checklist and implements each item (calling rule-lookup, design-checker, code-reviewer as needed).
@@ -29,12 +30,14 @@ Retry cap: max 3 fix attempts per failing check, then stop and report what was t
 Keep its returned `{ tests_passed, files_fixed, warnings }`.
 
 ## STEP 4: Finalize (skip if `local=true`)
-Invoke the `implement-finalize` skill, passing along `thread_ts` from step 1. It commits, updates the spec status, pushes, opens a draft PR, and notifies Slack.
+Invoke the `implement-finalize` skill, passing along `thread_ts` and `base_branch` from step 1. It commits, updates the spec status, pushes, opens a draft PR, and notifies Slack.
 Keep its returned `{ pr_url, files_committed }`.
+After finalize (or after step 3 if `local=true`), call `ExitWorktree` with `action: "keep"` to return to the original directory.
 
 ## STEP 5: FINAL SUMMARY
 
 Report a summary ONLY ONCE, at the very end:
+- Worktree path and branch name
 - PR link (omit if `local=true`)
 - Files changed
 - Checklist items completed
