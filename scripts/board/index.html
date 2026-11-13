@@ -97,18 +97,24 @@
   .summary .stat.needs-you { --dot: var(--needs-you); }
   .summary .stat.needs-you.has-items strong { color: var(--needs-you); }
   .summary .stat.in-progress { --dot: var(--accent); }
+  .summary .stat.review { --dot: var(--merged); }
+  .summary .stat.done { --dot: var(--next); }
 
-  .side-right:empty { display: none; }
+  .side-notes:empty { display: none; }
   .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
-  .side-right .row { grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
-  .side-right .row > button { grid-column: 2; justify-self: start; }
-  .side-right .title { font-size: 14px; }
-  .side-right .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
-  .side-right .row:has(> .number:empty) > button { grid-column: 1; }
+  .side-notes .row { grid-template-columns: 44px minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
+  .side-notes .row > button { grid-column: 2; justify-self: start; }
+  .side-notes .title { font-size: 14px; }
+  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
+  .side-notes .row:has(> .number:empty) > button { grid-column: 1; }
 
-  @media (min-width: 1200px) {
-    .layout { max-width: none; grid-template-columns: 200px minmax(0, 940px) 300px; gap: 40px; justify-content: center; }
-    .side { position: sticky; top: var(--space-6); align-self: start; }
+  .side-column { display: contents; }
+  .side-left { order: 1; }
+  .page-main { order: 2; }
+  .side-notes { order: 3; }
+  @media (min-width: 1100px) {
+    .layout { max-width: none; grid-template-columns: 264px minmax(0, 980px); gap: 40px; justify-content: center; }
+    .side-column { display: flex; flex-direction: column; gap: var(--space-6); position: sticky; top: var(--space-6); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
     .tabs { flex-direction: column; padding: 0; border: none; background: none; gap: 2px; }
     .tabs button { justify-content: flex-start; min-height: 34px; padding: 0 10px; }
     .tabs button.active { background: rgba(129, 139, 152, 0.18); border-color: transparent; position: relative; }
@@ -133,7 +139,9 @@
   section { margin-bottom: 20px; --state: transparent; }
   section.needs-you { --state: var(--needs-you); }
   section.in-progress { --state: var(--accent); }
-  section.review, section.ready, section.blocked, section.done { --state: var(--border-strong); }
+  section.ready, section.blocked { --state: var(--border-strong); }
+  section.review { --state: var(--merged); }
+  section.done { --state: var(--next); }
   section { background: var(--surface); }
   section.needs-you { --rule: var(--needs-you-border); }
   section h2 {
@@ -301,6 +309,65 @@
   .state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--border-strong); }
   .state-dot.needs-you { background: var(--needs-you); }
   .state-dot.in-progress { background: var(--accent); }
+  .state-dot.review { background: var(--merged); }
+  .state-dot.done { background: var(--next); }
+
+  .openable { cursor: pointer; }
+  .openable:hover { color: var(--accent); text-decoration: underline; }
+  #drawer-backdrop { position: fixed; inset: 0; z-index: 19; background: rgba(31, 35, 40, 0.25); opacity: 0; pointer-events: none; }
+  #drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  #drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; flex-direction: column;
+    width: min(640px, 94vw);
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: -12px 0 32px rgba(31, 35, 40, 0.14);
+    transform: translateX(100%);
+    visibility: hidden;
+  }
+  #drawer.open { transform: none; visibility: visible; }
+  .drawer-head { padding: var(--space-4) var(--space-6) 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .drawer-title-row { display: flex; align-items: flex-start; gap: var(--space-3); }
+  .drawer-title-row h2 { flex: 1; margin: 0; font-size: 18px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .drawer-close { min-height: 28px; padding: 0 8px; border-color: transparent; background: none; color: var(--text-muted); }
+  .drawer-sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); font-size: 12px; color: var(--text-muted); }
+  .drawer-sub a { color: var(--accent); text-decoration: none; }
+  .drawer-sub a:hover { text-decoration: underline; }
+  .drawer-tabs { display: flex; gap: var(--space-4); margin-top: var(--space-3); }
+  .drawer-tabs button { min-height: 34px; padding: 0 2px; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--text-muted); font-size: 13px; }
+  .drawer-tabs button:hover { background: none; color: var(--text); }
+  .drawer-tabs button.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 600; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-6) 48px; }
+  .drawer-message { color: var(--text-muted); font-size: 13px; }
+  .drawer-message.error { color: var(--danger); }
+  .issue-state { padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 20px; color: var(--on-state); background: var(--next); }
+  .issue-state.closed { background: var(--merged); }
+  .label-chip { padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; line-height: 18px; }
+  .markdown { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+  .markdown > :first-child { margin-top: 0; }
+  .markdown h1, .markdown h2, .markdown h3, .markdown h4 { margin: 1.4em 0 0.5em; font-weight: 650; line-height: 1.3; }
+  .markdown h1 { font-size: 20px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .markdown h2 { font-size: 17px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .markdown h3, .markdown h4 { font-size: 15px; }
+  .markdown p, .markdown ul, .markdown ol, .markdown blockquote, .markdown pre, .markdown table { margin: 0 0 0.9em; }
+  .markdown ul, .markdown ol { padding-left: 1.4em; }
+  .markdown li { margin: 2px 0; }
+  .markdown li.nested-item { list-style: circle; }
+  .markdown code { padding: 1px 5px; border-radius: 4px; background: var(--surface-2); font-family: var(--font-mono); font-size: 12.5px; }
+  .markdown pre { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); overflow-x: auto; }
+  .markdown pre code { padding: 0; background: none; font-size: 12px; }
+  .markdown blockquote { padding-left: var(--space-3); border-left: 3px solid var(--border-strong); color: var(--text-muted); }
+  .markdown hr { margin: 1.2em 0; border: none; border-top: 1px solid var(--border); }
+  .markdown a { color: var(--accent); }
+  .markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 13px; }
+  .markdown th, .markdown td { padding: 5px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  .markdown th { background: var(--surface-2); font-weight: 600; }
+  @media (prefers-reduced-motion: no-preference) {
+    #drawer { transition: transform 200ms ease, visibility 0s linear 200ms; }
+    #drawer.open { transition: transform 200ms ease; }
+    #drawer-backdrop { transition: opacity 200ms ease; }
+  }
 
   .focus {
     display: grid;
@@ -338,19 +405,33 @@
 </head>
 <body>
 <div class="layout">
+  <div class="side-column">
   <aside class="side side-left">
     <h1 id="repo-name"></h1>
     <nav class="tabs" id="tabs"></nav>
     <div class="summary" id="summary"></div>
   </aside>
+  <aside class="side-notes" id="side-notes"></aside>
+  </div>
   <div class="page-main">
     <div id="banner"></div>
     <div id="focus"></div>
     <div class="view-switch" id="view-switch"></div>
     <main id="board"></main>
   </div>
-  <aside class="side side-right" id="side-notes"></aside>
 </div>
+<div id="drawer-backdrop"></div>
+<aside id="drawer" aria-label="Chi tiết" inert>
+  <header class="drawer-head">
+    <div class="drawer-title-row">
+      <h2 id="drawer-title"></h2>
+      <button class="drawer-close" id="drawer-close" aria-label="Đóng">✕</button>
+    </div>
+    <div class="drawer-sub" id="drawer-sub"></div>
+    <div class="drawer-tabs" id="drawer-tabs"></div>
+  </header>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
 <script>
   const BOARD_REFRESH_MS = 3000;
   const WORK_IN_PROGRESS_LIMIT = 3;
@@ -405,7 +486,7 @@
     { key: "review", label: "review", className: "review" },
     { key: "ready", label: "sẵn sàng", className: "ready" },
     { key: "todo", label: "bị chặn" },
-    { key: "done", label: "xong" },
+    { key: "done", label: "xong", className: "done" },
   ];
 
   let currentTasks = [];
@@ -766,6 +847,259 @@
     return link;
   }
 
+
+  const MARKDOWN_INLINE_PATTERN = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\(https?:\/\/[^)\s]+\))|(https?:\/\/[^\s)<]+)/g;
+  const MARKDOWN_TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
+  function appendLink(parent, text, url) {
+    const link = createElement("a", "", text);
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    parent.append(link);
+  }
+
+  function appendInlineMarkdown(parent, text) {
+    let lastIndex = 0;
+    for (const match of text.matchAll(MARKDOWN_INLINE_PATTERN)) {
+      parent.append(text.slice(lastIndex, match.index));
+      const [token] = match;
+      if (match[1]) parent.append(createElement("code", "", token.slice(1, -1)));
+      else if (match[2]) parent.append(createElement("strong", "", token.slice(2, -2)));
+      else if (match[3]) {
+        const linkMatch = token.match(/^\[([^\]]+)\]\((.+)\)$/);
+        appendLink(parent, linkMatch[1], linkMatch[2]);
+      } else appendLink(parent, token, token);
+      lastIndex = match.index + token.length;
+    }
+    parent.append(text.slice(lastIndex));
+  }
+
+  function splitTableCells(line) {
+    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  }
+
+  function buildMarkdownTable(headerLine, bodyLines) {
+    const table = createElement("table");
+    const headRow = createElement("tr");
+    for (const cell of splitTableCells(headerLine)) {
+      const header = createElement("th");
+      appendInlineMarkdown(header, cell);
+      headRow.append(header);
+    }
+    const head = createElement("thead");
+    head.append(headRow);
+    table.append(head);
+    const body = createElement("tbody");
+    for (const line of bodyLines) {
+      const row = createElement("tr");
+      for (const cell of splitTableCells(line)) {
+        const data = createElement("td");
+        appendInlineMarkdown(data, cell);
+        row.append(data);
+      }
+      body.append(row);
+    }
+    table.append(body);
+    return table;
+  }
+
+  function renderMarkdown(source) {
+    const root = createElement("div", "markdown");
+    const lines = source.replace(/\r\n/g, "\n").split("\n");
+    let paragraphLines = [];
+    let activeList = null;
+    const flushParagraph = () => {
+      if (paragraphLines.length === 0) return;
+      const paragraph = createElement("p");
+      appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+      root.append(paragraph);
+      paragraphLines = [];
+    };
+    let index = 0;
+    while (index < lines.length) {
+      const line = lines[index];
+      const heading = line.match(/^(#{1,6})\s+(.*)$/);
+      const listItem = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+      if (/^```/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        const codeLines = [];
+        index += 1;
+        while (index < lines.length && !/^```/.test(lines[index])) codeLines.push(lines[index++]);
+        const pre = createElement("pre");
+        pre.append(createElement("code", "", codeLines.join("\n")));
+        root.append(pre);
+      } else if (heading) {
+        flushParagraph();
+        activeList = null;
+        const element = createElement(`h${Math.min(heading[1].length, 4)}`);
+        appendInlineMarkdown(element, heading[2]);
+        root.append(element);
+      } else if (/^\s*(---+|\*\*\*+)\s*$/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        root.append(createElement("hr"));
+      } else if (line.includes("|") && MARKDOWN_TABLE_SEPARATOR.test(lines[index + 1] ?? "")) {
+        flushParagraph();
+        activeList = null;
+        const bodyLines = [];
+        index += 2;
+        while (index < lines.length && lines[index].includes("|") && lines[index].trim() !== "") bodyLines.push(lines[index++]);
+        root.append(buildMarkdownTable(line, bodyLines));
+        continue;
+      } else if (listItem) {
+        flushParagraph();
+        const isOrdered = /\d/.test(listItem[2]);
+        if (!activeList || activeList.isOrdered !== isOrdered) {
+          activeList = { isOrdered, element: createElement(isOrdered ? "ol" : "ul") };
+          root.append(activeList.element);
+        }
+        const item = createElement("li", listItem[1].length >= 2 ? "nested-item" : "");
+        item.style.marginLeft = `${Math.floor(listItem[1].length / 2) * 18}px`;
+        const checkbox = listItem[3].match(/^\[( |x|X)\]\s+(.*)$/);
+        if (checkbox) {
+          const box = createElement("input");
+          box.type = "checkbox";
+          box.disabled = true;
+          box.checked = checkbox[1] !== " ";
+          item.append(box, " ");
+          appendInlineMarkdown(item, checkbox[2]);
+        } else {
+          appendInlineMarkdown(item, listItem[3]);
+        }
+        activeList.element.append(item);
+      } else if (/^>\s?/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        const quote = createElement("blockquote");
+        appendInlineMarkdown(quote, line.replace(/^>\s?/, ""));
+        root.append(quote);
+      } else if (line.trim() === "") {
+        flushParagraph();
+        activeList = null;
+      } else {
+        activeList = null;
+        paragraphLines.push(line.trim());
+      }
+      index += 1;
+    }
+    flushParagraph();
+    return root;
+  }
+
+  let drawerContext = null;
+  let drawerSourceKey = "spec";
+  let drawerRequestId = 0;
+
+  function closeDrawer() {
+    drawerContext = null;
+    document.getElementById("drawer").classList.remove("open");
+    document.getElementById("drawer-backdrop").classList.remove("open");
+    document.getElementById("drawer").inert = true;
+  }
+
+  function buildDrawerSources({ taskId, issueNumber }) {
+    const sources = [];
+    if (taskId) sources.push({ key: "spec", label: "Spec local", url: `/api/detail?spec=${encodeURIComponent(taskId)}` });
+    if (issueNumber) sources.push({ key: "github", label: `GitHub issue #${issueNumber}`, url: `/api/detail?issue=${issueNumber}` });
+    return sources;
+  }
+
+  function renderIssueDetail(detail) {
+    const wrapper = createElement("div");
+    const meta = createElement("div", "drawer-sub");
+    meta.append(createElement("span", `issue-state ${detail.state === "CLOSED" ? "closed" : ""}`.trim(), detail.state === "CLOSED" ? "Closed" : "Open"));
+    for (const label of detail.labels) meta.append(createElement("span", "label-chip", label));
+    const details = [detail.author && `mở bởi ${detail.author}`, detail.createdAt && new Date(detail.createdAt).toLocaleDateString("vi-VN"), `${detail.commentCount} bình luận`].filter(Boolean);
+    meta.append(createElement("span", "", details.join(" · ")));
+    wrapper.append(meta, detail.body.trim() ? renderMarkdown(detail.body) : createElement("p", "drawer-message", "Issue không có mô tả."));
+    wrapper.firstChild.style.marginBottom = "var(--space-4)";
+    return wrapper;
+  }
+
+  function renderSpecDetail(detail) {
+    const wrapper = createElement("div");
+    wrapper.append(createElement("div", "drawer-sub", detail.path), renderMarkdown(detail.content));
+    wrapper.firstChild.style.marginBottom = "var(--space-4)";
+    return wrapper;
+  }
+
+  async function loadDrawerSource(source) {
+    const body = document.getElementById("drawer-body");
+    const requestId = ++drawerRequestId;
+    body.replaceChildren(createElement("p", "drawer-message", "Đang tải…"));
+    try {
+      const response = await fetch(source.url);
+      const detail = await response.json();
+      if (!response.ok) throw new Error(detail.error);
+      if (requestId !== drawerRequestId) return;
+      body.replaceChildren(source.key === "github" ? renderIssueDetail(detail) : renderSpecDetail(detail));
+      body.scrollTop = 0;
+    } catch (error) {
+      if (requestId !== drawerRequestId) return;
+      body.replaceChildren(createElement("p", "drawer-message error", `Không tải được: ${error.message}`));
+    }
+  }
+
+  function showDrawerSource(sourceKey) {
+    const sources = buildDrawerSources(drawerContext);
+    const source = sources.find((candidate) => candidate.key === sourceKey) ?? sources[0];
+    drawerSourceKey = source.key;
+    const tabs = document.getElementById("drawer-tabs");
+    tabs.replaceChildren();
+    if (sources.length > 1) {
+      for (const candidate of sources) {
+        const tab = createElement("button", candidate.key === source.key ? "active" : "", candidate.label);
+        tab.addEventListener("click", () => showDrawerSource(candidate.key));
+        tabs.append(tab);
+      }
+    }
+    loadDrawerSource(source);
+  }
+
+  function openDrawer(context) {
+    drawerContext = context;
+    document.getElementById("drawer-title").textContent = context.title;
+    const sub = document.getElementById("drawer-sub");
+    sub.replaceChildren();
+    if (context.issueNumber && githubWebUrl) appendLink(sub, `#${context.issueNumber} trên GitHub ↗`, `${githubWebUrl}/issues/${context.issueNumber}`);
+    const drawer = document.getElementById("drawer");
+    drawer.inert = false;
+    drawer.classList.add("open");
+    document.getElementById("drawer-backdrop").classList.add("open");
+    showDrawerSource(drawerSourceKey);
+    document.getElementById("drawer-close").focus();
+  }
+
+  function buildOpenableTitle(className, text, context) {
+    const title = createElement("div", `${className} openable`, text);
+    title.tabIndex = 0;
+    title.setAttribute("role", "button");
+    const open = (event) => {
+      event.stopPropagation();
+      openDrawer(context);
+    };
+    title.addEventListener("click", open);
+    title.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open(event);
+      }
+    });
+    return title;
+  }
+
+  function taskDrawerContext(task) {
+    return { title: task.title, taskId: task.id, issueNumber: task.githubIssues[0] };
+  }
+
+  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && drawerContext) closeDrawer();
+  });
+
   function buildGroupToggle(task, descendantCount) {
     const isExpanded = expandedGroupIds.has(task.id);
     const toggle = buildButton(isExpanded ? `▾ Ẩn ${descendantCount} task` : `▸ ${descendantCount} task phụ thuộc`, "group-toggle", () => {
@@ -785,7 +1119,7 @@
     }
     row.dataset.taskId = task.id;
     const body = createElement("div");
-    body.append(createElement("div", "title", task.title));
+    body.append(buildOpenableTitle("title", task.title, taskDrawerContext(task)));
     const detailLine = createElement("div", "detail-line");
     const status = describeStatus(task);
     if (status) detailLine.append(status);
@@ -915,7 +1249,7 @@
   function buildIssueWithoutSpecRow(issue) {
     const row = createElement("div", "row");
     const body = createElement("div");
-    body.append(createElement("div", "title", issue.title));
+    body.append(buildOpenableTitle("title", issue.title, { title: issue.title, taskId: null, issueNumber: issue.number }));
     const command = `/github-issues-to-md ${issue.number} ${githubWebUrl?.replace("https://github.com/", "") ?? ""}`.trim();
     const copyButton = buildButton("Copy lệnh", "", async () => {
       try {
@@ -1022,7 +1356,7 @@
     const numberCell = createElement("td", "cell-number");
     numberCell.append(buildIssueNumberLink(task.githubIssues[0], githubWebUrl && task.githubIssues[0] ? `${githubWebUrl}/issues/${task.githubIssues[0]}` : null));
     const titleCell = createElement("td", "cell-title");
-    titleCell.append(createElement("div", depth > 0 ? "title-text nested" : "title-text", task.title));
+    titleCell.append(buildOpenableTitle(depth > 0 ? "title-text nested" : "title-text", task.title, taskDrawerContext(task)));
     titleCell.style.setProperty("--depth", String(depth));
     if (descendantCount > 0) titleCell.append(buildGroupToggle(task, descendantCount));
     const stateCell = createElement("td", "cell-state");

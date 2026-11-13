@@ -7,6 +7,7 @@ const { loadSpecs } = require("./specs");
 const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
+const { readSpecDetail, readIssueDetail } = require("./details");
 const { BoardActionError, startTask, startAutoRun, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const IS_LAN_MODE = process.env.BOARD_LAN === "1";
@@ -47,7 +48,7 @@ function loadSpecsOnlyInWorktrees(worktrees, mainSpecIds) {
     for (const spec of loadSpecs(worktree.path)) {
       if (seenSpecIds.has(spec.id)) continue;
       seenSpecIds.add(spec.id);
-      extraSpecs.push({ ...spec, onlyInBranch: worktree.branch ?? worktree.path });
+      extraSpecs.push({ ...spec, onlyInBranch: worktree.branch ?? worktree.path, sourceRoot: worktree.path });
     }
   }
   return extraSpecs;
@@ -145,6 +146,15 @@ const ACTION_HANDLERS = {
   "/api/clean-up": async (taskId) => cleanUpTaskWorktree(repoRoot, (await findTaskContext(taskId)).task),
 };
 
+async function handleDetail(searchParams) {
+  if (searchParams.has("issue")) return readIssueDetail(repoRoot, Number(searchParams.get("issue")));
+  const specId = searchParams.get("spec");
+  const { specs } = await readBoardState();
+  const spec = specs.find((candidate) => candidate.id === specId);
+  if (!spec) throw new BoardActionError(`Không tìm thấy spec ${specId}`, 404);
+  return readSpecDetail(repoRoot, spec);
+}
+
 async function handleAction(request, response, actionHandler) {
   if (!(request.headers["content-type"] ?? "").startsWith("application/json")) {
     throw new BoardActionError("Cần Content-Type application/json", 415);
@@ -166,6 +176,10 @@ async function routeRequest(request, response) {
     const { tasks, issuesWithoutSpec, unlinkedWorktrees, warnings } = await readBoardState();
     const githubWebUrl = await githubWebUrlPromise;
     sendJson(response, 200, { repoName: mainRepoName, githubWebUrl, tasks, issuesWithoutSpec, unlinkedWorktrees, warnings });
+    return;
+  }
+  if (request.method === "GET" && pathname === "/api/detail") {
+    sendJson(response, 200, await handleDetail(new URL(request.url, `http://${HOST}`).searchParams));
     return;
   }
   const actionHandler = ACTION_HANDLERS[pathname];
