@@ -67,3 +67,21 @@ test("buildCreateIssuePrompt targets one spec and waits for approval before post
   assert.match(prompt, /wait for my OK/);
   return assert.rejects(startIssueCreation({ repoRoot: "/repo", task: { id: "101-x", githubIssues: [101], onlyInBranch: null } }), /đã có issue GitHub/);
 });
+
+test("isWorktreeSafeToAutoCleanUp only accepts a merged, clean, agent-free task worktree", () => {
+  const { isWorktreeSafeToAutoCleanUp } = require("../actions");
+  const safeTask = {
+    column: "done",
+    pullRequest: { state: "MERGED" },
+    worktree: { path: "/repo.feature-x", isMain: false },
+    agent: null,
+    diffStats: { uncommittedFileCount: 0 },
+  };
+  assert.equal(isWorktreeSafeToAutoCleanUp(safeTask), true);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, pullRequest: { state: "OPEN" } }), false);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, pullRequest: null }), false);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, worktree: { path: "/repo", isMain: true } }), false);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, agent: { paneId: "p1" } }), false);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, diffStats: { uncommittedFileCount: 2 } }), false);
+  assert.equal(isWorktreeSafeToAutoCleanUp({ ...safeTask, diffStats: null }), false);
+});

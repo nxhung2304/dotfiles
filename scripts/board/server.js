@@ -4,11 +4,13 @@ const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const { loadSpecs } = require("./specs");
+const { loadStoryTasksWithoutSpec, addSpecWriterStatus } = require("./story");
 const { buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees } = require("./columns");
 const { createLiveStateReader } = require("./live-state");
 const { readGithubWebUrl } = require("./repo-url");
 const { readSpecDetail, writeSpecFile, readIssueDetail } = require("./details");
-const { BoardActionError, startTask, startAutoRun, startSpecCreation, startIssueCreation, resumeTaskSession, focusTask, cleanUpTaskWorktree } = require("./actions");
+const { createCooldownTracker, selectTasksToAutoCleanUp, isLocalAddress } = require("./server-rules");
+const { BoardActionError, startTask, startAutoRun, startSpecCreation, startStorySpecCreation, startIssueCreation, resumeTaskSession, focusTask, cleanUpTaskWorktree } = require("./actions");
 
 const IS_LAN_MODE = process.env.BOARD_LAN === "1";
 const HOST = IS_LAN_MODE ? "0.0.0.0" : "127.0.0.1";
@@ -30,6 +32,10 @@ const repoRoot = process.argv[2] ?? process.cwd();
 const port = Number.parseInt(process.env.BOARD_PORT ?? "", 10) || DEFAULT_PORT;
 const readLiveState = createLiveStateReader(repoRoot);
 const startingTaskIds = new Set();
+const AUTO_CLEAN_UP_INTERVAL_MS = 60_000;
+const cleaningTaskIds = new Set();
+const AUTO_RUN_START_COOLDOWN_MS = 120_000;
+const autoRunCooldown = createCooldownTracker(AUTO_RUN_START_COOLDOWN_MS);
 
 function readMainRepoName() {
   try {
@@ -64,9 +70,26 @@ async function readBoardState() {
     specs,
     tasks: buildBoard(specs, liveState),
     issuesWithoutSpec: findIssuesWithoutSpec(specs, liveState.openIssues),
+    storyTasksWithoutSpec: addSpecWriterStatus(loadStoryTasksWithoutSpec(repoRoot, specs), liveState.herdrWorkspaces ?? [], liveState.herdrAgents ?? []),
     unlinkedWorktrees: findUnlinkedWorktrees(specs, liveState),
     warnings: liveState.warnings,
+    isHerdrAvailable: liveState.isHerdrAvailable,
   };
+}
+
+async function autoCleanUpMergedWorktrees() {
+  for (const task of selectTasksToAutoCleanUp(await readBoardState())) {
+    if (cleaningTaskIds.has(task.id)) continue;
+    cleaningTaskIds.add(task.id);
+    try {
+      await cleanUpTaskWorktree(repoRoot, task);
+      console.log(`[board] đã tự dọn worktree của ${task.id} (PR đã merge)`);
+    } catch (error) {
+      console.error(`[board] không tự dọn được worktree của ${task.id}: ${error.message}`);
+    } finally {
+      cleaningTaskIds.delete(task.id);
+    }
+  }
 }
 
 function sendJson(response, httpStatus, body) {
@@ -75,8 +98,7 @@ function sendJson(response, httpStatus, body) {
 }
 
 function isRequestFromThisMachine(request) {
-  const address = (request.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
-  return address === "127.0.0.1" || address === "::1" || listLanAddresses().includes(address);
+  return isLocalAddress(request.socket.remoteAddress, listLanAddresses());
 }
 
 function isTrustedRequest(request) {
@@ -164,12 +186,32 @@ async function handleCreateSpec(taskId) {
   }
 }
 
+async function handleCreateStorySpec(taskId) {
+  const slug = taskId.replace(/^story:/, "");
+  if (startingTaskIds.has(taskId)) throw new BoardActionError("Task này đang được mở tab", 409);
+  startingTaskIds.add(taskId);
+  try {
+    const { storyTasksWithoutSpec } = await readBoardState();
+    const storyTask = storyTasksWithoutSpec.find((candidate) => candidate.slug === slug);
+    if (!storyTask) throw new BoardActionError(`Task ${slug} không nằm trong danh sách chưa có spec`, 404);
+    if (storyTask.specWriter) throw new BoardActionError(`Task ${slug} đã có tab [SPEC] đang mở`, 409);
+    return await startStorySpecCreation({ repoRoot, storyTask });
+  } finally {
+    startingTaskIds.delete(taskId);
+  }
+}
+
 async function handleStartAuto(taskId, { autoApproveSpec }) {
   if (startingTaskIds.has(taskId)) throw new BoardActionError(`Task ${taskId} đang được khởi động`, 409);
+  if (autoRunCooldown.isCoolingDown(taskId)) {
+    throw new BoardActionError(`Task ${taskId} vừa được chạy tự động, chờ tab [AUTO] hiện lên rồi hãy thử lại`, 409);
+  }
   startingTaskIds.add(taskId);
   try {
     const { task } = await findTaskContext(taskId);
-    return await startAutoRun({ repoRoot, task, autoApproveSpec: autoApproveSpec === true });
+    const result = await startAutoRun({ repoRoot, task, autoApproveSpec: autoApproveSpec === true });
+    autoRunCooldown.markStarted(taskId);
+    return result;
   } finally {
     startingTaskIds.delete(taskId);
   }
@@ -179,6 +221,7 @@ const ACTION_HANDLERS = {
   "/api/start": handleStart,
   "/api/start-auto": handleStartAuto,
   "/api/create-spec": handleCreateSpec,
+  "/api/create-story-spec": handleCreateStorySpec,
   "/api/create-issue": async (taskId) => startIssueCreation({ repoRoot, task: (await findTaskContext(taskId)).task }),
   "/api/resume": async (taskId, body) =>
     resumeTaskSession({ repoRoot, task: toResumableTask((await findTaskContext(taskId)).task), reviewUncommitted: body.reviewUncommitted === true }),
@@ -223,9 +266,9 @@ async function routeRequest(request, response) {
     return;
   }
   if (request.method === "GET" && pathname === "/api/board") {
-    const { tasks, issuesWithoutSpec, unlinkedWorktrees, warnings } = await readBoardState();
+    const { tasks, issuesWithoutSpec, storyTasksWithoutSpec, unlinkedWorktrees, warnings } = await readBoardState();
     const githubWebUrl = await githubWebUrlPromise;
-    sendJson(response, 200, { repoName: mainRepoName, githubWebUrl, tasks, issuesWithoutSpec, unlinkedWorktrees, warnings });
+    sendJson(response, 200, { repoName: mainRepoName, githubWebUrl, tasks, issuesWithoutSpec, storyTasksWithoutSpec, unlinkedWorktrees, warnings });
     return;
   }
   if (request.method === "GET" && pathname === "/api/detail") {
@@ -234,6 +277,7 @@ async function routeRequest(request, response) {
   }
   const actionHandler = ACTION_HANDLERS[pathname];
   if (request.method === "POST" && actionHandler) {
+    if (!isRequestFromThisMachine(request)) throw new BoardActionError("Chỉ máy chạy board mới được thao tác, máy khác trong LAN chỉ xem", 403);
     await handleAction(request, response, actionHandler, pathname === SPEC_SAVE_PATH ? MAX_SPEC_BODY_BYTES : undefined);
     return;
   }
@@ -257,3 +301,5 @@ server.listen(port, HOST, () => {
   const addresses = IS_LAN_MODE ? ["127.0.0.1", ...listLanAddresses()] : [HOST];
   console.log(`[board] ${path.basename(repoRoot)} → ${addresses.map((address) => `http://${address}:${port}`).join("  ")}`);
 });
+
+setInterval(() => autoCleanUpMergedWorktrees().catch((error) => console.error(`[board] auto clean-up: ${error.message}`)), AUTO_CLEAN_UP_INTERVAL_MS);

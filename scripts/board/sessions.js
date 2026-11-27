@@ -3,7 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const MAX_SESSIONS_TO_SCAN = 8;
-const MAX_TRANSCRIPT_BYTES = 200_000_000;
+const MAX_TRANSCRIPT_BYTES = 50_000_000;
 
 function listClaudeConfigDirs() {
   const candidates = [process.env.CLAUDE_CONFIG_DIR, path.join(os.homedir(), ".claude"), path.join(os.homedir(), ".claude-personal")];
@@ -29,16 +29,23 @@ function listSessionFiles(configDirs, worktreePath) {
   return sessionFiles.sort((first, second) => second.mtimeMs - first.mtimeMs);
 }
 
-function transcriptMentions(sessionFile, needle) {
+async function transcriptMentions(sessionFile, needle) {
   if (sessionFile.size > MAX_TRANSCRIPT_BYTES) return false;
-  return fs.readFileSync(sessionFile.filePath, "utf8").includes(needle);
+  return (await fs.promises.readFile(sessionFile.filePath, "utf8")).includes(needle);
 }
 
-function findResumableSession({ worktreePath, pullRequestNumber = null, configDirs = listClaudeConfigDirs() }) {
+async function findFirstSessionMentioning(sessionFiles, needle) {
+  for (const sessionFile of sessionFiles) {
+    if (await transcriptMentions(sessionFile, needle)) return sessionFile;
+  }
+  return null;
+}
+
+async function findResumableSession({ worktreePath, pullRequestNumber = null, configDirs = listClaudeConfigDirs() }) {
   const sessionFiles = listSessionFiles(configDirs, worktreePath).slice(0, MAX_SESSIONS_TO_SCAN);
   if (sessionFiles.length === 0) return null;
   if (pullRequestNumber) {
-    const creator = sessionFiles.find((sessionFile) => transcriptMentions(sessionFile, `/pull/${pullRequestNumber}`));
+    const creator = await findFirstSessionMentioning(sessionFiles, `/pull/${pullRequestNumber}`);
     if (creator) return { sessionId: creator.sessionId, reason: "created-pr" };
   }
   return { sessionId: sessionFiles[0].sessionId, reason: "latest" };

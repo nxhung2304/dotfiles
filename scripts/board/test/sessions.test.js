@@ -25,25 +25,25 @@ test("encodeProjectDirName replaces every non-alphanumeric character like Claude
   );
 });
 
-test("findResumableSession prefers the session that mentions the pull request", () => {
+test("findResumableSession prefers the session that mentions the pull request", async () => {
   const worktreePath = "/w/app.feature-1";
   const configDir = createConfigDir(worktreePath, [
     { id: "newest", content: "nothing relevant", ageSeconds: 10 },
     { id: "creator", content: 'created https://github.com/o/r/pull/100 done', ageSeconds: 500 },
   ]);
-  assert.deepEqual(findResumableSession({ worktreePath, pullRequestNumber: 100, configDirs: [configDir] }), { sessionId: "creator", reason: "created-pr" });
+  assert.deepEqual(await findResumableSession({ worktreePath, pullRequestNumber: 100, configDirs: [configDir] }), { sessionId: "creator", reason: "created-pr" });
 });
 
-test("findResumableSession falls back to the newest session", () => {
+test("findResumableSession falls back to the newest session", async () => {
   const worktreePath = "/w/app.feature-2";
   const configDir = createConfigDir(worktreePath, [
     { id: "old", content: "a", ageSeconds: 900 },
     { id: "new", content: "b", ageSeconds: 5 },
   ]);
-  assert.deepEqual(findResumableSession({ worktreePath, pullRequestNumber: 7, configDirs: [configDir] }), { sessionId: "new", reason: "latest" });
+  assert.deepEqual(await findResumableSession({ worktreePath, pullRequestNumber: 7, configDirs: [configDir] }), { sessionId: "new", reason: "latest" });
 });
 
-test("findResumableSession returns null when the worktree has no session", () => {
+test("findResumableSession returns null when the worktree has no session", async () => {
   const configDir = fs.mkdtempSync(path.join(os.tmpdir(), "board-sessions-"));
-  assert.equal(findResumableSession({ worktreePath: "/w/none", configDirs: [configDir] }), null);
+  assert.equal(await findResumableSession({ worktreePath: "/w/none", configDirs: [configDir] }), null);
 });

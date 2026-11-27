@@ -82,24 +82,6 @@
   .tabs .count { margin-left: 0; padding: 0 6px; border-radius: 999px; background: rgba(129, 139, 152, 0.18); font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text); }
   .tabs .count.needs-you { background: var(--needs-you); color: var(--on-state); font-weight: 650; }
 
-  .summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px var(--space-4);
-    margin-top: var(--space-3);
-    padding: var(--space-3) var(--space-2) 0;
-    border-top: 1px solid var(--border);
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .summary .stat { display: flex; align-items: center; gap: var(--space-2); }
-  .summary .stat::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--border-strong)); flex: none; }
-  .summary .stat strong { margin-left: auto; font-family: var(--font-mono); font-weight: 600; color: var(--text); }
-  .summary .stat.needs-you { --dot: var(--needs-you); }
-  .summary .stat.needs-you.has-items strong { color: var(--needs-you); }
-  .summary .stat.in-progress { --dot: var(--accent); }
-  .summary .stat.review { --dot: var(--merged); }
-  .summary .stat.done { --dot: var(--next); }
 
   .side-notes:empty { display: none; }
   .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
@@ -124,8 +106,6 @@
     .tabs button.active { background: rgba(129, 139, 152, 0.18); border-color: transparent; position: relative; }
     .tabs button.active::before { content: ""; position: absolute; left: -2px; top: 7px; bottom: 7px; width: 4px; border-radius: 4px; background: var(--accent); }
     .tabs .count { margin-left: auto; }
-    .summary { flex-direction: column; }
-    .summary::before { content: "Tổng quan"; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text); }
   }
 
   #banner {
@@ -149,8 +129,14 @@
   .filter-bar button { min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; color: var(--text-muted); }
   .filter-bar button.active { background: var(--text); border-color: var(--text); color: var(--surface); }
   .filter-bar button .count { margin-left: 6px; background: rgba(129, 139, 152, 0.22); color: inherit; }
-  .sync-tag { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--warning-text); font-size: 12px; }
-  .sync-tag button { min-height: 20px; padding: 0 8px; font-size: 11.5px; }
+  .story-list { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .story-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 10px var(--space-3); border-bottom: 1px solid var(--border); }
+  .story-row:last-child { border-bottom: none; }
+  .story-row:hover { background: var(--surface-hover); }
+  .story-name { font-size: 14px; font-weight: 600; line-height: 1.4; }
+  .story-note { margin-top: 1px; font-size: 12px; color: var(--text-muted); }
+  .story-row .sync-label { color: var(--warning-text); margin-top: 2px; font-size: 12px; }
+  .story-row button { flex: none; min-height: 28px; padding: 0 12px; font-size: 12.5px; }
   #toast {
     position: fixed;
     right: var(--space-6);
@@ -171,7 +157,7 @@
   }
   #toast.error { background: var(--needs-you); border-color: var(--needs-you); color: #fff; }
   #toast:empty { display: none; }
-  #toast .toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  #toast .toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 
   section { margin-bottom: 20px; --state: transparent; }
   section.needs-you { --state: var(--needs-you); }
@@ -291,7 +277,6 @@
   .meta a:hover { text-decoration: underline; }
 
   .tag { display: inline-flex; align-items: center; padding: 0 8px; border: 1px solid transparent; border-radius: 999px; font-size: 12px; font-weight: 500; line-height: 18px; }
-  .tag.next { background: var(--accent-surface); color: var(--accent); border-color: rgba(9, 105, 218, 0.3); }
   .tag.auto, .tag.p3, .tag.unapproved { background: var(--surface); color: var(--text-muted); border-color: var(--border); }
   .tag.p1 { padding: 0; border: none; background: none; color: var(--danger); font-weight: 600; }
 
@@ -320,16 +305,19 @@
   .actions { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
   button.clean-up-blocked { border: none; background: none; min-height: 0; padding: 0; color: var(--needs-you); font-size: 12px; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 3px; }
   button.clean-up-blocked:hover { background: none; text-decoration-style: solid; }
-  .auto-group { display: inline-flex; align-items: stretch; }
-  .auto-group > button { border-radius: var(--radius); }
-  .auto-group > button:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-  .auto-approve { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 1px solid var(--border); border-left: none; border-radius: 0 var(--radius) var(--radius) 0; background: var(--surface-2); color: var(--text); font-size: 12.5px; white-space: nowrap; cursor: pointer; }
-  .auto-approve:hover { background: #eef1f4; border-color: var(--border-strong); }
-  .auto-approve:has(input:checked) { background: var(--accent-surface); border-color: var(--accent); color: #0550ae; }
-  .auto-approve input { margin: 0; }
+  .more-menu { position: relative; }
+  .more-menu > summary { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; min-height: 30px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; list-style: none; user-select: none; }
+  .more-menu > summary::-webkit-details-marker { display: none; }
+  .more-menu > summary:hover { background: #eef1f4; border-color: var(--border-strong); }
+  .more-panel { position: fixed; z-index: 20; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); width: 280px; max-width: calc(100vw - 16px); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 8px 24px rgba(31, 35, 40, 0.18); }
+  .menu-hint { color: var(--text-muted); font-size: 12px; white-space: normal; }
+  .auto-approve { display: inline-flex; align-items: flex-start; gap: 6px; color: var(--text); font-size: 12.5px; cursor: pointer; }
+  .auto-approve input { margin: 2px 0 0; }
+  #board.has-pending-update::before { content: "Có cập nhật mới, di chuột ra khỏi bảng để làm mới"; display: block; margin-bottom: var(--space-2); padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--text-muted); font-size: 12px; }
   .toggle { border: none; background: none; color: var(--accent); min-height: 0; border-radius: 0; }
   .toggle:hover { background: var(--surface-hover); text-decoration: underline; }
   .empty-hint {
+    margin-bottom: var(--space-6);
     padding: var(--space-4);
     border: 1px dashed var(--border-strong);
     border-radius: var(--radius-lg);
@@ -338,9 +326,44 @@
   }
 
 
+  .inbox { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  @media (max-width: 860px) { .inbox { grid-template-columns: minmax(0, 1fr); } }
+  .inbox-list { display: flex; flex-direction: column; gap: var(--space-4); }
+  .inbox-group { display: flex; flex-direction: column; gap: 2px; --state: var(--border-strong); }
+  .inbox-group.needs-you { --state: var(--needs-you); }
+  .inbox-group.in-progress { --state: var(--accent); }
+  .inbox-group.review { --state: var(--merged); }
+  .inbox-group-title { display: flex; justify-content: space-between; padding: 0 var(--space-3); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .inbox-group.needs-you .inbox-group-title { color: var(--needs-you); }
+  .inbox-item { display: flex; gap: 10px; padding: 10px var(--space-3); border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+  .inbox-item:hover { background: var(--surface-hover); }
+  .inbox-item.selected { background: var(--surface); border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .inbox-dot { flex: none; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: var(--state); }
+  .inbox-item-title { font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .inbox-item-number { font-family: var(--font-mono); font-weight: 400; color: var(--text-muted); }
+  .inbox-item-note { font-size: 12.5px; line-height: 1.4; color: var(--text-muted); }
+  .inbox-detail { position: sticky; top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--border); border-radius: 12px; background: var(--surface); --state: var(--border-strong); }
+  .inbox-detail.needs-you { --state: var(--needs-you); }
+  .inbox-detail.in-progress { --state: var(--accent); }
+  .inbox-detail.review { --state: var(--merged); }
+  .detail-badge { align-self: flex-start; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .inbox-detail.needs-you .detail-badge { background: var(--needs-you-surface); border-color: var(--needs-you-border); color: var(--needs-you); }
+  .detail-title { font-size: 22px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+  .detail-callout { padding: var(--space-3) var(--space-4); border-left: 3px solid var(--state); border-radius: var(--radius); background: var(--surface-2); font-size: 14px; line-height: 1.5; }
+  .inbox-detail.needs-you .detail-callout { background: var(--needs-you-surface); color: var(--needs-you); font-weight: 500; }
+  .detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .detail-actions .actions { width: auto; flex-wrap: wrap; justify-content: flex-start; }
+  .detail-actions button { min-height: 36px; padding: 0 var(--space-4); font-size: 13.5px; }
+  .inbox-detail.needs-you .detail-actions > button { background: var(--needs-you); border-color: var(--needs-you); color: var(--on-state); }
+  .phase-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .phase-step { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); font-size: 12.5px; color: var(--text-muted); }
+  .phase-step.done { background: #dafbe1; color: #116329; }
+  .phase-step.current { background: var(--accent-surface); color: #0550ae; font-weight: 650; }
+  .phase-step.current.needs-you { background: var(--needs-you-surface); color: var(--needs-you); }
+
   .table-scroll { overflow-x: auto; border: 1px solid var(--rule, var(--border)); border-radius: var(--radius-lg); }
   .task-table { width: 100%; min-width: 760px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
-  .task-table th:nth-child(1) { width: 60px; }
+  .task-table th:nth-child(1) { width: 104px; }
   .task-table th:nth-child(3) { width: 150px; }
   .task-table th:nth-child(4) { width: 220px; }
   .task-table th:nth-child(5) { width: 300px; }
@@ -353,6 +376,8 @@
   .task-table .title-text.nested::before { content: "↳"; margin-right: 6px; color: var(--border-strong); font-size: 11px; font-weight: 400; }
   .task-table .cell-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-3); margin-top: 3px; font-size: 12px; }
   .task-table .cell-sub.nested { margin-left: calc(var(--depth) * 32px + 17px); }
+  .no-issue-column th:nth-child(1), .no-issue-column td.cell-number { display: none; }
+  .backlog-table th:nth-child(3), .backlog-table th:nth-child(4), .backlog-table td.cell-claude, .backlog-table td.cell-pr { display: none; }
   .task-table .cell-claude { color: var(--text-muted); white-space: nowrap; }
   .task-table .cell-pr .ref { white-space: nowrap; }
   .task-table .cell-pr .refs { gap: 4px; }
@@ -361,7 +386,6 @@
   .task-table tr.task-row:hover { background: var(--surface-hover); }
   .task-table tr.clickable { cursor: pointer; }
   .task-table tr.related { background: var(--related); }
-  .task-table tr.is-next .title-text::after { content: "Tiếp theo"; margin-left: var(--space-2); padding: 0 6px; border-radius: 999px; background: var(--accent-surface); color: var(--accent); font-size: 11px; font-weight: 500; vertical-align: 1px; }
   .task-table tr.state-blocked .title-text, .task-table tr.state-done .title-text { color: var(--text-muted); font-weight: 400; }
   .task-table tr.state-needs-you { background: var(--needs-you-surface); box-shadow: inset 3px 0 0 var(--needs-you); }
   .task-table tr.detail-row td { padding-top: 0; background: var(--surface); }
@@ -489,7 +513,6 @@
   <aside class="side side-left">
     <h1 id="repo-name"></h1>
     <nav class="tabs" id="tabs"></nav>
-    <div class="summary" id="summary"></div>
   </aside>
   </div>
   <div class="page-main">
@@ -514,6 +537,8 @@
 </aside>
 <script>
   const BOARD_REFRESH_MS = 3000;
+  const MORE_PANEL_OFFSET_PX = 4;
+  const PENDING_UPDATE_CLASS = "has-pending-update";
   const WORK_IN_PROGRESS_LIMIT = 3;
   const READY_PREVIEW_COUNT = 3;
   const ISSUES_WITHOUT_SPEC_PREVIEW_COUNT = 3;
@@ -522,7 +547,7 @@
     { key: "running", label: "Đang chạy" },
     { key: "backlog", label: "Backlog" },
     { key: "done", label: "Đã xong" },
-    { key: "worktrees", label: "Worktree chưa gắn task", isExtra: true },
+    { key: "worktrees", label: "Chưa gắn task", isExtra: true },
   ];
   const SHORT_TITLE_LENGTH = 32;
   const SECTIONS = [
@@ -559,14 +584,6 @@
     MERGED: { label: "Merged", className: "pr-merged" },
     CLOSED: { label: "Closed", className: "pr-closed" },
   };
-  const SUMMARY_PARTS = [
-    { key: "needsYou", label: "cần anh", className: "needs-you" },
-    { key: "inProgress", label: "đang làm", className: "in-progress" },
-    { key: "review", label: "review", className: "review" },
-    { key: "ready", label: "sẵn sàng", className: "ready" },
-    { key: "todo", label: "bị chặn" },
-    { key: "done", label: "xong", className: "done" },
-  ];
 
   let currentTasks = [];
   let lastRenderedJson = "";
@@ -576,6 +593,7 @@
   let selectedTab = readSavedTab();
   let previousNeedsYouCount = 0;
   let issuesWithoutSpec = [];
+  let storyTasksWithoutSpec = [];
   let unlinkedWorktrees = [];
   const CHECK_SIGNALS = {
     failing: { label: "CI lỗi", tone: "bad" },
@@ -603,12 +621,15 @@
     return currentTasks.filter((task) => task.column === column);
   }
 
-  function shortName(taskId) {
+  function shortTitle(taskId) {
     const task = currentTasks.find((candidate) => candidate.id === taskId);
     if (!task) return taskId;
-    const title = task.title.length > SHORT_TITLE_LENGTH ? `${task.title.slice(0, SHORT_TITLE_LENGTH)}…` : task.title;
-    const issueNumber = task.githubIssues?.[0];
-    return issueNumber ? `#${issueNumber} ${title}` : title;
+    return task.title.length > SHORT_TITLE_LENGTH ? `${task.title.slice(0, SHORT_TITLE_LENGTH)}…` : task.title;
+  }
+
+  function shortName(taskId) {
+    const issueNumber = currentTasks.find((candidate) => candidate.id === taskId)?.githubIssues?.[0];
+    return issueNumber ? `#${issueNumber} ${shortTitle(taskId)}` : shortTitle(taskId);
   }
 
   async function postAction(actionPath, taskId, options = {}) {
@@ -629,7 +650,7 @@
       actionMessage = `Lỗi: ${error.message}`;
     }
     lastRenderedJson = "";
-    await refreshBoard();
+    await refreshBoard({ isForced: true });
   }
 
   function confirmStart(task) {
@@ -754,14 +775,13 @@
     return meta.childNodes.length > 0 ? meta : null;
   }
 
-  function describeTags(task, isNext) {
+  function describeTags(task) {
     const tags = createElement("div", "meta");
-    if (isNext) tags.append(createElement("span", "tag next", "Tiếp theo"));
     if (task.column !== "done") appendPriorityTags(tags, task);
     if (task.column === "ready" && task.specPath.endsWith("/issue.md")) {
-      tags.append(createElement("span", "tag unapproved", "chưa có spec · Claude sẽ đọc thư mục issue rồi hỏi anh bước tiếp"));
+      tags.append(createElement("span", "tag unapproved", "thư mục tài liệu · Claude sẽ hỏi bước tiếp"));
     } else if (task.column === "ready" && !task.isApproved) {
-      tags.append(createElement("span", "tag unapproved", "chưa duyệt · sẽ chạy review spec"));
+      tags.append(createElement("span", "tag unapproved", "chưa duyệt · chạy review spec trước"));
     }
     return tags.childNodes.length > 0 ? tags : null;
   }
@@ -835,42 +855,67 @@
       else autoApproveTaskIds.delete(task.id);
     });
     label.title = "Tự duyệt spec: chỉ duyệt khi agent review không thấy vấn đề chặn và không còn câu hỏi mở. Nếu không, dừng chờ anh duyệt.";
-    label.append(checkbox, "tự duyệt");
+    label.append(checkbox, "tự duyệt spec nếu review không thấy vấn đề");
     return label;
+  }
+
+  function closeOpenMoreMenus() {
+    document.querySelectorAll("details.more-menu[open]").forEach((menu) => {
+      menu.open = false;
+    });
+  }
+
+  function buildMoreMenu(items) {
+    const menu = createElement("details", "more-menu");
+    const toggle = createElement("summary", "", "⋯");
+    toggle.setAttribute("aria-label", "Thêm hành động");
+    const panel = createElement("div", "more-panel");
+    panel.append(...items);
+    menu.append(toggle, panel);
+    menu.addEventListener("toggle", () => {
+      if (!menu.open) return;
+      const toggleRect = toggle.getBoundingClientRect();
+      panel.style.top = `${toggleRect.bottom + MORE_PANEL_OFFSET_PX}px`;
+      panel.style.right = `${window.innerWidth - toggleRect.right}px`;
+    });
+    return menu;
+  }
+
+  function buildAutoRunMenu(task) {
+    const autoButton = buildButton("Để Claude tự làm tới PR nháp", "", () => startAutoTask(task));
+    autoButton.disabled = startingTaskIds.size > 0;
+    autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
+    const items = [autoButton, createElement("div", "menu-hint", "Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần.")];
+    if (!task.isApproved) items.push(buildAutoApproveToggle(task));
+    return buildMoreMenu(items);
   }
 
   function buildAction(task, isNext) {
     if (task.column === "needsYou") return buildButton("Mở tab", "", () => focusTask(task));
     if (task.column === "inProgress" && task.agent) return buildButton("Mở tab", "", () => focusTask(task));
+    if (task.column === "todo" && isMissingIssue(task)) return buildCreateIssueButton(task, false);
     if (task.column === "ready") {
-      const button = buildButton(startingTaskIds.has(task.id) ? "Đang mở…" : "Bắt đầu", isNext ? "primary" : "", () => startTask(task));
-      button.disabled = startingTaskIds.size > 0;
-      if (task.specPath.endsWith("/issue.md")) return button;
-      const autoButton = buildButton("Chạy tự động", "", () => startAutoTask(task));
-      autoButton.disabled = startingTaskIds.size > 0;
-      autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
+      const needsIssue = isMissingIssue(task);
+      const startButton = buildButton(startingTaskIds.has(task.id) ? "Đang mở…" : "Làm cùng Claude", isNext && !needsIssue ? "primary" : "", () => startTask(task));
+      startButton.disabled = startingTaskIds.size > 0;
       const group = createElement("div", "actions");
-      const autoGroup = createElement("div", "auto-group");
-      autoGroup.append(autoButton);
-      if (!task.isApproved) autoGroup.append(buildAutoApproveToggle(task));
-      group.append(button, autoGroup);
+      if (needsIssue) group.append(buildCreateIssueButton(task, isNext));
+      group.append(startButton);
+      if (!task.specPath.endsWith("/issue.md")) group.append(buildAutoRunMenu(task));
       return group;
     }
     if (task.column === "done" && task.worktree && !task.worktree.isMain) {
       const uncommittedFileCount = task.diffStats?.uncommittedFileCount ?? 0;
+      if (uncommittedFileCount > 0) {
+        const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit, chưa dọn được`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task, { reviewUncommitted: true })));
+        openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có) và nhờ nó xem các file chưa commit";
+        return openWorktree;
+      }
       const button = buildButton("Dọn worktree", "", () =>
         runAction("/api/clean-up", task.id, () => `Đã đóng workspace và xoá worktree của ${shortName(task.id)} (branch vẫn giữ).`),
       );
-      button.disabled = uncommittedFileCount > 0;
-      button.title = uncommittedFileCount > 0
-        ? `Còn ${uncommittedFileCount} file chưa commit, không dọn được`
-        : "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
-      if (uncommittedFileCount === 0) return button;
-      const group = createElement("div", "actions");
-      const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task, { reviewUncommitted: true })));
-      openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có) và nhờ nó xem các file chưa commit";
-      group.append(openWorktree, button);
-      return group;
+      button.title = "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
+      return button;
     }
     return null;
   }
@@ -940,7 +985,7 @@
     if (worktree.agent) meta.append(buildAgentStatus(`Claude: ${worktree.agent.status}`, worktree.agent.status));
     else meta.append(buildAgentStatus("chưa có phiên Claude"));
     const isIssueWithoutSpec = issuesWithoutSpec.some((issue) => issue.number === worktree.issueNumber);
-    meta.append(isIssueWithoutSpec ? `issue #${worktree.issueNumber} chưa có spec, tạo spec để gắn vào board` : "không khớp spec nào");
+    meta.append(isIssueWithoutSpec ? `issue #${worktree.issueNumber} · chưa gắn spec` : "không khớp spec nào");
     body.append(meta);
     const { toggle, panel } = buildRowDetails(pseudoTask.id, buildWorktreeDetailNodes(worktree));
     if (toggle) meta.append(toggle);
@@ -1490,26 +1535,23 @@
     actionMessage = `Đang mở tab Claude để tạo issue cho ${shortName(task.id)}…`;
     lastRenderedJson = "";
     render();
-    await runAction("/api/create-issue", task.id, () => `Đã mở tab [ISSUE] ${shortName(task.id)}, xem và đồng ý trong tab đó.`);
+    await runAction("/api/create-issue", task.id, () => `Đã gửi yêu cầu tạo issue cho ${shortName(task.id)} sang Claude, xem và đồng ý trong tab đó.`);
     creatingIssueTaskIds.delete(task.id);
     render();
   }
 
-  function buildMissingIssueTag(task) {
-    const tag = createElement("span", "sync-tag");
-    tag.append(createElement("span", "", "chưa có issue"));
+  function buildCreateIssueButton(task, isPrimary) {
     const isBusy = creatingIssueTaskIds.has(task.id);
-    const button = buildButton(isBusy ? "đang mở…" : "Tạo issue", "", () => createIssueForTask(task));
+    const button = buildButton(isBusy ? "Đang mở…" : "Tạo issue", isPrimary ? "primary" : "", () => createIssueForTask(task));
     button.disabled = isBusy;
     button.title = "Mở Claude để tạo issue GitHub từ spec này. Claude sẽ cho anh xem nội dung và chờ anh đồng ý trước khi đăng.";
-    tag.append(button);
-    return tag;
+    return button;
   }
 
-  const TASK_TABLE_COLUMNS = ["#", "Task", "Claude", "PR", ""];
+  const TASK_TABLE_COLUMNS = ["Issue number", "Task", "Claude", "PR", ""];
 
   function buildTaskRows(task, section, isNext, depth, descendantCount) {
-    const row = createElement("tr", ["task-row", `state-${section.className}`, isNext && "is-next"].filter(Boolean).join(" "));
+    const row = createElement("tr", ["task-row", `state-${section.className}`].join(" "));
     row.dataset.taskId = task.id;
     const issueNumber = task.githubIssues[0];
     const numberCell = createElement("td", "cell-number");
@@ -1519,14 +1561,13 @@
     const titleElement = buildOpenableTitle(depth > 0 ? "title-text nested" : "title-text", task.title, taskDrawerContext(task));
     titleElement.style.setProperty("--depth", String(depth));
     titleCell.append(titleElement);
-    const tags = describeTags(task, isNext);
+    const tags = describeTags(task);
     const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
     const subLine = createElement("div", depth > 0 ? "cell-sub nested" : "cell-sub");
     subLine.style.setProperty("--depth", String(depth));
     const problem = describeStatus(task);
     for (const reason of problem?.querySelectorAll(".blocked-by") ?? []) subLine.append(createElement("span", "blocked-by", reason.textContent));
     if (toggle) subLine.append(toggle);
-    if (isMissingIssue(task) && BACKLOG_COLUMNS.includes(task.column)) subLine.append(buildMissingIssueTag(task));
     if (descendantCount > 0) subLine.append(buildGroupToggle(task, descendantCount));
     if (subLine.childElementCount > 0) titleCell.append(subLine);
 
@@ -1546,7 +1587,7 @@
     if (task.agent) {
       row.classList.add("clickable");
       row.addEventListener("click", (event) => {
-        if (!event.target.closest("a, button, [role=button]")) focusTask(task);
+        if (!event.target.closest("a, button, summary, [role=button]")) focusTask(task);
       });
     }
     if (!panel) return [row];
@@ -1554,7 +1595,7 @@
     const detailCell = createElement("td", "");
     detailCell.colSpan = TASK_TABLE_COLUMNS.length - 1;
     detailCell.append(panel);
-    detailRow.append(createElement("td", ""), detailCell);
+    detailRow.append(createElement("td", "cell-number"), detailCell);
     return [row, detailRow];
   }
 
@@ -1565,7 +1606,10 @@
     const element = createElement("section", section.className ?? "");
     const heading = createElement("h2");
     heading.append(createElement("span", "", section.label), createElement("span", "count", String(allTasks.length)));
-    const table = createElement("table", "task-table");
+    const tableClasses = ["task-table"];
+    if (BACKLOG_COLUMNS.includes(section.key)) tableClasses.push("backlog-table");
+    if (!tasks.some(({ task }) => task.githubIssues.length > 0)) tableClasses.push("no-issue-column");
+    const table = createElement("table", tableClasses.join(" "));
     const headRow = createElement("tr");
     for (const label of TASK_TABLE_COLUMNS) headRow.append(createElement("th", "", label));
     const head = createElement("thead");
@@ -1636,7 +1680,8 @@
     const createButton = buildButton(isCreatingSpecs ? "Đang mở…" : `Tạo spec (${selectedCount})`, "", createSpecsFromSelection);
     createButton.disabled = selectedCount === 0 || isCreatingSpecs;
     createButton.title = "Mở một tab Claude mới để lấy các issue đã chọn về thành file spec trong specs/issues";
-    bar.append(label, createButton);
+    bar.append(label);
+    if (selectedCount > 0) bar.append(createButton);
     return bar;
   }
 
@@ -1647,7 +1692,7 @@
     const element = createElement("section", "without-spec");
     const heading = createElement("h2");
     heading.append(
-      createElement("span", "", "Issue GitHub chưa có spec"),
+      createElement("span", "", "Issue GitHub"),
       createElement("span", "count", String(issuesWithoutSpec.length)),
     );
     const list = createElement("div", "list");
@@ -1664,24 +1709,63 @@
     return element;
   }
 
+  const creatingStorySpecSlugs = new Set();
+
+  async function createSpecForStoryTask(storyTask) {
+    creatingStorySpecSlugs.add(storyTask.slug);
+    actionMessage = `Đang mở tab Claude để tạo spec cho ${storyTask.slug}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-story-spec", `story:${storyTask.slug}`, () => `Đã mở tab [SPEC] ${storyTask.slug}, xem và trả lời trong tab đó.`);
+    creatingStorySpecSlugs.delete(storyTask.slug);
+    render();
+  }
+
+  const SPEC_WRITER_LABELS = { working: "Claude đang viết spec", blocked: "Claude đang chờ anh trả lời" };
+
+  function describeSpecWriter(specWriter) {
+    if (!specWriter) return null;
+    return SPEC_WRITER_LABELS[specWriter.agentStatus] ?? "Tab [SPEC] đang mở";
+  }
+
+  function splitStoryTitle(title) {
+    const match = /^(.*?)\s*\((.*)\)\s*$/.exec(title);
+    return match ? { name: match[1], note: match[2] } : { name: title, note: "" };
+  }
+
+  function buildStoryTaskRow(storyTask) {
+    const row = createElement("div", "story-row");
+    const { name, note } = splitStoryTitle(storyTask.title);
+    const text = createElement("div", "story-text");
+    text.append(createElement("div", "story-name", name));
+    if (note) text.append(createElement("div", "story-note", note));
+    const writerLabel = describeSpecWriter(storyTask.specWriter);
+    if (writerLabel) text.append(createElement("div", "sync-label", writerLabel));
+    const isBusy = creatingStorySpecSlugs.has(storyTask.slug) || storyTask.specWriter !== null;
+    const button = buildButton(isBusy ? "Đang chạy…" : "Tạo spec", "", () => createSpecForStoryTask(storyTask));
+    button.disabled = isBusy;
+    button.title = "Mở Claude để viết spec cho task này từ story.md. Claude sẽ hỏi anh trước khi ghi.";
+    row.append(text, button);
+    return row;
+  }
+
+  function buildStoryTasksWithoutSpecSection() {
+    const element = createElement("section", "without-spec");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", "Task trong story.md"), createElement("span", "count", String(storyTasksWithoutSpec.length)));
+    const list = createElement("div", "story-list");
+    list.append(...storyTasksWithoutSpec.map(buildStoryTaskRow));
+    element.append(heading, list);
+    return element;
+  }
+
   function buildIdleHint() {
     const hasNext = tasksIn("ready").length > 0;
     return createElement(
       "div",
       "empty-hint",
-      hasNext ? "Chưa có task nào đang chạy. Bấm Bắt đầu ở task Tiếp theo bên dưới." : "Chưa có task nào đang chạy và không còn task sẵn sàng.",
+      hasNext ? "Chưa có task nào đang chạy." : "Chưa có task nào đang chạy và không còn task sẵn sàng.",
     );
-  }
-
-  function renderSummary() {
-    const summary = document.getElementById("summary");
-    summary.replaceChildren();
-    SUMMARY_PARTS.forEach((part) => {
-      const taskCount = tasksIn(part.key).length;
-      const stat = createElement("span", ["stat", part.className, taskCount > 0 && "has-items"].filter(Boolean).join(" "));
-      stat.append(createElement("span", "", part.label), createElement("strong", "", String(taskCount)));
-      summary.append(stat);
-    });
   }
 
   function findSection(key) {
@@ -1694,22 +1778,129 @@
     }
   }
 
-  function buildRunningTab(board) {
-    const hasActiveTasks = currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column));
-    if (!hasActiveTasks) board.append(buildIdleHint());
-    appendTaskSections(board, ["needsYou", "inProgress", "review"]);
-    if (tasksIn("ready").length > 0) {
-      board.append(buildSection(findSection("ready"), {
-        limit: READY_PREVIEW_COUNT,
-        moreLabel: (total) => `Xem cả ${total} task sẵn sàng trong Backlog`,
-      }));
+  const RUNNING_GROUP_KEYS = ["needsYou", "inProgress", "review", "ready"];
+  let selectedTaskId = null;
+
+  function listRunningGroups() {
+    return RUNNING_GROUP_KEYS.map((key) => {
+      const section = findSection(key);
+      const allTasks = tasksIn(key);
+      const tasks = key === "ready" ? allTasks.slice(0, READY_PREVIEW_COUNT) : allTasks;
+      return { section, tasks, totalCount: allTasks.length };
+    }).filter((group) => group.tasks.length > 0);
+  }
+
+  function describeListNote(task) {
+    if (task.column === "needsYou") return describeNeedsYouReason(task);
+    if (task.column === "inProgress" && task.autoRun) return AUTO_RUN_PHASE_LABELS[normalizePhase(task.autoRun.phase)] ?? task.autoRun.phase;
+    if (task.column === "inProgress") return task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude";
+    if (task.column === "review" && task.pullRequest) return `PR #${task.pullRequest.number}`;
+    return task.priority === "P2" ? "Sẵn sàng bắt đầu" : `Sẵn sàng · ${task.priority}`;
+  }
+
+  function normalizePhase(phase) {
+    return phase.replace(/-/g, "_");
+  }
+
+  function buildInboxItem(task) {
+    const item = createElement("div", task.id === selectedTaskId ? "inbox-item selected" : "inbox-item");
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-pressed", String(task.id === selectedTaskId));
+    const text = createElement("div");
+    const title = createElement("div", "inbox-item-title");
+    const issueNumber = task.githubIssues[0];
+    if (issueNumber) title.append(createElement("span", "inbox-item-number", `#${issueNumber} `));
+    title.append(task.title);
+    text.append(title, createElement("div", "inbox-item-note", describeListNote(task)));
+    item.append(createElement("span", "inbox-dot"), text);
+    const select = () => {
+      selectedTaskId = task.id;
+      render();
+    };
+    item.addEventListener("click", select);
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select();
+      }
+    });
+    return item;
+  }
+
+  function buildInboxGroup({ section, tasks, totalCount }) {
+    const group = createElement("div", `inbox-group ${section.className}`);
+    const title = createElement("div", "inbox-group-title");
+    title.append(createElement("span", "", section.label), createElement("span", "", String(totalCount)));
+    group.append(title, ...tasks.map(buildInboxItem));
+    if (tasks.length < totalCount) {
+      group.append(buildButton(`Xem cả ${totalCount} task sẵn sàng trong Backlog`, "toggle", () => selectTab("backlog")));
     }
+    return group;
+  }
+
+  function buildPhaseSteps(autoRun) {
+    const currentPhase = normalizePhase(autoRun.phase);
+    const phases = Object.keys(AUTO_RUN_PHASE_LABELS).filter((phase) => phase !== "fix" || phase === currentPhase);
+    const currentIndex = phases.indexOf(currentPhase);
+    if (currentIndex === -1) return null;
+    const steps = createElement("ol", "phase-steps");
+    phases.forEach((phase, index) => {
+      const isWaitingForUser = autoRun.status === "needs_you" || Boolean(autoRun.problem);
+      const stateClass = index < currentIndex ? "done" : index === currentIndex ? `current${isWaitingForUser ? " needs-you" : ""}` : "";
+      const mark = index < currentIndex ? "✓ " : index === currentIndex ? "● " : "";
+      steps.append(createElement("li", `phase-step ${stateClass}`.trim(), `${mark}${AUTO_RUN_PHASE_LABELS[phase]}`));
+    });
+    return steps;
+  }
+
+  function buildTaskDetail(task, section, isNext) {
+    const detail = createElement("div", `inbox-detail ${section.className}`);
+    detail.append(createElement("div", "detail-badge", section.label));
+    const issueNumber = task.githubIssues[0];
+    const heading = createElement("div");
+    heading.append(buildOpenableTitle("detail-title", task.title, taskDrawerContext(task)));
+    const tags = describeTags(task);
+    const meta = createElement("div", "meta");
+    meta.append(buildIssueNumberLink(issueNumber, githubWebUrl && issueNumber ? `${githubWebUrl}/issues/${issueNumber}` : null));
+    if (tags) meta.append(...tags.childNodes);
+    heading.append(meta);
+    detail.append(heading);
+    if (task.column === "needsYou") detail.append(createElement("div", "detail-callout", describeNeedsYouReason(task)));
+    const actions = createElement("div", "detail-actions");
+    const action = buildAction(task, isNext);
+    if (action) actions.append(action);
+    const status = describeStatus(task);
+    if (status) actions.append(status);
+    if (actions.childElementCount > 0) detail.append(actions);
+    const steps = task.autoRun ? buildPhaseSteps(task.autoRun) : null;
+    if (steps) detail.append(steps);
+    const references = buildReferences(task);
+    if (references) detail.append(references);
+    detail.append(...buildWorktreeDetailNodes(task));
+    return detail;
+  }
+
+  function buildRunningTab(board) {
+    const groups = listRunningGroups();
+    if (!currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column))) board.append(buildIdleHint());
+    const visibleTasks = groups.flatMap((group) => group.tasks);
+    if (visibleTasks.length === 0) return;
+    const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) ?? visibleTasks[0];
+    selectedTaskId = selectedTask.id;
+    const selectedGroup = groups.find((group) => group.tasks.includes(selectedTask));
+    const isNext = selectedGroup.section.key === "ready" && selectedGroup.tasks[0] === selectedTask;
+    const list = createElement("div", "inbox-list");
+    list.append(...groups.map(buildInboxGroup));
+    const inbox = createElement("div", "inbox");
+    inbox.append(list, buildTaskDetail(selectedTask, selectedGroup.section, isNext));
+    board.append(inbox);
   }
 
   const BACKLOG_COLUMNS = ["ready", "todo"];
   const BACKLOG_FILTERS = [
     { key: "all", label: "Tất cả", count: () => countTab("backlog") },
-    { key: "missingSpec", label: "Thiếu spec", count: () => issuesWithoutSpec.length, hint: "Issue GitHub đang mở nhưng chưa có spec local" },
+    { key: "missingSpec", label: "Thiếu spec", count: () => issuesWithoutSpec.length + storyTasksWithoutSpec.length, hint: "Task trong story.md hoặc issue GitHub đang mở nhưng chưa có spec local" },
     { key: "missingIssue", label: "Thiếu issue", count: () => countBacklogTasksWithoutIssue(), hint: "Spec local chưa có issue GitHub" },
   ];
   let backlogFilter = "all";
@@ -1722,9 +1913,9 @@
     return BACKLOG_COLUMNS.flatMap(tasksIn).filter(isMissingIssue).length;
   }
 
-  function buildBacklogFilterBar() {
+  function buildBacklogFilterBar(visibleFilters) {
     const bar = createElement("div", "filter-bar");
-    for (const filter of BACKLOG_FILTERS) {
+    for (const filter of visibleFilters) {
       const button = createElement("button", filter.key === backlogFilter ? "active" : "", filter.label);
       button.append(createElement("span", "count", String(filter.count())));
       if (filter.hint) button.title = filter.hint;
@@ -1737,14 +1928,20 @@
     return bar;
   }
 
+  function findNarrowingBacklogFilters() {
+    const total = countTab("backlog");
+    return BACKLOG_FILTERS.filter((filter) => filter.key !== "all" && filter.count() > 0 && filter.count() < total);
+  }
+
   function buildBacklogTab(board) {
-    const hasSyncGap = issuesWithoutSpec.length > 0 || countBacklogTasksWithoutIssue() > 0;
-    if (!hasSyncGap) backlogFilter = "all";
-    if (hasSyncGap) board.append(buildBacklogFilterBar());
+    const narrowingFilters = findNarrowingBacklogFilters();
+    if (!narrowingFilters.some((filter) => filter.key === backlogFilter)) backlogFilter = "all";
+    if (narrowingFilters.length > 0) board.append(buildBacklogFilterBar([BACKLOG_FILTERS[0], ...narrowingFilters]));
     if (backlogFilter !== "missingSpec") appendTaskSections(board, BACKLOG_COLUMNS, backlogFilter === "missingIssue" ? isMissingIssue : undefined);
-    if (backlogFilter !== "missingIssue" && issuesWithoutSpec.length > 0) {
+    if (backlogFilter !== "missingIssue" && (issuesWithoutSpec.length > 0 || storyTasksWithoutSpec.length > 0)) {
       const wrapper = createElement("div", "side-notes");
-      wrapper.append(buildIssuesWithoutSpecSection());
+      if (storyTasksWithoutSpec.length > 0) wrapper.append(buildStoryTasksWithoutSpecSection());
+      if (issuesWithoutSpec.length > 0) wrapper.append(buildIssuesWithoutSpecSection());
       board.append(wrapper);
     }
     if (board.querySelector("section") === null) board.append(createElement("div", "empty-hint", "Backlog trống."));
@@ -1759,7 +1956,7 @@
     if (tabKey === "running") {
       return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0);
     }
-    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length;
+    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length + storyTasksWithoutSpec.length;
     if (tabKey === "worktrees") return unlinkedWorktrees.length;
     return tasksIn("done").length;
   }
@@ -1808,48 +2005,50 @@
 
   function buildFocus() {
     const needsYou = tasksIn("needsYou");
-    if (needsYou.length > 0) {
-      const task = needsYou[0];
-      const others = needsYou.length > 1 ? ` · còn ${needsYou.length - 1} task khác cũng đang chờ anh` : "";
-      return buildFocusCard("needs-you", "Làm ngay", shortName(task.id), `${describeNeedsYouReason(task)}${others}`, [
-        buildButton("Mở tab để trả lời", "primary", () => focusTask(task)),
-      ]);
-    }
-    const reviewing = tasksIn("review").filter((task) => task.pullRequest);
-    if (reviewing.length > 0) {
-      const task = reviewing[0];
-      const { pullRequest } = task;
-      const signals = [CHECK_SIGNALS[pullRequest.checks], REVIEW_SIGNALS[pullRequest.reviewDecision]].filter(Boolean).map((signal) => signal.label);
-      const others = reviewing.length > 1 ? ` · còn ${reviewing.length - 1} PR khác` : "";
-      return buildFocusCard("review", "Làm tiếp", `Review PR #${pullRequest.number}: ${shortName(task.id)}`, `${signals.join(" · ") || "đang chờ review"}${others}`, [
-        buildButton("Mở PR", "primary", () => window.open(pullRequest.url, "_blank", "noopener")),
-      ]);
-    }
-    const working = tasksIn("inProgress");
-    const next = tasksIn("ready")[0];
-    if (working.length > 0) {
-      const canStartMore = next && working.length < WORK_IN_PROGRESS_LIMIT;
-      const actions = canStartMore ? [buildAction(next, true)] : [];
-      const suggestion = canStartMore ? `Có thể bắt đầu thêm: ${shortName(next.id)}` : "";
-      return buildFocusCard("working", "Chưa cần anh", `Claude đang làm ${working.length} task`, [working.map((task) => shortName(task.id)).join(", "), suggestion].filter(Boolean).join(" · "), actions);
-    }
-    if (next) {
-      const reason = next.isApproved ? "Spec đã duyệt, bắt đầu được ngay" : "Spec chưa duyệt, sẽ chạy review spec trước";
-      return buildFocusCard("next", "Tiếp theo", shortName(next.id), reason, [buildAction(next, true)]);
-    }
-    return buildFocusCard("idle", "Xong việc", "Không còn việc nào cần làm", "Không có task sẵn sàng, đang chạy hay chờ review.");
+    if (needsYou.length === 0) return null;
+    const task = needsYou[0];
+    const others = needsYou.length > 1 ? ` · còn ${needsYou.length - 1} task khác cũng đang chờ anh` : "";
+    return buildFocusCard("needs-you", "Làm ngay", shortName(task.id), `${describeNeedsYouReason(task)}${others}`, [
+      buildButton("Mở tab để trả lời", "primary", () => focusTask(task)),
+    ]);
   }
 
   function renderFocus() {
-    document.getElementById("focus").replaceChildren(buildFocus());
+    const focusCard = selectedTab === "running" ? buildFocus() : null;
+    document.getElementById("focus").replaceChildren(...(focusCard ? [focusCard] : []));
   }
 
   const TOAST_AUTO_HIDE_MS = 5000;
+  const PROMPT_NOT_SENT_MARKER = "chưa gửi được";
   let toastHideTimer = null;
   let dismissedWarningsKey = "";
 
   function isPersistentMessage(message) {
-    return message.startsWith("Lỗi:") || message.includes("chưa gửi được");
+    return message.startsWith("Lỗi:") || message.includes(PROMPT_NOT_SENT_MARKER);
+  }
+
+  function extractCopyableText(message) {
+    if (!message.includes(PROMPT_NOT_SENT_MARKER)) return "";
+    return message.split("\n").slice(1).join("\n");
+  }
+
+  function buildCopyButton(text) {
+    const button = createElement("button", "", "Sao chép");
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Đã chép";
+      } catch {
+        button.textContent = "Không chép được";
+      }
+    });
+    return button;
+  }
+
+  function updateDocumentTitle(repositoryName, tasks) {
+    const needsYouCount = tasks.filter((task) => task.column === "needsYou").length;
+    const badge = needsYouCount > 0 ? `(${needsYouCount}) ` : "";
+    document.title = `${badge}Board · ${repositoryName}`;
   }
 
   function dismissToast() {
@@ -1874,7 +2073,10 @@
     toast.classList.toggle("error", isPersistent);
     const closeButton = createElement("button", "", "Đóng");
     closeButton.addEventListener("click", dismissToast);
-    toast.append(createElement("span", "toast-text", actionMessage), closeButton);
+    toast.append(createElement("span", "toast-text", actionMessage));
+    const copyableText = extractCopyableText(actionMessage);
+    if (copyableText) toast.append(buildCopyButton(copyableText));
+    toast.append(closeButton);
     if (!isPersistent && !actionMessage.endsWith("…")) toastHideTimer = window.setTimeout(dismissToast, TOAST_AUTO_HIDE_MS);
   }
 
@@ -1894,29 +2096,42 @@
   function render() {
     const board = document.getElementById("board");
     board.replaceChildren();
+    board.classList.remove(PENDING_UPDATE_CLASS);
     if (TABS.find((tab) => tab.key === selectedTab)?.isExtra && countTab(selectedTab) === 0) selectedTab = TABS[0].key;
     TAB_BUILDERS[selectedTab](board);
     renderTabs();
-    renderSummary();
     renderFocus();
     renderBanner();
     renderToast();
   }
 
-  async function refreshBoard() {
+  function isPointerOverBoard() {
+    return window.matchMedia("(hover: hover)").matches && document.getElementById("board").matches(":hover");
+  }
+
+  async function refreshBoard({ isForced = false } = {}) {
     try {
       const response = await fetch("/api/board");
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
       document.getElementById("repo-name").textContent = body.repoName.replace(/([_-])/g, "$1\u200b");
-      document.title = `Board · ${body.repoName}`;
-      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.unlinkedWorktrees, body.warnings, actionMessage]);
-      if (renderedJson === lastRenderedJson) return;
+      updateDocumentTitle(body.repoName, body.tasks);
+      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.storyTasksWithoutSpec, body.unlinkedWorktrees, body.warnings, actionMessage]);
+      const boardElement = document.getElementById("board");
+      if (renderedJson === lastRenderedJson) {
+        boardElement.classList.remove(PENDING_UPDATE_CLASS);
+        return;
+      }
+      if (!isForced && isPointerOverBoard()) {
+        boardElement.classList.add(PENDING_UPDATE_CLASS);
+        return;
+      }
       lastRenderedJson = renderedJson;
       currentTasks = body.tasks;
       currentWarnings = body.warnings;
       githubWebUrl = body.githubWebUrl;
       issuesWithoutSpec = body.issuesWithoutSpec;
+      storyTasksWithoutSpec = body.storyTasksWithoutSpec;
       unlinkedWorktrees = body.unlinkedWorktrees;
       const needsYouCount = tasksIn("needsYou").length;
       if (needsYouCount > previousNeedsYouCount) selectedTab = "running";
@@ -1928,8 +2143,16 @@
     }
   }
 
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("details.more-menu")) closeOpenMoreMenus();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeOpenMoreMenus();
+  });
+  window.addEventListener("scroll", closeOpenMoreMenus, { passive: true });
+
   refreshBoard();
-  setInterval(refreshBoard, BOARD_REFRESH_MS);
+  setInterval(() => refreshBoard(), BOARD_REFRESH_MS);
 </script>
 </body>
 </html>

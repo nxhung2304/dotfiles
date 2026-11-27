@@ -5,6 +5,7 @@ const { SPECS_RELATIVE_DIR } = require("./specs");
 const { COLUMN } = require("./columns");
 const { groupClaudeAgentsByWorktree } = require("./live-state");
 const { findResumableSession } = require("./sessions");
+const { findReusableSpecPane } = require("./story");
 
 const HERDR_SCRIPTS_DIR = path.resolve(__dirname, "..", "herdr");
 const WORKTREE_WORKSPACE_SCRIPT = path.join(HERDR_SCRIPTS_DIR, "worktree-workspace");
@@ -230,6 +231,18 @@ async function startSpecCreation({ repoRoot, issueNumbers, repoSlug }) {
   return openRepoClaudeWithPrompt({ repoRoot, label, prompt: buildCreateSpecPrompt(issueNumbers, repoSlug) });
 }
 
+function buildCreateStorySpecPrompt(storyTask) {
+  return [
+    `Create the local spec for the story task "${storyTask.title}" from specs/story.md, only for this task.`,
+    `Use the generate-issues skill and save it as specs/issues/${storyTask.slug}/issue.md. Do not post anything to GitHub.`,
+    "Ask me about anything unclear before writing.",
+  ].join(" ");
+}
+
+async function startStorySpecCreation({ repoRoot, storyTask }) {
+  return openRepoClaudeWithPrompt({ repoRoot, label: `[SPEC] ${storyTask.slug}`, prompt: buildCreateStorySpecPrompt(storyTask) });
+}
+
 function buildCreateIssuePrompt(specPath) {
   return [
     `Create a GitHub issue for the local spec ${specPath}, only for this file.`,
@@ -240,10 +253,24 @@ function buildCreateIssuePrompt(specPath) {
   ].join(" ");
 }
 
+async function findIdleSpecPane(slug) {
+  if (!process.env.HERDR_ENV) return null;
+  const [workspaceList, agentList] = await Promise.all([
+    runJsonCommand("herdr", ["workspace", "list"]),
+    runJsonCommand("herdr", ["agent", "list"]),
+  ]);
+  return findReusableSpecPane(workspaceList.result.workspaces, agentList.result.agents, slug);
+}
+
 async function startIssueCreation({ repoRoot, task }) {
   if (task.githubIssues.length > 0) throw new BoardActionError(`Task ${task.id} đã có issue GitHub`, 409);
   if (task.onlyInBranch) throw new BoardActionError(`Spec ${task.id} chỉ có trên branch ${task.onlyInBranch}, hãy merge về trước`, 409);
-  return openRepoClaudeWithPrompt({ repoRoot, label: `[ISSUE] ${task.id}`, prompt: buildCreateIssuePrompt(task.specPath) });
+  const prompt = buildCreateIssuePrompt(task.specPath);
+  const specPane = await findIdleSpecPane(task.id);
+  if (!specPane) return openRepoClaudeWithPrompt({ repoRoot, label: `[ISSUE] ${task.id}`, prompt });
+  await runCommand("herdr", ["workspace", "focus", specPane.workspaceId]);
+  await sendPrompt(specPane.paneId, prompt);
+  return { paneId: specPane.paneId, prompt, isPromptSent: true };
 }
 
 function buildAgentStartArgs(paneId, sessionId) {
@@ -274,7 +301,7 @@ async function resumeTaskSession({ repoRoot, task, reviewUncommitted = false }) 
   ensureRunningInsideHerdr();
   if (!task.worktree || task.worktree.isMain) throw new BoardActionError(`Task ${task.id} chưa có worktree riêng`, 409);
   if (task.agent) throw new BoardActionError(`Task ${task.id} đã có phiên Claude`, 409);
-  const session = findResumableSession({ worktreePath: task.worktree.path, pullRequestNumber: task.pullRequest?.number ?? null });
+  const session = await findResumableSession({ worktreePath: task.worktree.path, pullRequestNumber: task.pullRequest?.number ?? null });
   const existingPane = await findShellPaneInWorktree(task.worktree.path);
   let paneId = existingPane?.pane_id;
   if (existingPane) {
@@ -313,13 +340,26 @@ async function cleanUpTaskWorktree(repoRoot, task) {
   await runCommand("git", ["worktree", "remove", task.worktree.path], { cwd: repoRoot });
 }
 
+function isWorktreeSafeToAutoCleanUp(task) {
+  return (
+    task.column === COLUMN.done &&
+    task.pullRequest?.state === "MERGED" &&
+    Boolean(task.worktree) &&
+    !task.worktree.isMain &&
+    !task.agent &&
+    task.diffStats?.uncommittedFileCount === 0
+  );
+}
+
 module.exports = {
   BoardActionError,
+  isWorktreeSafeToAutoCleanUp,
   buildWorktreePath,
   buildStartPrompt,
   startTask,
   startAutoRun,
   startSpecCreation,
+  startStorySpecCreation,
   startIssueCreation,
   buildCreateIssuePrompt,
   resumeTaskSession,
