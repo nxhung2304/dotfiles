@@ -30,7 +30,7 @@ Retry cap: max 3 fix attempts per failing check, then stop and report what was t
 Keep its returned `{ tests_passed, files_fixed, warnings }`.
 
 ## STEP 4: Finalize (skip if `local=true`)
-Invoke the `implement-finalize` skill, passing along `thread_ts` and `base_branch` from step 1. It commits, updates the spec status, pushes, opens a draft PR, and notifies Slack.
+Invoke the `implement-finalize` skill, passing along `thread_ts` and `base_branch` from step 1. It commits, pushes, opens a draft PR, marks the spec and story as merged, and notifies Slack.
 Keep its returned `{ pr_url, files_committed }`.
 After finalize (or after step 3 if `local=true`), call `ExitWorktree` with `action: "keep"` to return to the original directory.
 

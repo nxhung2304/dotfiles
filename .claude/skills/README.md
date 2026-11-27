@@ -47,7 +47,7 @@ Flow: `plan-idea → plan-prd → plan-stack → plan-design → plan-story → 
 
 | Skill | Usage | Description |
 | :--- | :--- | :--- |
-| **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Per-screen UI/UX process: understand the problem → gather references (Mobbin/Refero/Land-book/Dribbble) → build an interactive HTML prototype from the project design made by `plan-design` (tokens/components only, no new values) → review → iterate → handoff. Stops and asks for `plan-design` first when a multi-screen project has no design yet; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
+| **[ui-ux-workflow](./ui-ux-workflow/SKILL.md)** | `/ui-ux-workflow` or ask to design/mock up/prototype a screen | Per-screen UI/UX process: understand the problem → gather references (Refero/Land-book/Dribbble) → build an interactive HTML prototype from the project design made by `plan-design` (tokens/components only, no new values) → review → iterate → handoff. Stops and asks for `plan-design` first when a multi-screen project has no design yet; context in `CLAUDE.md`/`specs/story.md` (or `specs/project.md` if none). |
 
 ### 🎬 YouTube Channel
 
