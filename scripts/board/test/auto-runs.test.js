@@ -22,6 +22,33 @@ test("findActiveAutoRuns ignores finished tasks and runs whose AUTO workspace is
   assert.equal(findActiveAutoRuns([runningRun], [], panes, agents).size, 0);
 });
 
+test("findActiveAutoRuns skips a run file whose tasks is not a list and still reads the other runs", () => {
+  const runWithTasksObject = { tasks: { "024-apply": { phase: "plan", status: "running" } } };
+  const runWithoutTasks = {};
+  const autoRuns = findActiveAutoRuns([runWithTasksObject, runWithoutTasks, runningRun], workspaces, panes, agents);
+  assert.deepEqual([...autoRuns.keys()], ["024-apply"]);
+});
+
+test("findActiveAutoRuns links a run task to its own pane when the run file has pane_id, without an AUTO workspace", () => {
+  const manualRun = { tasks: [{ spec: "122-leave", phase: "plan", status: "running", pane_id: "w3N:p2" }] };
+  const manualPanes = [{ pane_id: "w3N:p2", workspace_id: "w3N" }];
+  const manualAgents = [{ agent: "claude", pane_id: "w3N:p2", workspace_id: "w3N", agent_status: "working" }];
+  assert.deepEqual(findActiveAutoRuns([manualRun], [], manualPanes, manualAgents).get("122-leave"), {
+    paneId: "w3N:p2",
+    agentStatus: "working",
+    phase: "plan",
+    runStatus: "running",
+    problem: null,
+  });
+});
+
+test("findActiveAutoRuns reports a problem when the pane of a run task is closed", () => {
+  const manualRun = { tasks: [{ spec: "122-leave", phase: "plan", status: "running", pane_id: "w3N:p2" }] };
+  const closedPaneRun = findActiveAutoRuns([manualRun], [], [], []).get("122-leave");
+  assert.equal(closedPaneRun.paneId, null);
+  assert.equal(closedPaneRun.problem, "Phiên Claude đang chạy task này không còn chạy");
+});
+
 test("buildBoard puts a task with an active auto run in progress, or needs you when the run waits for the user", () => {
   const specContent = ["## **Status:**", "- Review: Pending", "- PR: Todo", "## Metadata", "- **Title:** t", "- **GitHub Issue:** #24", "- **Depends on:** —", "---"].join("\n");
   const specs = [parseSpec("024-apply.md", specContent)];
