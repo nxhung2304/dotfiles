@@ -6,6 +6,7 @@ const PRIORITY_LEVELS = ["P1", "P2", "P3"];
 const DEFAULT_PRIORITY = "P2";
 const PRIORITY_ALIASES = { high: "P1", medium: "P2", low: "P3" };
 const NO_DEPENDENCY_MARKERS = ["", "—", "-", "none"];
+const NOTE_FIELD_VALUE_START = "(?:#|PR\\s*#|\\d+-[a-z]|none\\b|—)";
 const FOLDER_SPEC_FILE = "issue.md";
 const SPEC_NUMBER_LENGTH = 3;
 const MIN_MATCHING_WORD_LENGTH = 3;
@@ -20,10 +21,27 @@ function extractStatusBlock(header) {
   return metadataIndex === -1 ? "" : header.slice(0, metadataIndex);
 }
 
+function isApprovedReview(reviewText) {
+  return /\bapproved\b/i.test(reviewText) && !/\bnot\s+approved\b/i.test(reviewText);
+}
+
+function isMarkedDoneStatus(statusBlock) {
+  const statusWithoutReviewLine = statusBlock.replace(/^\s*-\s*(?:\*\*)?Review:.*$/gim, "");
+  return /(?<!\bnot\s)(?<!\bnot yet\s)(?<!\bchưa\s)\b(?:merged|completed)\b/i.test(statusWithoutReviewLine);
+}
+
 function readField(header, fieldPattern) {
   const pattern = new RegExp(`^\\s*-\\s*(?:\\*\\*)?(?:${fieldPattern}):(?:\\*\\*)?\\s*(.*)$`, "m");
   const match = header.match(pattern);
   return match ? match[1].trim() : null;
+}
+
+function readTokenField(content, header, fieldName) {
+  const metadataValue = readField(header, fieldName);
+  if (metadataValue !== null) return metadataValue;
+  const notePattern = new RegExp(`^\\s*[-*]\\s*(?:\\*\\*)?${fieldName}:?(?:\\*\\*)?\\s*(${NOTE_FIELD_VALUE_START}.*)$`, "m");
+  const noteMatch = content.match(notePattern);
+  return noteMatch ? noteMatch[1].trim().replace(/\.$/, "") : null;
 }
 
 function normalizePriority(rawPriority) {
@@ -48,11 +66,12 @@ function parseSpec(fileOrFolderName, content) {
     slug: id.replace(/^\d+-/, ""),
     title: readField(header, "Title") ?? id,
     githubIssues: parseIssueNumbers(readField(header, "GitHub Issues?")),
-    isApproved: /approved/i.test(readField(header, "Review") ?? ""),
-    isMarkedDone: /merged|completed/i.test(extractStatusBlock(header)),
+    isApproved: isApprovedReview(readField(header, "Review") ?? ""),
+    isMarkedDone: isMarkedDoneStatus(extractStatusBlock(header)),
     rawPriority,
     priority: normalizePriority(rawPriority) ?? DEFAULT_PRIORITY,
-    rawDependsOn: readField(header, "Depends on"),
+    rawDependsOn: readTokenField(content, header, "Depends on"),
+    rawConflictsWith: readTokenField(content, header, "Conflicts with"),
   };
 }
 
@@ -140,6 +159,13 @@ function resolveDependencies(spec, specs) {
   };
 }
 
+function resolveConflictingSpecIds(spec, specs) {
+  return splitDependencyTokens(spec.rawConflictsWith)
+    .map((token) => resolveDependencyToken(token, specs))
+    .filter((resolution) => resolution.specId)
+    .map((resolution) => resolution.specId);
+}
+
 module.exports = {
   SPECS_RELATIVE_DIR,
   DEFAULT_PRIORITY,
@@ -151,4 +177,5 @@ module.exports = {
   splitDependencyTokens,
   resolveDependencyToken,
   resolveDependencies,
+  resolveConflictingSpecIds,
 };

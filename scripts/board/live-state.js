@@ -5,7 +5,8 @@ const { readRunFiles, findActiveAutoRuns } = require("./auto-runs");
 const HERDR_REFRESH_MS = 3_000;
 const PULL_REQUEST_REFRESH_MS = 60_000;
 const FAILED_READ_RETRY_MS = 10_000;
-const PULL_REQUEST_LIMIT = "200";
+const GITHUB_LIST_LIMIT = 1000;
+const PULL_REQUEST_LIMIT = String(GITHUB_LIST_LIMIT);
 const CLAUDE_AGENT_LABEL = "claude";
 
 function parseWorktreeList(porcelainOutput) {
@@ -81,6 +82,10 @@ async function readHerdrSnapshot() {
   }
 }
 
+function buildTruncationNotice(items, listName) {
+  return items.length >= GITHUB_LIST_LIMIT ? `Danh sách ${listName} từ GitHub bị cắt ở ${GITHUB_LIST_LIMIT} mục, task cũ có thể hiện sai trạng thái` : null;
+}
+
 function createOpenIssueReader(repoRoot) {
   return async () => {
     try {
@@ -89,7 +94,7 @@ function createOpenIssueReader(repoRoot) {
         ["issue", "list", "--state", "open", "--limit", PULL_REQUEST_LIMIT, "--json", "number,title,url"],
         { cwd: repoRoot },
       );
-      return { isAvailable: true, openIssues };
+      return { isAvailable: true, openIssues, notice: buildTruncationNotice(openIssues, "issue đang mở") };
     } catch (error) {
       return { isAvailable: false, error: error.message, openIssues: [] };
     }
@@ -119,9 +124,24 @@ function createPullRequestReader(repoRoot) {
         ["pr", "list", "--state", "all", "--limit", PULL_REQUEST_LIMIT, "--json", "number,state,isDraft,headRefName,url,mergedAt,reviewDecision,statusCheckRollup"],
         { cwd: repoRoot },
       );
-      return { isAvailable: true, pullRequests: pullRequests.map(summarizePullRequest) };
+      return { isAvailable: true, pullRequests: pullRequests.map(summarizePullRequest), notice: buildTruncationNotice(pullRequests, "PR") };
     } catch (error) {
       return { isAvailable: false, error: error.message, pullRequests: [] };
+    }
+  };
+}
+
+function createClosedIssueReader(repoRoot) {
+  return async () => {
+    try {
+      const closedIssues = await runJsonCommand(
+        "gh",
+        ["issue", "list", "--state", "closed", "--limit", PULL_REQUEST_LIMIT, "--json", "number"],
+        { cwd: repoRoot },
+      );
+      return { isAvailable: true, closedIssueNumbers: closedIssues.map((issue) => issue.number), notice: buildTruncationNotice(closedIssues, "issue đã đóng") };
+    } catch (error) {
+      return { isAvailable: false, error: error.message, closedIssueNumbers: [] };
     }
   };
 }
@@ -130,25 +150,39 @@ function createLiveStateReader(repoRoot) {
   const readHerdr = createCachedReader(readHerdrSnapshot, HERDR_REFRESH_MS);
   const readPullRequests = createCachedReader(createPullRequestReader(repoRoot), PULL_REQUEST_REFRESH_MS, { keepLastGood: true });
   const readOpenIssues = createCachedReader(createOpenIssueReader(repoRoot), PULL_REQUEST_REFRESH_MS, { keepLastGood: true });
+  const readClosedIssues = createCachedReader(createClosedIssueReader(repoRoot), PULL_REQUEST_REFRESH_MS, { keepLastGood: true });
+
+  let latestWorktreeDetailInput = null;
+  const readWorktreeDetailsCached = createCachedReader(
+    async () => ({ detailsByPath: await readWorktreeDetails(...latestWorktreeDetailInput) }),
+    HERDR_REFRESH_MS,
+  );
 
   return async () => {
-    const [worktreeOutput, herdr, pullRequestState, openIssueState] = await Promise.all([
+    const [worktreeOutput, herdr, pullRequestState, openIssueState, closedIssueState] = await Promise.all([
       runCommand("git", ["worktree", "list", "--porcelain"], { cwd: repoRoot }),
       readHerdr(),
       readPullRequests(),
       readOpenIssues(),
+      readClosedIssues(),
     ]);
     const worktrees = parseWorktreeList(worktreeOutput);
     const agentsByWorktreePath = groupClaudeAgentsByWorktree(worktrees, herdr.panes, herdr.agents);
     const autoRunBySpecId = await addAutoRunPreviews(findActiveAutoRuns(readRunFiles(), herdr.workspaces, herdr.panes, herdr.agents));
+    latestWorktreeDetailInput = [repoRoot, worktrees, agentsByWorktreePath];
+    const { detailsByPath } = await readWorktreeDetailsCached();
     return {
+      isHerdrAvailable: herdr.isAvailable !== false,
       worktrees,
       agentsByWorktreePath,
+      herdrWorkspaces: herdr.workspaces,
+      herdrAgents: herdr.agents,
       autoRunBySpecId,
-      worktreeDetailsByPath: await readWorktreeDetails(repoRoot, worktrees, agentsByWorktreePath),
+      worktreeDetailsByPath: detailsByPath,
       pullRequests: pullRequestState.pullRequests,
       openIssues: openIssueState.openIssues,
-      warnings: [herdr.error, pullRequestState.error, openIssueState.error].filter(Boolean),
+      closedIssueNumbers: closedIssueState.closedIssueNumbers,
+      warnings: [herdr, pullRequestState, openIssueState, closedIssueState].flatMap((state) => [state.error, state.notice]).filter(Boolean),
     };
   };
 }

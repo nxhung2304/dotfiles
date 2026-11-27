@@ -1,4 +1,4 @@
-const { resolveDependencies, PRIORITY_LEVELS } = require("./specs");
+const { resolveDependencies, resolveConflictingSpecIds, PRIORITY_LEVELS } = require("./specs");
 
 const COLUMN = {
   ready: "ready",
@@ -58,15 +58,19 @@ function indexLiveStateBySpec(liveState, specs) {
   return { worktreeBySpecId, pullRequestBySpecId };
 }
 
-function isSpecDone(spec, pullRequest) {
-  return spec.isMarkedDone || pullRequest?.state === "MERGED";
+function areAllIssuesClosed(spec, closedIssueNumbers) {
+  return spec.githubIssues.length > 0 && spec.githubIssues.every((number) => closedIssueNumbers.has(number));
+}
+
+function isSpecDone(spec, pullRequest, closedIssueNumbers) {
+  return spec.isMarkedDone || pullRequest?.state === "MERGED" || areAllIssuesClosed(spec, closedIssueNumbers);
 }
 
 function deriveColumn({ isDone, pullRequest, worktree, agent, autoRun, hasOpenDependencies }) {
   const isWorkStarted = Boolean(worktree || autoRun);
   if (isDone) return COLUMN.done;
   if (isWorkStarted && (agent?.status === "blocked" || autoRun?.runStatus === "needs_you" || autoRun?.problem)) return COLUMN.needsYou;
-  if (pullRequest?.state === "OPEN") return COLUMN.review;
+  if (pullRequest?.state === "OPEN" && !pullRequest.isDraft) return COLUMN.review;
   if (isWorkStarted) return COLUMN.inProgress;
   return hasOpenDependencies ? COLUMN.todo : COLUMN.ready;
 }
@@ -76,13 +80,31 @@ function compareTasks(first, second) {
   return priorityOrder !== 0 ? priorityOrder : first.id.localeCompare(second.id);
 }
 
-function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds }) {
+function findConflictingSpecIdsBySpecId(specs) {
+  const conflictingSpecIdsBySpecId = new Map(specs.map((spec) => [spec.id, new Set()]));
+  for (const spec of specs) {
+    for (const conflictingSpecId of resolveConflictingSpecIds(spec, specs)) {
+      conflictingSpecIdsBySpecId.get(spec.id).add(conflictingSpecId);
+      conflictingSpecIdsBySpecId.get(conflictingSpecId).add(spec.id);
+    }
+  }
+  return conflictingSpecIdsBySpecId;
+}
+
+function isSpecActive(specId, { liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds }) {
+  if (doneSpecIds.has(specId)) return false;
+  return worktreeBySpecId.has(specId) || Boolean(liveState.autoRunBySpecId?.has(specId)) || pullRequestBySpecId.get(specId)?.state === "OPEN";
+}
+
+function buildTask(spec, context) {
+  const { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds, conflictingSpecIdsBySpecId } = context;
   const { dependsOn, pullRequestDependencies, unresolvedDependencies } = resolveDependencies(spec, specs);
   const mergedPullRequestNumbers = new Set(
     liveState.pullRequests.filter((pullRequest) => pullRequest.state === "MERGED").map((pullRequest) => pullRequest.number),
   );
+  const activeConflictingSpecIds = [...conflictingSpecIdsBySpecId.get(spec.id)].filter((specId) => isSpecActive(specId, context));
   const blockedBy = [
-    ...dependsOn.filter((specId) => !doneSpecIds.has(specId)),
+    ...new Set([...dependsOn.filter((specId) => !doneSpecIds.has(specId)), ...activeConflictingSpecIds]),
     ...pullRequestDependencies.filter((number) => !mergedPullRequestNumbers.has(number)).map((number) => `PR #${number}`),
   ];
   const worktree = worktreeBySpecId.get(spec.id) ?? null;
@@ -111,11 +133,13 @@ function buildTask(spec, { specs, liveState, worktreeBySpecId, pullRequestBySpec
 
 function buildBoard(specs, liveState) {
   const { worktreeBySpecId, pullRequestBySpecId } = indexLiveStateBySpec(liveState, specs);
+  const closedIssueNumbers = new Set(liveState.closedIssueNumbers ?? []);
   const doneSpecIds = new Set(
-    specs.filter((spec) => isSpecDone(spec, pullRequestBySpecId.get(spec.id))).map((spec) => spec.id),
+    specs.filter((spec) => isSpecDone(spec, pullRequestBySpecId.get(spec.id), closedIssueNumbers)).map((spec) => spec.id),
   );
 
-  const context = { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds };
+  const conflictingSpecIdsBySpecId = findConflictingSpecIdsBySpecId(specs);
+  const context = { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds, conflictingSpecIdsBySpecId };
   return specs.map((spec) => buildTask(spec, context)).sort(compareTasks);
 }
 

@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { parseSpec } = require("../specs");
-const { buildBoard, findSpecIdForBranch } = require("../columns");
+const { COLUMN, deriveColumn, buildBoard, findSpecIdForBranch } = require("../columns");
 
 function buildSpec(fileName, { issue, dependsOn = "—", pr = "Todo", priority = "P2" }) {
   const content = [
@@ -106,4 +106,58 @@ test("findUnlinkedWorktrees lists task worktrees whose branch matches no spec", 
     agentsByWorktreePath: new Map([...liveState.agentsByWorktreePath, ["/repo.spike", [{ paneId: "p9", status: "idle" }]]]),
   };
   assert.deepEqual(findUnlinkedWorktrees(specs, state).map((worktree) => [worktree.branch, worktree.agent.paneId]), [["spike/hung-#9-try-riverpod-3", "p9"]]);
+});
+
+test("buildBoard treats a spec as done once its GitHub issue is closed, even without a matching PR", () => {
+  const closedState = { ...liveState, closedIssueNumbers: [2] };
+  const board = buildBoard(specs, closedState);
+  assert.equal(columnOf(board, "002-next"), "done");
+  assert.equal(columnOf(board, "003-blocked"), "ready");
+});
+
+test("buildBoard keeps a spec without any GitHub issue out of the done column", () => {
+  const specWithoutIssue = parseSpec("009-no-issue.md", "## Metadata\n- **Title:** no issue\n---\n");
+  const board = buildBoard([specWithoutIssue], { ...liveState, closedIssueNumbers: [2] });
+  assert.notEqual(columnOf(board, "009-no-issue"), "done");
+});
+
+test("deriveColumn keeps a draft pull request in progress and an open one in review", () => {
+  const worktree = { path: "/w", isMain: false };
+  const base = { isDone: false, worktree, agent: null, autoRun: null, hasOpenDependencies: false };
+  assert.equal(deriveColumn({ ...base, pullRequest: { state: "OPEN", isDraft: true } }), COLUMN.inProgress);
+  assert.equal(deriveColumn({ ...base, pullRequest: { state: "OPEN", isDraft: false } }), COLUMN.review);
+});
+
+function buildConflictSpec(fileName, { issue, conflictsWith, pr = "Todo" }) {
+  const conflictLine = conflictsWith ? [`- **Conflicts with:** ${conflictsWith}`] : [];
+  const content = ["## **Status:**", "- Review: Approved", `- PR: ${pr}`, "## Metadata", `- **Title:** ${fileName}`, `- **GitHub Issue:** #${issue}`, ...conflictLine, "---"].join("\n");
+  return parseSpec(fileName, content);
+}
+
+const conflictSpecs = [
+  buildConflictSpec("010-detail.md", { issue: 10 }),
+  buildConflictSpec("011-create.md", { issue: 11, conflictsWith: "#10" }),
+];
+const noLiveWork = { worktrees: [], agentsByWorktreePath: new Map(), pullRequests: [] };
+const detailWorktree = { path: "/repo.feature-hung-10-detail", branch: "feature/hung-#10-detail", isMain: false };
+
+test("buildBoard blocks a task while its Conflicts with task is in progress, and frees it when that task is not started", () => {
+  const detailInProgress = buildBoard(conflictSpecs, { ...noLiveWork, worktrees: [detailWorktree] });
+  assert.deepEqual(detailInProgress.find((task) => task.id === "011-create").blockedBy, ["010-detail"]);
+  assert.equal(columnOf(detailInProgress, "011-create"), "todo");
+  assert.deepEqual(buildBoard(conflictSpecs, noLiveWork).find((task) => task.id === "011-create").blockedBy, []);
+});
+
+test("buildBoard keeps a Conflicts with task blocked while the other task has an open PR, and frees it once that task is done", () => {
+  const detailPullRequest = { number: 70, state: "OPEN", isDraft: true, headRefName: "feature/hung-#10-detail", url: "u" };
+  const detailInReview = buildBoard(conflictSpecs, { ...noLiveWork, pullRequests: [detailPullRequest] });
+  assert.deepEqual(detailInReview.find((task) => task.id === "011-create").blockedBy, ["010-detail"]);
+  const detailMerged = buildBoard(conflictSpecs, { ...noLiveWork, pullRequests: [{ ...detailPullRequest, state: "MERGED" }] });
+  assert.deepEqual(detailMerged.find((task) => task.id === "011-create").blockedBy, []);
+});
+
+test("buildBoard applies Conflicts with in both directions", () => {
+  const createWorktree = { path: "/repo.feature-hung-11-create", branch: "feature/hung-#11-create", isMain: false };
+  const createInProgress = buildBoard(conflictSpecs, { ...noLiveWork, worktrees: [createWorktree] });
+  assert.deepEqual(createInProgress.find((task) => task.id === "010-detail").blockedBy, ["011-create"]);
 });

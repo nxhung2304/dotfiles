@@ -92,3 +92,57 @@ test("loadSpecs reads folder issue docs only when no file spec has the same name
 test("resolveDependencyToken reads PR references", () => {
   assert.deepEqual(resolveDependencyToken("PR #73 (OT Request) merged first", specs), { pullRequestNumber: 73 });
 });
+
+test("parseSpec treats 'Not approved' and 'Unapproved' as not approved", () => {
+  for (const review of ["Not approved", "Unapproved", "not approved yet"]) {
+    assert.equal(parseSpec("026-dark.md", buildSpecContent({ title: "Dark mode", review })).isApproved, false, review);
+  }
+  assert.equal(parseSpec("026-dark.md", buildSpecContent({ title: "Dark mode", review: "Approved by lead" })).isApproved, true);
+});
+
+test("parseSpec marks done only on a positive merged or completed status", () => {
+  const readIsMarkedDone = (pr, review = "Approved") => parseSpec("026-dark.md", buildSpecContent({ title: "Dark mode", pr, review })).isMarkedDone;
+  assert.equal(readIsMarkedDone("not yet merged"), false);
+  assert.equal(readIsMarkedDone("chưa merged"), false);
+  assert.equal(readIsMarkedDone("Draft", "Review completed"), false);
+  assert.equal(readIsMarkedDone("Merged"), true);
+});
+
+function buildNotesSpec({ metadataLines = [], noteLines = [] }) {
+  return ["## Metadata", "- **Title:** t", ...metadataLines, "", "---", "", "## Notes", ...noteLines].join("\n");
+}
+
+test("parseSpec reads Depends on from a Notes bullet without a colon", () => {
+  const spec = parseSpec("122-leave.md", buildNotesSpec({ noteLines: ["- Depends on #121."] }));
+  assert.equal(spec.rawDependsOn, "#121");
+  assert.deepEqual(splitDependencyTokens(spec.rawDependsOn), ["#121"]);
+});
+
+test("parseSpec reads Depends on from a Notes bullet with a colon", () => {
+  const spec = parseSpec("122-leave.md", buildNotesSpec({ noteLines: ["- Depends on: #121, 120-base"] }));
+  assert.deepEqual(splitDependencyTokens(spec.rawDependsOn), ["#121", "120-base"]);
+});
+
+test("parseSpec keeps the Metadata Depends on when the Notes also have one", () => {
+  const spec = parseSpec("122-leave.md", buildNotesSpec({ metadataLines: ["- **Depends on:** #121"], noteLines: ["- Depends on #130."] }));
+  assert.equal(spec.rawDependsOn, "#121");
+});
+
+test("parseSpec treats a Notes Depends on none as no dependency, and no text as null", () => {
+  const withNone = parseSpec("122-leave.md", buildNotesSpec({ noteLines: ["- Depends on none."] }));
+  assert.deepEqual(splitDependencyTokens(withNone.rawDependsOn), []);
+  assert.equal(parseSpec("122-leave.md", buildNotesSpec({ noteLines: ["- Nothing else to say."] })).rawDependsOn, null);
+});
+
+test("parseSpec ignores a prose line that only starts with Depends on", () => {
+  const spec = parseSpec("122-leave.md", buildNotesSpec({ noteLines: ["- Depends on the backend team for the API."] }));
+  assert.equal(spec.rawDependsOn, null);
+});
+
+test("parseSpec reads Conflicts with from the Metadata or from a Notes bullet", () => {
+  const fromMetadata = parseSpec("123-create.md", buildNotesSpec({ metadataLines: ["- **Conflicts with:** #122"] }));
+  const fromNotes = parseSpec("123-create.md", buildNotesSpec({ noteLines: ["- Conflicts with #122."] }));
+  assert.equal(fromMetadata.rawConflictsWith, "#122");
+  assert.equal(fromNotes.rawConflictsWith, "#122");
+  assert.equal(parseSpec("123-create.md", buildNotesSpec({})).rawConflictsWith, null);
+});
