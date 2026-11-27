@@ -33,11 +33,11 @@ Line ranges are inclusive: from the section heading to the line before the next 
 | **parameter, argument, limit** | clean-code.md | Parameter Limit | 294-327 |
 | **class, god, large** | clean-code.md | Avoid God Classes | 328-358 |
 | **immutable, mutable, let, final** | clean-code.md | Prefer Immutability | 359-389 |
-| **error, exception, handling** | clean-code.md | Explicit Error Handling | 390-419 |
-| **composition, inheritance** | clean-code.md | Prefer Composition Over Inheritance | 420-448 |
-| **optimization, premature, performance** | clean-code.md | Avoid Premature Optimization | 477-498 |
-| **file, size, length** | clean-code.md | File Size Limits | 499-516 |
-| **condition, named, boolean** | clean-code.md | Named Condition Variables | 536-569 |
+| **error, exception, handling** | clean-code.md | Explicit Error Handling | 390-424 |
+| **composition, inheritance** | clean-code.md | Prefer Composition Over Inheritance | 425-453 |
+| **optimization, premature, performance** | clean-code.md | Avoid Premature Optimization | 482-503 |
+| **file, size, length** | clean-code.md | File Size Limits | 504-521 |
+| **condition, named, boolean** | clean-code.md | Named Condition Variables | 541-574 |
 | **indent, space, format** | code-style.md | Indentation | 32-61 |
 | **line, length, wrap** | code-style.md | Line Length | 62-75 |
 | **statement, one, per line** | code-style.md | One Statement Per Line | 76-97 |

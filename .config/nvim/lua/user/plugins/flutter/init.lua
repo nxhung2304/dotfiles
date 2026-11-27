@@ -285,7 +285,7 @@ return {
 			-- herdr log tab already exists) the pane's scrollback, so leftover output
 			-- from a previous session never bleeds into the next one.
 			local function clear_flutter_log()
-				vim.cmd("FlutterLogClear")
+				require("flutter-tools.log").clear()
 				vim.fn.writefile({}, flutter_log_path)
 				if vim.env.HERDR_ENV ~= "1" then
 					return

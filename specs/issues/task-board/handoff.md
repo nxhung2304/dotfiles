@@ -1,0 +1,55 @@
+# Task board — handoff to a local session
+
+## Related
+- [Original issue](./issue.md)
+- [Investigation and all decisions](./investigate.md)
+- [Plan](./implement.md)
+
+## Goal
+A local web board for `specs/issues` that shows which task needs the user, what is running, what is next and what depends on what, and starts a task in its own worktree + herdr workspace with the right skill.
+
+## State (2026-11-12)
+- Branch `claude/dazzling-ramanujan-id70x6` in `nxhung2304/dotfiles`, pushed, no PR yet.
+- Built in a cloud session with stub herdr and `gh`. On 2026-11-12 it was run against the real herdr and `gh` on the user's machine (mobile repo); results below.
+- Rebased onto `master` (adds `vibe-issue`). Local commits only, not pushed.
+- Code: `scripts/board/` (Node 22, stdlib only, no build). Start: `scripts/board/board` from a repo root inside a herdr pane → `http://127.0.0.1:4777`.
+- Tests: `bash tests/test-board.sh` (32 node tests, all pass).
+
+## Files
+| File | Does |
+|---|---|
+| `board` | Launcher: finds repo root, starts the server, opens the browser |
+| `server.js` | HTTP on 127.0.0.1, Host/Origin/Content-Type guard, routes `/api/board`, `/api/start`, `/api/focus`, `/api/clean-up` |
+| `specs.js` | Reads `specs/issues/*.md` and folder docs `specs/issues/<n>-<slug>/issue.md`, parses Status/Metadata, resolves `Depends on` (file name, `#NNN` spec number, `#NN` GitHub issue, `PR #N`) |
+| `columns.js` | Derives the column of each task from spec + worktrees + herdr agents + PRs; ready/blocked; unlinked worktrees; issues without spec |
+| `auto-runs.js` | Reads `vibe-issue` run files and links active tasks to their `[AUTO]` pane |
+| `live-state.js` | `git worktree list`, `herdr pane/agent list` (3 s cache), `gh pr list` and `gh issue list` (60 s cache) |
+| `worktree-details.js` | Diff size and uncommitted files per worktree, last lines of the Claude pane (`herdr pane read`) |
+| `actions.js` | Start (branch `feature/<user>-#<issue>-<slug>`, `git worktree add`, `scripts/herdr/worktree-workspace open`, send the prompt with `herdr pane send-text`), auto-run (`/vibe-issue <spec> max-parallel=1` in a `[AUTO]` workspace at the repo root, spec files only; for an unapproved spec the row has a "tự duyệt spec" checkbox that adds `auto-approve-spec=true`, off by default), focus (`scripts/herdr/notify-agent --focus`), clean-up (close workspace + `git worktree remove`, only when clean) |
+| `index.html` | Single page. Left sidebar: project name (main repo, not the worktree folder), the 3 tabs Đang chạy / Backlog / Đã xong and a status count list. Right sidebar: unlinked worktrees and GitHub issues without spec. Below 1200px it collapses to one column. A focus card above the list answers "what now": needs you, then PR review, then Claude working (with a suggested next task), then next ready task. Style follows GitHub (Primer light palette): white page, bordered list boxes with a grey header bar, pill labels, grey default buttons and a green primary button. Light only, no dark mode. The row number is the first GitHub issue and links to it (not the spec file prefix). Each row shows title, Claude status, PR (plus blocked-by and error reasons); tags, git status and live Claude output sit behind a "Chi tiết" button, remembered per row while the page refreshes. Orange is reserved for needs-you, red for errors |
+| `migrate-specs.js` | Normalizes `Depends on` and adds `Priority` in spec files; dry run unless `--write` |
+
+## Verify on the real machine (run 2026-11-12)
+1. Done. Tasks, tabs, Issue/PR links and merged work under Đã xong are right. Fixed: branches without `#` (`feature/hung-16-…`) were not matched, so task 012 showed as ready (`columns.js`).
+2. Done. A new `[WT]` workspace opens and Claude receives the prompt. Fixed: `herdr agent start claude` failed with `agent_name_taken` when another pane already had that name, so the second workspace never got Claude (`scripts/herdr/worktree-workspace` now names agents `claude-<pane>`).
+3. Done. `implement-prepare` creates its own worktree and stops when the branch or path exists, so the old "skip checkout" note was unlikely to work. The spec-file prompt now runs `implement-code`, `quality-runner`, `implement-finalize` directly. Checked with a throwaway approved spec: Claude loaded `implement-code` first, did not run `implement-prepare` and did not create another worktree. It was interrupted before commit; nothing was pushed. Throwaway spec, worktree and branch were removed. `quality-runner` and `implement-finalize` were not reached.
+4. Done with a real AskUserQuestion dialog: row moves to "Cần anh". Fixed: preview now cuts the input box and footer, drops dialog hints and shows 6 lines when blocked (`worktree-details.js`).
+5. "Mở tab" works. "Dọn worktree" refuses the main checkout (409) as designed. Actual removal not tried: no done task has its own worktree.
+Also fixed: "Worktree chưa gắn task" lists only branches with a real issue number.
+
+## Board UI added after the verification run
+- Views: list and table (remembered), dependent tasks fold under their parent with a count, side lists (unlinked worktrees, issues without spec) live in the left column.
+- Detail drawer (click a task title): local spec docs of the spec folder and the GitHub issue (`GET /api/detail?spec=<id>[&file=<name>.md]` or `?issue=<n>`, `details.js`).
+- Spec edit (`POST /api/spec-save`): only `.md` files listed for that spec, refuses when the file changed since it was opened (mtime), refuses branch-only specs, disabled with `board --lan`. Checked against a real server with a throwaway repo (save, stale save, bad name, `--lan`).
+- Sections are tables (columns: issue number, task, Claude, PR, action); the list/table switch is gone. Rows keep the "Chi tiết" fold, dependency fold and indent.
+- "chưa có phiên Claude" on an in-progress task with its own worktree is a button (`POST /api/resume`, `sessions.js`): it opens a Claude tab in that worktree with `herdr agent start ... -- --resume <id>`, picking the session whose transcript mentions the task's PR URL, else the newest session of that worktree, else a fresh Claude. Checked on the real mobile board with task 93: Claude opened with its previous conversation and the agent reports the same session id.
+- "Issue GitHub chưa có spec": tick issues (or "Chọn tất cả") then "Tạo spec (N)" opens one `[SPEC]` tab (`POST /api/create-spec`, id `issues:96,84`). One issue sends `/github-issues-to-md N owner/repo`; several send a plain instruction to run the skill once per issue (not yet run on real issues).
+- `board --lan` listens on all interfaces and accepts the machine's own IPs as Host. Anyone on the network can then start Claude tasks from the board, so use it on trusted networks only.
+
+## Open decisions
+- Run `node ~/dotfiles/scripts/board/migrate-specs.js <mobile repo> --write` on a feature branch of the mobile repo? Dry run is clean except `timesheet-api-permission-check` (free-text dependency, left for a hand edit). Waiting for the user.
+- Open a PR for the dotfiles branch? Not asked yet.
+- Auto-run rows are tracked through `~/.ai-metrics/orchestrator/<run-id>.json` (`auto-runs.js`): a task with an active run and a live `[AUTO] <spec>` workspace is In progress, or Cần anh when the run status is `needs_you`. Checked against a real run (shape: `tasks[].spec/phase/status/worktree/branch/pr_url`); a finished or crashed run is ignored once its workspace is closed.
+
+## Not done on purpose
+- Web chat, in-board diff viewer and comments, auto-commit/auto-PR, auto-start of dependents, `story.md` items on the board. Reasons in `investigate.md`.

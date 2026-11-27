@@ -1,7 +1,7 @@
 ---
 name: ui-ux-workflow
 model: claude-opus-5-5
-description: Quy trình thiết kế UI/UX có nghiên cứu cho vibe coding — hiểu vấn đề, tra cứu tham khảo thật (Mobbin, Refero, Land-book, Dribbble), dựng prototype HTML tương tác được theo bộ design chung của dự án (do plan-design tạo), review và lặp feedback. Dùng skill này bất cứ khi nào người dùng muốn thiết kế, dựng, mockup, prototype hoặc làm lại giao diện/màn hình/landing page/app/web/dashboard, hỏi "làm UI cho…", "thiết kế màn hình…", "UI trông generic quá", hoặc cần tham khảo thiết kế — kể cả khi họ không nhắc chữ "UI/UX". Also use for English requests to design, mock up, prototype or redesign any app or web interface.
+description: Quy trình thiết kế UI/UX có nghiên cứu cho vibe coding — hiểu vấn đề, tra cứu tham khảo thật (Refero, Land-book, Dribbble), dựng prototype HTML tương tác được theo bộ design chung của dự án (do plan-design tạo), review và lặp feedback. Dùng skill này bất cứ khi nào người dùng muốn thiết kế, dựng, mockup, prototype hoặc làm lại giao diện/màn hình/landing page/app/web/dashboard, hỏi "làm UI cho…", "thiết kế màn hình…", "UI trông generic quá", hoặc cần tham khảo thiết kế — kể cả khi họ không nhắc chữ "UI/UX". Also use for English requests to design, mock up, prototype or redesign any app or web interface.
 ---
 
 # UI/UX Workflow
@@ -70,7 +70,6 @@ Khi đã xác nhận, đề nghị lưu phần context mới vào đúng chỗ �
 
 ### 2a. Kiểm tra công cụ có sẵn
 Trước khi tra cứu, xem trong danh sách tool đang có:
-- MCP **Mobbin** (`api.mobbin.com/mcp`)
 - MCP **Refero** (`api.refero.design/mcp`, cần gói Pro)
 - web search / web fetch / trình duyệt
 
@@ -79,15 +78,15 @@ Nếu thiếu MCP cần thiết, nói ngắn gọn và dùng phương án dự p
 ### 2b. Chọn nguồn theo ngữ cảnh
 | Ngữ cảnh | Nguồn ưu tiên |
 |---|---|
-| Mobile app (flow, màn hình) | Mobbin → Refero |
-| Web app, SaaS, dashboard | Refero → Mobbin (web) |
+| Mobile app (flow, màn hình) | Refero |
+| Web app, SaaS, dashboard | Refero |
 | Landing page, marketing site | Land-book → Refero styles |
 | Cảm hứng thị giác, minh hoạ | Dribbble (chỉ tham khảo, nhiều concept không thực tế) |
 
 Chi tiết cách tìm và câu truy vấn mẫu: `references/sources.md`.
 
 ### 2c. Tiết kiệm lượt gọi
-Mobbin và Refero có phí và giới hạn. Mỗi màn hình chính: 1–3 truy vấn cụ thể (ví dụ "onboarding finance app mobile", "pricing page monthly annual toggle web"), không quét rộng. Chế độ Nhanh: tối đa 1–2 truy vấn cho cả dự án, hoặc bỏ qua.
+Refero có phí và giới hạn. Mỗi màn hình chính: 1–3 truy vấn cụ thể (ví dụ "onboarding finance app mobile", "pricing page monthly annual toggle web"), không quét rộng. Chế độ Nhanh: tối đa 1–2 truy vấn cho cả dự án, hoặc bỏ qua.
 
 ### 2d. Tổng hợp, không sao chép
 Từ 3–6 tham khảo, rút ra:

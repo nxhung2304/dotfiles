@@ -24,6 +24,13 @@ worktree_label() {
     echo "[WT] ${worktree_name#"$(basename "$repo_root")."}"
 }
 
+is_default_branch() {
+    case $(git -C "$1" branch --show-current) in
+        develop | master | main) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 open_workspace() {
     local worktree_path=$1
     local existing_id created root_pane repo_root
@@ -35,9 +42,13 @@ open_workspace() {
     fi
 
     repo_root=$(dirname "$(git -C "$worktree_path" rev-parse --path-format=absolute --git-common-dir)")
-    created=$(herdr worktree open --cwd "$repo_root" --path "$worktree_path" --label "$(worktree_label "$worktree_path" "$repo_root")" --focus)
+    if is_default_branch "$repo_root"; then
+        created=$(herdr worktree open --cwd "$repo_root" --path "$worktree_path" --label "$(worktree_label "$worktree_path" "$repo_root")" --focus)
+    else
+        created=$(herdr workspace create --cwd "$worktree_path" --label "$(worktree_label "$worktree_path" "$repo_root")" --focus)
+    fi
     root_pane=$(jq -r '.result.root_pane.pane_id' <<<"$created")
-    herdr agent start claude --kind claude --pane "$root_pane" >/dev/null || true
+    herdr agent start "claude-$(tr 'A-Z:' 'a-z-' <<<"$root_pane")" --kind claude --pane "$root_pane" >/dev/null || true
 }
 
 close_workspaces() {

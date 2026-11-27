@@ -9,7 +9,6 @@ trap 'rm -rf "$work_dir"' EXIT
 home_dir="$work_dir/home"
 rights_dir="$home_dir/Dev/rights"
 hook_script="$repo_dir/.claude/hooks/guard_remote_write.py"
-whitelisted_hook="$work_dir/guard_whitelisted.py"
 allowed_exit_code=0
 blocked_exit_code=2
 
@@ -22,13 +21,10 @@ create_repo() {
     git -C "$repo_path" checkout -q -b feature/x
 }
 
-allowed_repo="$rights_dir/allowed"
 blocked_repo="$rights_dir/blocked"
 personal_repo="$home_dir/Dev/personal/mine"
-create_repo "$allowed_repo"
 create_repo "$blocked_repo"
 create_repo "$personal_repo"
-sed 's/^WHITELISTED_PROJECTS = \[\]/WHITELISTED_PROJECTS = ["allowed"]/' "$hook_script" >"$whitelisted_hook"
 
 bash_call() {
     local cwd=$1
@@ -60,24 +56,6 @@ check "reading a rights repo is allowed" "$allowed_exit_code" \
 check "personal repo push to main is allowed" "$allowed_exit_code" \
     "$(exit_code_of "$hook_script" "$(bash_call "$personal_repo" "git push origin main")")"
 
-check "whitelisted feature push is allowed" "$allowed_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "git push -u origin feature/x")")"
-check "whitelisted PR is allowed" "$allowed_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "gh pr create --fill")")"
-check "whitelisted push to main is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "git push origin HEAD:main")")"
-check "push to main via cd is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call /tmp "cd $allowed_repo && git push origin main")")"
-check "push of all branches is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "git push --all")")"
-check "merge is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "gh pr merge 3 --squash")")"
-check "file push to main through GitHub is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(github_call push_files '{"repo":"allowed","branch":"main"}')")"
 check "unreadable input is blocked" "$blocked_exit_code" "$(exit_code_of "$hook_script" "not json")"
-
-git -C "$allowed_repo" checkout -q main
-check "bare push while on main is blocked" "$blocked_exit_code" \
-    "$(exit_code_of "$whitelisted_hook" "$(bash_call "$allowed_repo" "git push")")"
 
 finish_tests

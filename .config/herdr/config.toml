@@ -12,7 +12,7 @@ name = "terminal"
 auto_switch = false
 
 [ui]
-sidebar_width = 38
+sidebar_width = 30
 sidebar_max_width = 45
 sidebar_start_collapsed = true
 mouse_capture = true
@@ -23,10 +23,7 @@ pane_gaps = true
 pane_scrollbars = false
 
 status_indicators = "symbols"
-tab_bar_right = [
-  { type = "command", command = "~/dotfiles/scripts/herdr/pr-status", interval_seconds = 30, timeout_seconds = 5 },
-  { type = "command", command = "~/dotfiles/scripts/herdr/device-status", interval_seconds = 10, timeout_seconds = 5 },
-]
+tab_bar_right = []
 [ui.toast]
 delivery = "off"
 delay_seconds = 1

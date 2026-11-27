@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-WHITELISTED_PROJECTS = []
+WHITELISTED_PROJECTS = ['rights_vn-office_management-mobile']
 
 RIGHTS_ROOT = Path.home() / "Dev" / "rights"
 PROTECTED_BRANCHES = {"main", "master", "develop"}

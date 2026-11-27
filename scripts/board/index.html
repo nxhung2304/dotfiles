@@ -1,0 +1,2158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Board</title>
+<style>
+  :root {
+    color-scheme: light;
+    --background: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f6f8fa;
+    --surface-hover: #f6f8fa;
+    --border: #d1d9e0;
+    --border-strong: #afb8c1;
+    --text: #1f2328;
+    --text-muted: #59636e;
+    --text-faint: #6e7781;
+    --accent: #0969da;
+    --accent-surface: #ddf4ff;
+    --needs-you: #bc4c00;
+    --needs-you-surface: #fff1e5;
+    --needs-you-border: #f1c196;
+    --next: #1a7f37;
+    --next-surface: #f6f8fa;
+    --danger: #d1242f;
+    --danger-surface: #ffebe9;
+    --warning-surface: #fff8c5;
+    --warning-text: #9a6700;
+    --related: #ddf4ff;
+    --merged: #8250df;
+    --on-state: #ffffff;
+    --primary: #1f883d;
+    --on-primary: #ffffff;
+    --shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --radius: 6px;
+    --radius-lg: 6px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font: 14px/1.45 var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  :root { accent-color: var(--accent); }
+  ::selection { background: var(--accent-surface); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); max-width: 880px; margin: 0 auto; padding: var(--space-6) var(--space-4) 64px; }
+  .side h1 { margin: 0 0 var(--space-4); font-size: 16px; font-weight: 650; line-height: 1.25; word-break: break-word; }
+
+  .tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-2); }
+  .tabs button {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 var(--space-1);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .tabs button:hover { color: var(--text); background: rgba(129, 139, 152, 0.12); border-color: transparent; }
+  .tabs button:not(.extra) + button.extra { margin-top: var(--space-3); }
+  .tabs button.active { background: var(--surface); border-color: var(--border); color: var(--text); font-weight: 600; }
+  .tabs .count { margin-left: 0; padding: 0 6px; border-radius: 999px; background: rgba(129, 139, 152, 0.18); font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text); }
+  .tabs .count.needs-you { background: var(--needs-you); color: var(--on-state); font-weight: 650; }
+
+
+  .side-notes:empty { display: none; }
+  .side-note { padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); color: var(--text-faint); font-size: 12px; }
+  .side-notes .row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: var(--space-1) var(--space-2); padding: 7px 0; align-items: start; }
+  .side-notes .row > button { align-self: start; }
+  .side-notes button { min-height: 22px; padding: 0 8px; font-size: 12px; }
+  .side-notes .title { font-size: 13px; font-weight: 500; line-height: 1.35; }
+  .side-notes .number { font-size: 12px; }
+  .side-notes .row:has(> .number:empty) { grid-template-columns: minmax(0, 1fr); }
+  .side-notes .row:has(> .number:empty) > button { justify-self: start; }
+  .side-notes .row .meta { align-items: center; }
+  .side-notes .meta { font-size: 11.5px; }
+
+  .side-column { display: contents; }
+  .side-left { order: 1; }
+  .page-main { order: 2; }
+  @media (min-width: 1100px) {
+    .layout { max-width: none; grid-template-columns: 264px minmax(0, 980px); gap: 40px; justify-content: center; }
+    .side-column { display: flex; flex-direction: column; gap: var(--space-6); position: sticky; top: var(--space-6); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; }
+    .tabs { flex-direction: column; padding: 0; border: none; background: none; gap: 2px; }
+    .tabs button { justify-content: flex-start; min-height: 34px; padding: 0 10px; }
+    .tabs button.active { background: rgba(129, 139, 152, 0.18); border-color: transparent; position: relative; }
+    .tabs button.active::before { content: ""; position: absolute; left: -2px; top: 7px; bottom: 7px; width: 4px; border-radius: 4px; background: var(--accent); }
+    .tabs .count { margin-left: auto; }
+  }
+
+  #banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+    border-left: 3px solid var(--warning-text);
+    border-radius: var(--radius);
+    background: var(--warning-surface);
+    color: var(--warning-text);
+    font-size: 12.5px;
+    white-space: pre-line;
+  }
+  #banner:empty { display: none; }
+  #banner .banner-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  #banner button, #toast button { min-height: 22px; padding: 0 8px; border: none; background: none; color: inherit; font-size: 12px; opacity: 0.75; }
+  #banner button:hover, #toast button:hover { background: rgba(0, 0, 0, 0.06); opacity: 1; }
+  .filter-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .filter-bar button { min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; color: var(--text-muted); }
+  .filter-bar button.active { background: var(--text); border-color: var(--text); color: var(--surface); }
+  .filter-bar button .count { margin-left: 6px; background: rgba(129, 139, 152, 0.22); color: inherit; }
+  .story-list { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .story-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: 10px var(--space-3); border-bottom: 1px solid var(--border); }
+  .story-row:last-child { border-bottom: none; }
+  .story-row:hover { background: var(--surface-hover); }
+  .story-name { font-size: 14px; font-weight: 600; line-height: 1.4; }
+  .story-note { margin-top: 1px; font-size: 12px; color: var(--text-muted); }
+  .story-row .sync-label { color: var(--warning-text); margin-top: 2px; font-size: 12px; }
+  .story-row button { flex: none; min-height: 28px; padding: 0 12px; font-size: 12.5px; }
+  #toast {
+    position: fixed;
+    right: var(--space-6);
+    bottom: var(--space-6);
+    z-index: 30;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    max-width: min(420px, calc(100vw - 32px));
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--text);
+    color: var(--surface);
+    box-shadow: 0 6px 20px rgba(31, 35, 40, 0.25);
+    font-size: 13px;
+    white-space: pre-line;
+  }
+  #toast.error { background: var(--needs-you); border-color: var(--needs-you); color: #fff; }
+  #toast:empty { display: none; }
+  #toast .toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+  section { margin-bottom: 20px; --state: transparent; }
+  section.needs-you { --state: var(--needs-you); }
+  section.in-progress { --state: var(--accent); }
+  section.ready, section.blocked { --state: var(--border-strong); }
+  section.review { --state: var(--merged); }
+  section.done { --state: var(--next); }
+  section { background: var(--surface); }
+  section.needs-you { --rule: var(--needs-you-border); }
+  section h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--rule, var(--border));
+    font-size: 14px;
+    font-weight: 650;
+    color: var(--text);
+  }
+  section.needs-you h2 { color: var(--needs-you); }
+  .page-main section h2 { border-bottom: none; padding: 0 0 var(--space-2); }
+  section .toggle { display: block; margin: 0; padding: var(--space-2) var(--space-4); width: 100%; border-top: 1px solid var(--border); text-align: left; }
+  section h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--state); flex: none; }
+  section.unlinked h2::before, section.without-spec h2::before { display: none; }
+  section h2 .count { padding: 0 7px; border-radius: 999px; background: rgba(129, 139, 152, 0.18); font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text); }
+  .list { background: var(--surface); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: start;
+    padding: 10px var(--space-2) 10px var(--space-1);
+    border-top: 1px solid var(--border);
+  }
+  .row:first-child { border-top: none; }
+  .row-index { display: none; }
+  .row.clickable { cursor: pointer; }
+  .row.clickable:hover { background: var(--surface-hover); }
+  .group-toggle { min-height: 0; padding: 0 8px; border: none; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font-size: 12px; line-height: 20px; }
+  .group-toggle:hover { background: var(--accent-surface); color: var(--accent); border: none; }
+  .row > .actions, .row > button { align-self: center; }
+  section.blocked .row .title, section.done .row .title { color: var(--text-muted); font-weight: 400; }
+  .number { justify-self: start; margin-top: 1px; font-family: var(--font-mono); font-size: 13px; line-height: 20px; color: var(--accent); }
+  .number:empty { display: none; }
+  a.number { text-decoration: none; }
+  a.number:hover { text-decoration: underline; }
+  .title { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .detail-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-3); margin-top: 5px; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); font-size: 12px; color: var(--text-muted); }
+  .meta .blocked-by { color: var(--danger); }
+  .agent-status { display: inline-flex; align-items: center; gap: 6px; padding: 0 9px 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; cursor: default; }
+  .agent-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); flex: none; }
+  .agent-status:hover { background: #e6eaee; }
+  .agent-status.working { background: var(--accent-surface); color: #0550ae; }
+  .agent-status.working::before { background: var(--accent); }
+  .agent-status.working:hover { background: #b6e3ff; }
+  .agent-status.blocked { background: var(--needs-you-surface); color: var(--needs-you); }
+  .agent-status.blocked::before { background: var(--needs-you); }
+  .agent-status.blocked:hover { background: #ffddc2; }
+  section.needs-you .agent-status.blocked { background: var(--surface); border: 1px solid var(--needs-you-border); }
+  .agent-status.done, .agent-status.idle { background: #dafbe1; color: #116329; }
+  .agent-status.done::before, .agent-status.idle::before { background: var(--next); }
+  .agent-status.done:hover, .agent-status.idle:hover { background: #b8f0c4; }
+  .agent-status.idle { background: var(--surface-2); color: var(--text); }
+  .agent-status.idle::before { background: var(--text-faint); }
+  .agent-status.idle:hover { background: #e6eaee; }
+  .row-toggle { min-height: 0; padding: 0 2px; border: none; background: none; color: var(--text-muted); font-size: 12px; }
+  .row-toggle:hover { background: none; color: var(--accent); text-decoration: underline; }
+  .row-details { display: grid; gap: var(--space-2); margin-top: var(--space-2); }
+  .row-details .diff-stats, .row-details .preview { margin-top: 0; }
+  .diff-stats { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .diff-stats .insertions { color: var(--next); }
+  .diff-stats .deletions { color: var(--danger); }
+  .diff-stats .dirty { color: var(--text); font-weight: 600; }
+  .preview {
+    margin-top: var(--space-2);
+    padding: var(--space-2) 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  section.needs-you .preview { background: var(--surface); border-color: var(--needs-you-border); box-shadow: inset 3px 0 0 var(--needs-you); color: var(--text); }
+
+  .refs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px 0 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  .ref:hover { background: var(--surface-2); color: var(--text); }
+  .ref svg { width: 14px; height: 14px; flex: none; }
+  .ref .kind { font-weight: 600; color: var(--text); }
+  .ref .state { font-size: 11px; }
+  .ref .signal { font-size: 11px; }
+  .ref .signal.bad { color: var(--danger); }
+  .ref .signal.good, .ref .signal.waiting { color: var(--text-muted); }
+  .ref.issue svg { color: var(--text-muted); }
+  .ref.pr-open svg, .ref.pr-open .state, .ref.pr-draft svg, .ref.pr-draft .state, .ref.pr-merged svg, .ref.pr-merged .state { color: var(--text-faint); }
+  .ref.pr-closed svg, .ref.pr-closed .state { color: var(--danger); }
+  .meta a { color: var(--accent); text-decoration: none; }
+  .meta a:hover { text-decoration: underline; }
+
+  .tag { display: inline-flex; align-items: center; padding: 0 8px; border: 1px solid transparent; border-radius: 999px; font-size: 12px; font-weight: 500; line-height: 18px; }
+  .tag.auto, .tag.p3, .tag.unapproved { background: var(--surface); color: var(--text-muted); border-color: var(--border); }
+  .tag.p1 { padding: 0; border: none; background: none; color: var(--danger); font-weight: 600; }
+
+  button {
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    min-height: 30px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: #eef1f4; border-color: var(--border-strong); }
+  .actions button:not(.primary) { background: var(--surface); }
+  button.primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+  button.primary:hover { background: #1a7f37; border-color: #1a7f37; }
+  section.needs-you button { background: var(--needs-you); border-color: var(--needs-you); color: var(--on-state); }
+  section.needs-you button.row-toggle { background: none; border: none; color: var(--text-muted); }
+  button:active { background: #e6eaee; }
+  button.primary:active { background: #19722f; }
+  button:disabled { opacity: 0.5; cursor: progress; }
+  .actions { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 6px; width: 230px; }
+  button.clean-up-blocked { border: none; background: none; min-height: 0; padding: 0; color: var(--needs-you); font-size: 12px; white-space: nowrap; text-decoration: underline dotted; text-underline-offset: 3px; }
+  button.clean-up-blocked:hover { background: none; text-decoration-style: solid; }
+  .more-menu { position: relative; }
+  .more-menu > summary { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; min-height: 30px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; list-style: none; user-select: none; }
+  .more-menu > summary::-webkit-details-marker { display: none; }
+  .more-menu > summary:hover { background: #eef1f4; border-color: var(--border-strong); }
+  .more-panel { position: fixed; z-index: 20; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); width: 280px; max-width: calc(100vw - 16px); padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 8px 24px rgba(31, 35, 40, 0.18); }
+  .menu-hint { color: var(--text-muted); font-size: 12px; white-space: normal; }
+  .auto-approve { display: inline-flex; align-items: flex-start; gap: 6px; color: var(--text); font-size: 12.5px; cursor: pointer; }
+  .auto-approve input { margin: 2px 0 0; }
+  #board.has-pending-update::before { content: "Có cập nhật mới, di chuột ra khỏi bảng để làm mới"; display: block; margin-bottom: var(--space-2); padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--text-muted); font-size: 12px; }
+  .toggle { border: none; background: none; color: var(--accent); min-height: 0; border-radius: 0; }
+  .toggle:hover { background: var(--surface-hover); text-decoration: underline; }
+  .empty-hint {
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+
+  .inbox { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  @media (max-width: 860px) { .inbox { grid-template-columns: minmax(0, 1fr); } }
+  .inbox-list { display: flex; flex-direction: column; gap: var(--space-4); }
+  .inbox-group { display: flex; flex-direction: column; gap: 2px; --state: var(--border-strong); }
+  .inbox-group.needs-you { --state: var(--needs-you); }
+  .inbox-group.in-progress { --state: var(--accent); }
+  .inbox-group.review { --state: var(--merged); }
+  .inbox-group-title { display: flex; justify-content: space-between; padding: 0 var(--space-3); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .inbox-group.needs-you .inbox-group-title { color: var(--needs-you); }
+  .inbox-item { display: flex; gap: 10px; padding: 10px var(--space-3); border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+  .inbox-item:hover { background: var(--surface-hover); }
+  .inbox-item.selected { background: var(--surface); border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .inbox-dot { flex: none; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: var(--state); }
+  .inbox-item-title { font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .inbox-item-number { font-family: var(--font-mono); font-weight: 400; color: var(--text-muted); }
+  .inbox-item-note { font-size: 12.5px; line-height: 1.4; color: var(--text-muted); }
+  .inbox-detail { position: sticky; top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border: 1px solid var(--border); border-radius: 12px; background: var(--surface); --state: var(--border-strong); }
+  .inbox-detail.needs-you { --state: var(--needs-you); }
+  .inbox-detail.in-progress { --state: var(--accent); }
+  .inbox-detail.review { --state: var(--merged); }
+  .detail-badge { align-self: flex-start; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .inbox-detail.needs-you .detail-badge { background: var(--needs-you-surface); border-color: var(--needs-you-border); color: var(--needs-you); }
+  .detail-title { font-size: 22px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+  .detail-callout { padding: var(--space-3) var(--space-4); border-left: 3px solid var(--state); border-radius: var(--radius); background: var(--surface-2); font-size: 14px; line-height: 1.5; }
+  .inbox-detail.needs-you .detail-callout { background: var(--needs-you-surface); color: var(--needs-you); font-weight: 500; }
+  .detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .detail-actions .actions { width: auto; flex-wrap: wrap; justify-content: flex-start; }
+  .detail-actions button { min-height: 36px; padding: 0 var(--space-4); font-size: 13.5px; }
+  .inbox-detail.needs-you .detail-actions > button { background: var(--needs-you); border-color: var(--needs-you); color: var(--on-state); }
+  .phase-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .phase-step { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); font-size: 12.5px; color: var(--text-muted); }
+  .phase-step.done { background: #dafbe1; color: #116329; }
+  .phase-step.current { background: var(--accent-surface); color: #0550ae; font-weight: 650; }
+  .phase-step.current.needs-you { background: var(--needs-you-surface); color: var(--needs-you); }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--rule, var(--border)); border-radius: var(--radius-lg); }
+  .task-table { width: 100%; min-width: 760px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+  .task-table th:nth-child(1) { width: 104px; }
+  .task-table th:nth-child(3) { width: 150px; }
+  .task-table th:nth-child(4) { width: 220px; }
+  .task-table th:nth-child(5) { width: 300px; }
+  .task-table th { padding: 6px var(--space-2); border-bottom: 1px solid var(--border); background: var(--surface-2); text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .task-table td { padding: 9px var(--space-2); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .task-table .cell-number { padding-left: var(--space-3); white-space: nowrap; }
+  .task-table .cell-title { min-width: 220px; }
+  .task-table .title-text { display: inline; font-size: 14px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .task-table .title-text.nested { display: block; margin-left: calc(var(--depth) * 32px); }
+  .task-table .title-text.nested::before { content: "↳"; margin-right: 6px; color: var(--border-strong); font-size: 11px; font-weight: 400; }
+  .task-table .cell-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-3); margin-top: 3px; font-size: 12px; }
+  .task-table .cell-sub.nested { margin-left: calc(var(--depth) * 32px + 17px); }
+  .no-issue-column th:nth-child(1), .no-issue-column td.cell-number { display: none; }
+  .backlog-table th:nth-child(3), .backlog-table th:nth-child(4), .backlog-table td.cell-claude, .backlog-table td.cell-pr { display: none; }
+  .task-table .cell-claude { color: var(--text-muted); white-space: nowrap; }
+  .task-table .cell-pr .ref { white-space: nowrap; }
+  .task-table .cell-pr .refs { gap: 4px; }
+  .task-table .cell-action { text-align: right; }
+  .task-table .cell-action .actions { justify-content: flex-end; width: auto; }
+  .task-table tr.task-row:hover { background: var(--surface-hover); }
+  .task-table tr.clickable { cursor: pointer; }
+  .task-table tr.related { background: var(--related); }
+  .task-table tr.state-blocked .title-text, .task-table tr.state-done .title-text { color: var(--text-muted); font-weight: 400; }
+  .task-table tr.state-needs-you { background: var(--needs-you-surface); box-shadow: inset 3px 0 0 var(--needs-you); }
+  .task-table tr.detail-row td { padding-top: 0; background: var(--surface); }
+  .task-table tr.state-needs-you + tr.detail-row td { background: var(--needs-you-surface); }
+  .task-table tbody tr:last-child td { border-bottom: none; }
+  .task-table .blocked-by { color: var(--danger); }
+  .resume-link { min-height: 0; padding: 0; border: none; background: none; color: var(--needs-you); font-size: 12px; font-weight: 500; text-align: left; }
+  .resume-link:hover { background: none; text-decoration: underline; }
+  .resume-link:disabled { color: var(--text-muted); text-decoration: none; }
+  .select-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  .select-all { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .side-notes .row.selectable { grid-template-columns: 16px 36px minmax(0, 1fr); }
+  .state-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--border-strong); }
+  .state-dot.needs-you { background: var(--needs-you); }
+  .state-dot.in-progress { background: var(--accent); }
+  .state-dot.review { background: var(--merged); }
+  .state-dot.done { background: var(--next); }
+
+  .openable { cursor: pointer; }
+  .openable:hover { color: var(--accent); text-decoration: underline; }
+  #drawer-backdrop { position: fixed; inset: 0; z-index: 19; background: rgba(31, 35, 40, 0.25); opacity: 0; pointer-events: none; }
+  #drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+  #drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; flex-direction: column;
+    width: min(640px, 94vw);
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: -12px 0 32px rgba(31, 35, 40, 0.14);
+    transform: translateX(100%);
+    visibility: hidden;
+  }
+  #drawer.open { transform: none; visibility: visible; }
+  .drawer-head { padding: var(--space-4) var(--space-6) 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .drawer-back { display: block; max-width: 100%; min-height: 24px; margin: 0 0 var(--space-2) -6px; padding: 0 6px; border: none; background: none; color: var(--accent); font-size: 12px; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+  .drawer-back[hidden] { display: none; }
+  .drawer-back:hover { background: var(--accent-surface); }
+  .drawer-title-row { display: flex; align-items: flex-start; gap: var(--space-3); }
+  .drawer-title-row h2 { flex: 1; margin: 0; font-size: 18px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .drawer-close { min-height: 28px; padding: 0 8px; border-color: transparent; background: none; color: var(--text-muted); }
+  .drawer-sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); font-size: 12px; color: var(--text-muted); }
+  .drawer-sub a { color: var(--accent); text-decoration: none; }
+  .drawer-sub a:hover { text-decoration: underline; }
+  .drawer-tabs { display: flex; gap: var(--space-4); margin-top: var(--space-3); }
+  .drawer-tabs button { min-height: 34px; padding: 0 2px; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--text-muted); font-size: 13px; }
+  .drawer-tabs button:hover { background: none; color: var(--text); }
+  .drawer-tabs button.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 600; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-6) 48px; }
+  .spec-toolbar { justify-content: space-between; }
+  .spec-toolbar button { min-height: 24px; }
+  .spec-editor { display: grid; gap: var(--space-3); }
+  .spec-textarea { width: 100%; min-height: 58vh; padding: var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); color: var(--text); font: 12.5px/1.55 var(--font-mono); tab-size: 2; resize: vertical; }
+  .spec-editor-actions { display: flex; align-items: center; gap: var(--space-2); }
+  .doc-files { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .doc-file { min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--surface); }
+  .doc-file.active { border-color: var(--accent); background: var(--accent-surface); color: var(--accent); font-weight: 600; }
+  .markdown a.doc-link { color: var(--accent); cursor: pointer; }
+  .dead-link { color: var(--text-muted); }
+  .drawer-message { color: var(--text-muted); font-size: 13px; }
+  .drawer-message.error { color: var(--danger); }
+  .issue-state { padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 20px; color: var(--on-state); background: var(--next); }
+  .issue-state.closed { background: var(--merged); }
+  .label-chip { padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; line-height: 18px; }
+  .markdown { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+  .markdown > :first-child { margin-top: 0; }
+  .markdown h1, .markdown h2, .markdown h3, .markdown h4 { margin: 1.4em 0 0.5em; font-weight: 650; line-height: 1.3; }
+  .markdown h1 { font-size: 20px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .markdown h2 { font-size: 17px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .markdown h3, .markdown h4 { font-size: 15px; }
+  .markdown p, .markdown ul, .markdown ol, .markdown blockquote, .markdown pre, .markdown table { margin: 0 0 0.9em; }
+  .markdown ul, .markdown ol { padding-left: 1.4em; }
+  .markdown li { margin: 2px 0; }
+  .markdown li.nested-item { list-style: circle; }
+  .markdown code { padding: 1px 5px; border-radius: 4px; background: var(--surface-2); font-family: var(--font-mono); font-size: 12.5px; }
+  .markdown pre { padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); overflow-x: auto; }
+  .markdown pre code { padding: 0; background: none; font-size: 12px; }
+  .markdown blockquote { padding-left: var(--space-3); border-left: 3px solid var(--border-strong); color: var(--text-muted); }
+  .markdown hr { margin: 1.2em 0; border: none; border-top: 1px solid var(--border); }
+  .markdown a { color: var(--accent); }
+  .markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 13px; }
+  .markdown th, .markdown td { padding: 5px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  .markdown th { background: var(--surface-2); font-weight: 600; }
+  @media (prefers-reduced-motion: no-preference) {
+    #drawer { transition: transform 200ms ease, visibility 0s linear 200ms; }
+    #drawer.open { transition: transform 200ms ease; }
+    #drawer-backdrop { transition: opacity 200ms ease; }
+  }
+
+  .focus {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-4);
+    align-items: center;
+    margin-bottom: var(--space-6);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--tone-surface, var(--surface-2));
+  }
+  .focus.needs-you { --tone: var(--needs-you); --tone-surface: var(--needs-you-surface); }
+  .focus.review, .focus.working, .focus.next { --tone: var(--accent); }
+  .focus-kicker { font-size: 12px; font-weight: 650; color: var(--tone, var(--text-muted)); }
+  .focus-headline { margin-top: 2px; font-size: 16px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .focus-detail { margin-top: 4px; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+  .focus-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+  .focus button { min-height: 36px; padding: 0 var(--space-4); font-size: 13px; }
+  .focus.needs-you button.primary { background: var(--needs-you); border-color: var(--needs-you); }
+  @media (max-width: 560px) {
+    .focus { grid-template-columns: minmax(0, 1fr); padding: var(--space-4); }
+    .focus-actions { justify-content: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 40px minmax(0, 1fr); padding-right: var(--space-3); }
+    .row > :nth-child(3) { grid-column: 2; justify-self: start; }
+    .actions { justify-content: flex-start; max-width: none; }
+    button { min-height: 40px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    button, .row, .ref { transition: background-color 120ms ease, border-color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="side-column">
+  <aside class="side side-left">
+    <h1 id="repo-name"></h1>
+    <nav class="tabs" id="tabs"></nav>
+  </aside>
+  </div>
+  <div class="page-main">
+    <div id="banner"></div>
+    <div id="focus"></div>
+    <main id="board"></main>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="drawer-backdrop"></div>
+<aside id="drawer" aria-label="Chi tiết" inert>
+  <header class="drawer-head">
+    <button class="drawer-back" id="drawer-back" hidden></button>
+    <div class="drawer-title-row">
+      <h2 id="drawer-title"></h2>
+      <button class="drawer-close" id="drawer-close" aria-label="Đóng">✕</button>
+    </div>
+    <div class="drawer-sub" id="drawer-sub"></div>
+    <div class="drawer-tabs" id="drawer-tabs"></div>
+  </header>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+<script>
+  const BOARD_REFRESH_MS = 3000;
+  const MORE_PANEL_OFFSET_PX = 4;
+  const PENDING_UPDATE_CLASS = "has-pending-update";
+  const WORK_IN_PROGRESS_LIMIT = 3;
+  const READY_PREVIEW_COUNT = 3;
+  const ISSUES_WITHOUT_SPEC_PREVIEW_COUNT = 3;
+  const SELECTED_TAB_STORAGE_KEY = "task-board-selected-tab";
+  const TABS = [
+    { key: "running", label: "Đang chạy" },
+    { key: "backlog", label: "Backlog" },
+    { key: "done", label: "Đã xong" },
+    { key: "worktrees", label: "Chưa gắn task", isExtra: true },
+  ];
+  const SHORT_TITLE_LENGTH = 32;
+  const SECTIONS = [
+    { key: "needsYou", label: "Cần anh", className: "needs-you" },
+    { key: "inProgress", label: "Đang làm", className: "in-progress" },
+    { key: "review", label: "Review", className: "review" },
+    { key: "ready", label: "Sẵn sàng", className: "ready" },
+    { key: "todo", label: "Bị chặn", className: "blocked" },
+    { key: "done", label: "Xong", className: "done" },
+  ];
+  const AUTO_RUN_PHASE_LABELS = {
+    plan: "lập kế hoạch",
+    plan_review: "review kế hoạch",
+    prepare: "chuẩn bị",
+    risk: "kiểm tra rủi ro",
+    code: "viết code",
+    quality: "chạy kiểm tra",
+    review: "review",
+    fix: "sửa lỗi review",
+    finalize: "tạo PR",
+  };
+  const ACTIVE_COLUMNS = ["inProgress", "needsYou"];
+  const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+  const ISSUE_ICON_PATHS = [
+    "M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z",
+    "M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z",
+  ];
+  const PULL_REQUEST_ICON_PATHS = [
+    "M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z",
+  ];
+  const PULL_REQUEST_STATES = {
+    draft: { label: "Draft", className: "pr-draft" },
+    OPEN: { label: "Open", className: "pr-open" },
+    MERGED: { label: "Merged", className: "pr-merged" },
+    CLOSED: { label: "Closed", className: "pr-closed" },
+  };
+
+  let currentTasks = [];
+  let lastRenderedJson = "";
+  let actionMessage = "";
+  let currentWarnings = [];
+  let githubWebUrl = null;
+  let selectedTab = readSavedTab();
+  let previousNeedsYouCount = 0;
+  let issuesWithoutSpec = [];
+  let storyTasksWithoutSpec = [];
+  let unlinkedWorktrees = [];
+  const CHECK_SIGNALS = {
+    failing: { label: "CI lỗi", tone: "bad" },
+    pending: { label: "CI đang chạy", tone: "waiting" },
+    passing: { label: "CI đạt", tone: "good" },
+  };
+  const REVIEW_SIGNALS = {
+    CHANGES_REQUESTED: { label: "cần sửa", tone: "bad" },
+    REVIEW_REQUIRED: { label: "chờ review", tone: "waiting" },
+    APPROVED: { label: "đã duyệt", tone: "good" },
+  };
+  const startingTaskIds = new Set();
+  const autoApproveTaskIds = new Set();
+  const expandedRowKeys = new Set();
+  const expandedGroupIds = new Set();
+
+  function createElement(tagName, className, text) {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+
+  function tasksIn(column) {
+    return currentTasks.filter((task) => task.column === column);
+  }
+
+  function shortTitle(taskId) {
+    const task = currentTasks.find((candidate) => candidate.id === taskId);
+    if (!task) return taskId;
+    return task.title.length > SHORT_TITLE_LENGTH ? `${task.title.slice(0, SHORT_TITLE_LENGTH)}…` : task.title;
+  }
+
+  function shortName(taskId) {
+    const issueNumber = currentTasks.find((candidate) => candidate.id === taskId)?.githubIssues?.[0];
+    return issueNumber ? `#${issueNumber} ${shortTitle(taskId)}` : shortTitle(taskId);
+  }
+
+  async function postAction(actionPath, taskId, options = {}) {
+    const response = await fetch(actionPath, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, ...options }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error);
+    return body;
+  }
+
+  async function runAction(actionPath, taskId, successMessage, options) {
+    try {
+      actionMessage = successMessage(await postAction(actionPath, taskId, options));
+    } catch (error) {
+      actionMessage = `Lỗi: ${error.message}`;
+    }
+    lastRenderedJson = "";
+    await refreshBoard({ isForced: true });
+  }
+
+  function confirmStart(task) {
+    const activeCount = currentTasks.filter((candidate) => ACTIVE_COLUMNS.includes(candidate.column)).length;
+    const questions = [];
+    if (activeCount >= WORK_IN_PROGRESS_LIMIT) questions.push(`Đang có ${activeCount} task chạy song song.`);
+    if (task.unresolvedDependencies.length > 0) {
+      const tokens = task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken).join(", ");
+      questions.push(`Phụ thuộc chưa xác định: ${tokens}.`);
+    }
+    if (questions.length === 0) return true;
+    return window.confirm(`${questions.join("\n")}\nVẫn bắt đầu ${shortName(task.id)}?`);
+  }
+
+  async function startTask(task) {
+    if (!confirmStart(task)) return;
+    startingTaskIds.add(task.id);
+    actionMessage = `Đang mở worktree cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/start", task.id, (result) =>
+      result.isPromptSent
+        ? `Đã mở ${result.branch} và gửi lệnh cho Claude.`
+        : `Đã tạo ${result.branch} nhưng chưa gửi được lệnh (${result.warning}). Gõ tay trong tab đó:\n${result.prompt}`,
+    );
+    startingTaskIds.delete(task.id);
+  }
+
+  async function startAutoTask(task) {
+    if (!confirmStart(task)) return;
+    startingTaskIds.add(task.id);
+    actionMessage = `Đang mở workspace tự động cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    const autoApproveSpec = !task.isApproved && autoApproveTaskIds.has(task.id);
+    await runAction("/api/start-auto", task.id, () => `Đã mở tab [AUTO] ${shortName(task.id)}.`, { autoApproveSpec });
+    startingTaskIds.delete(task.id);
+  }
+
+  function focusTask(task) {
+    runAction("/api/focus", task.id, () => `Đã chuyển sang tab của ${shortName(task.id)}.`);
+  }
+
+  function highlightRelated(task, isOn) {
+    const relatedIds = new Set([
+      ...task.dependsOn,
+      ...currentTasks.filter((candidate) => candidate.dependsOn.includes(task.id)).map((candidate) => candidate.id),
+    ]);
+    document.querySelectorAll("tr[data-task-id]").forEach((row) => {
+      row.classList.toggle("related", isOn && relatedIds.has(row.dataset.taskId));
+    });
+  }
+
+  function appendPriorityTags(meta, task) {
+    if (task.priority === "P1") meta.append(createElement("span", "tag p1", "P1"));
+    if (task.priority === "P3") meta.append(createElement("span", "tag p3", "P3"));
+  }
+
+  const AGENT_STATUS_HINTS = {
+    working: "Claude đang làm việc",
+    blocked: "Claude đang chờ anh trả lời hoặc duyệt",
+    idle: "Claude đang rảnh, chờ lệnh tiếp theo",
+    done: "Claude đã xong lượt làm việc này",
+  };
+
+  function buildAgentStatus(text, status) {
+    const element = createElement("span", `agent-status ${status ?? ""}`.trim(), text);
+    element.title = AGENT_STATUS_HINTS[status] ?? "Chưa có phiên Claude nào đang chạy";
+    return element;
+  }
+
+  const resumingTaskIds = new Set();
+
+  function canResumeSession(task) {
+    return Boolean(task.worktree && !task.worktree.isMain && !task.autoRun);
+  }
+
+  async function resumeSession(task, options) {
+    const label = currentTasks.some((candidate) => candidate.id === task.id) ? shortName(task.id) : task.title;
+    resumingTaskIds.add(task.id);
+    actionMessage = `Đang mở Claude cho ${label}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/resume", task.id, (result) => {
+      const promptNote = result.isPromptSent ? " Đã gửi sẵn prompt kiểm tra file chưa commit." : "";
+      if (!result.sessionId) return `Đã mở Claude mới cho ${label} (không tìm thấy session cũ trong worktree này).${promptNote}`;
+      const why = result.reason === "created-pr" ? "session đã tạo PR" : "session gần nhất";
+      return `Đã mở Claude và resume ${why} của ${label} (${result.sessionId.slice(0, 8)}).${promptNote}`;
+    }, options);
+    resumingTaskIds.delete(task.id);
+    render();
+  }
+
+  function buildResumeButton(task) {
+    const isBusy = resumingTaskIds.has(task.id);
+    const button = buildButton(isBusy ? "đang mở…" : "chưa có phiên Claude · mở lại", "resume-link", () => resumeSession(task));
+    button.disabled = isBusy;
+    button.title = "Mở Claude trong worktree này. Nếu có session cũ (ưu tiên session đã tạo PR) thì resume lại.";
+    return button;
+  }
+
+  function describeClaudeStatus(task) {
+    if (task.agent) {
+      const phase = task.autoRun ? ` · ${AUTO_RUN_PHASE_LABELS[task.autoRun.phase] ?? task.autoRun.phase}` : "";
+      return buildAgentStatus(`Claude: ${task.agent.status}${phase}`, task.agent.status);
+    }
+    if (task.column === "inProgress") return canResumeSession(task) ? buildResumeButton(task) : buildAgentStatus("chưa có phiên Claude");
+    if (task.column === "needsYou" && !task.autoRun?.problem) return buildAgentStatus("Claude đang chờ anh trả lời", "blocked");
+    return null;
+  }
+
+  function describeStatus(task) {
+    const meta = createElement("div", "meta");
+    const claudeStatus = describeClaudeStatus(task);
+    if (claudeStatus) meta.append(claudeStatus);
+    if (task.onlyInBranch) meta.append(createElement("span", "blocked-by", `spec chỉ có trên ${task.onlyInBranch}, merge về để bắt đầu`));
+    if (task.column === "todo" && !task.onlyInBranch) {
+      const waitingFor = [...task.blockedBy.map(shortName), ...task.unresolvedDependencies.map((dependency) => dependency.unresolvedToken)];
+      meta.append(createElement("span", "blocked-by", `chờ ${waitingFor.join(", ")}`));
+    }
+    if (task.autoRun?.problem) meta.append(createElement("span", "blocked-by", task.autoRun.problem));
+    return meta.childNodes.length > 0 ? meta : null;
+  }
+
+  function describeTags(task) {
+    const tags = createElement("div", "meta");
+    if (task.column !== "done") appendPriorityTags(tags, task);
+    if (task.column === "ready" && task.specPath.endsWith("/issue.md")) {
+      tags.append(createElement("span", "tag unapproved", "thư mục tài liệu · Claude sẽ hỏi bước tiếp"));
+    } else if (task.column === "ready" && !task.isApproved) {
+      tags.append(createElement("span", "tag unapproved", "chưa duyệt · chạy review spec trước"));
+    }
+    return tags.childNodes.length > 0 ? tags : null;
+  }
+
+  function buildIcon(paths) {
+    const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("fill", "currentColor");
+    svg.setAttribute("aria-hidden", "true");
+    for (const pathData of paths) {
+      const path = document.createElementNS(SVG_NAMESPACE, "path");
+      path.setAttribute("d", pathData);
+      path.setAttribute("fill-rule", "evenodd");
+      svg.append(path);
+    }
+    return svg;
+  }
+
+  function buildReference({ className, iconPaths, kind, number, url, stateLabel, signals = [] }) {
+    const link = createElement("a", `ref ${className}`);
+    link.href = url;
+    link.target = "_blank";
+    link.title = `Mở ${kind} #${number} trên GitHub`;
+    link.append(buildIcon(iconPaths), createElement("span", "kind", kind), `#${number}`);
+    if (stateLabel) link.append(createElement("span", "state", `· ${stateLabel}`));
+    for (const signal of signals) link.append(createElement("span", `signal ${signal.tone}`, `· ${signal.label}`));
+    return link;
+  }
+
+  function buildReferences(task) {
+    const references = [];
+    if (githubWebUrl) {
+      for (const issueNumber of task.githubIssues.slice(1)) {
+        references.push(buildReference({
+          className: "issue",
+          iconPaths: ISSUE_ICON_PATHS,
+          kind: "Issue",
+          number: issueNumber,
+          url: `${githubWebUrl}/issues/${issueNumber}`,
+        }));
+      }
+    }
+    const pullRequest = task.pullRequest;
+    if (pullRequest) {
+      const state = PULL_REQUEST_STATES[pullRequest.isDraft && pullRequest.state === "OPEN" ? "draft" : pullRequest.state];
+      references.push(buildReference({
+        className: state?.className ?? "pr-open",
+        iconPaths: PULL_REQUEST_ICON_PATHS,
+        kind: "PR",
+        number: pullRequest.number,
+        url: pullRequest.url,
+        stateLabel: state?.label,
+        signals: pullRequest.state === "OPEN"
+          ? [CHECK_SIGNALS[pullRequest.checks], REVIEW_SIGNALS[pullRequest.reviewDecision]].filter(Boolean)
+          : [],
+      }));
+    }
+    if (references.length === 0) return null;
+    const container = createElement("div", "refs");
+    container.append(...references);
+    return container;
+  }
+
+  function buildAutoApproveToggle(task) {
+    const label = createElement("label", "auto-approve");
+    const checkbox = createElement("input", "");
+    checkbox.type = "checkbox";
+    checkbox.checked = autoApproveTaskIds.has(task.id);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) autoApproveTaskIds.add(task.id);
+      else autoApproveTaskIds.delete(task.id);
+    });
+    label.title = "Tự duyệt spec: chỉ duyệt khi agent review không thấy vấn đề chặn và không còn câu hỏi mở. Nếu không, dừng chờ anh duyệt.";
+    label.append(checkbox, "tự duyệt spec nếu review không thấy vấn đề");
+    return label;
+  }
+
+  function closeOpenMoreMenus() {
+    document.querySelectorAll("details.more-menu[open]").forEach((menu) => {
+      menu.open = false;
+    });
+  }
+
+  function buildMoreMenu(items) {
+    const menu = createElement("details", "more-menu");
+    const toggle = createElement("summary", "", "⋯");
+    toggle.setAttribute("aria-label", "Thêm hành động");
+    const panel = createElement("div", "more-panel");
+    panel.append(...items);
+    menu.append(toggle, panel);
+    menu.addEventListener("toggle", () => {
+      if (!menu.open) return;
+      const toggleRect = toggle.getBoundingClientRect();
+      panel.style.top = `${toggleRect.bottom + MORE_PANEL_OFFSET_PX}px`;
+      panel.style.right = `${window.innerWidth - toggleRect.right}px`;
+    });
+    return menu;
+  }
+
+  function buildAutoRunMenu(task) {
+    const autoButton = buildButton("Để Claude tự làm tới PR nháp", "", () => startAutoTask(task));
+    autoButton.disabled = startingTaskIds.size > 0;
+    autoButton.title = "Chạy vibe-issue: Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần";
+    const items = [autoButton, createElement("div", "menu-hint", "Claude tự làm từ lập kế hoạch đến PR nháp, chỉ gọi anh khi cần.")];
+    if (!task.isApproved) items.push(buildAutoApproveToggle(task));
+    return buildMoreMenu(items);
+  }
+
+  function buildAction(task, isNext) {
+    if (task.column === "needsYou") return buildButton("Mở tab", "", () => focusTask(task));
+    if (task.column === "inProgress" && task.agent) return buildButton("Mở tab", "", () => focusTask(task));
+    if (task.column === "todo" && isMissingIssue(task)) return buildCreateIssueButton(task, false);
+    if (task.column === "ready") {
+      const needsIssue = isMissingIssue(task);
+      const startButton = buildButton(startingTaskIds.has(task.id) ? "Đang mở…" : "Làm cùng Claude", isNext && !needsIssue ? "primary" : "", () => startTask(task));
+      startButton.disabled = startingTaskIds.size > 0;
+      const group = createElement("div", "actions");
+      if (needsIssue) group.append(buildCreateIssueButton(task, isNext));
+      group.append(startButton);
+      if (!task.specPath.endsWith("/issue.md")) group.append(buildAutoRunMenu(task));
+      return group;
+    }
+    if (task.column === "done" && task.worktree && !task.worktree.isMain) {
+      const uncommittedFileCount = task.diffStats?.uncommittedFileCount ?? 0;
+      if (uncommittedFileCount > 0) {
+        const openWorktree = buildButton(`còn ${uncommittedFileCount} file chưa commit, chưa dọn được`, "clean-up-blocked", () => (task.agent ? focusTask(task) : resumeSession(task, { reviewUncommitted: true })));
+        openWorktree.title = task.agent ? "Chuyển tới tab Claude của worktree này" : "Mở Claude trong worktree này (resume session cũ nếu có) và nhờ nó xem các file chưa commit";
+        return openWorktree;
+      }
+      const button = buildButton("Dọn worktree", "", () =>
+        runAction("/api/clean-up", task.id, () => `Đã đóng workspace và xoá worktree của ${shortName(task.id)} (branch vẫn giữ).`),
+      );
+      button.title = "Đóng workspace herdr và xoá thư mục worktree, giữ branch";
+      return button;
+    }
+    return null;
+  }
+
+  function buildButton(label, className, onClick) {
+    const button = createElement("button", className, label);
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      onClick();
+    });
+    return button;
+  }
+
+  function buildDiffStats(diffStats) {
+    const parts = [];
+    if (diffStats.filesChanged > 0) {
+      parts.push(
+        createElement("span", "insertions", `+${diffStats.insertions}`),
+        " ",
+        createElement("span", "deletions", `−${diffStats.deletions}`),
+        ` · ${diffStats.filesChanged} file`,
+      );
+    }
+    if (diffStats.uncommittedFileCount > 0) {
+      if (parts.length > 0) parts.push(" · ");
+      parts.push(createElement("span", "dirty", `${diffStats.uncommittedFileCount} file chưa commit`));
+    }
+    if (parts.length === 0) return null;
+    const line = createElement("div", "diff-stats");
+    line.append(...parts);
+    return line;
+  }
+
+  function buildWorktreeDetailNodes(item) {
+    const nodes = [];
+    const diffStatsLine = item.diffStats && item.column !== "done" ? buildDiffStats(item.diffStats) : null;
+    if (diffStatsLine) nodes.push(diffStatsLine);
+    if (item.previewLines?.length > 0) nodes.push(createElement("div", "preview", item.previewLines.join("\n")));
+    return nodes;
+  }
+
+  function buildRowDetails(rowKey, detailNodes) {
+    if (detailNodes.length === 0) return { toggle: null, panel: null };
+    const isOpen = expandedRowKeys.has(rowKey);
+    const toggle = buildButton(isOpen ? "Ẩn chi tiết ▴" : "Chi tiết ▾", "row-toggle", () => {
+      if (isOpen) expandedRowKeys.delete(rowKey);
+      else expandedRowKeys.add(rowKey);
+      render();
+    });
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    let panel = null;
+    if (isOpen) {
+      panel = createElement("div", "row-details");
+      panel.append(...detailNodes);
+    }
+    return { toggle, panel };
+  }
+
+  function buildUnlinkedWorktreeRow(worktree) {
+    const pseudoTask = { id: `worktree:${worktree.path}`, title: worktree.branch ?? worktree.path, agent: worktree.agent };
+    const row = createElement("div", worktree.agent ? "row clickable" : "row");
+    const body = createElement("div");
+    body.append(worktree.issueNumber
+      ? buildOpenableTitle("title", pseudoTask.title, { title: pseudoTask.title, taskId: null, issueNumber: worktree.issueNumber })
+      : createElement("div", "title", pseudoTask.title));
+    const meta = createElement("div", "meta");
+    if (worktree.agent) meta.append(buildAgentStatus(`Claude: ${worktree.agent.status}`, worktree.agent.status));
+    else meta.append(buildAgentStatus("chưa có phiên Claude"));
+    const isIssueWithoutSpec = issuesWithoutSpec.some((issue) => issue.number === worktree.issueNumber);
+    meta.append(isIssueWithoutSpec ? `issue #${worktree.issueNumber} · chưa gắn spec` : "không khớp spec nào");
+    body.append(meta);
+    const { toggle, panel } = buildRowDetails(pseudoTask.id, buildWorktreeDetailNodes(worktree));
+    if (toggle) meta.append(toggle);
+    if (panel) body.append(panel);
+    row.append(createElement("span", "number", ""), body);
+    if (worktree.agent) {
+      row.append(buildButton("Mở tab", "", () => focusTask(pseudoTask)));
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a, button")) focusTask(pseudoTask);
+      });
+    } else {
+      const resumeButton = buildButton(resumingTaskIds.has(pseudoTask.id) ? "Đang mở…" : "Mở lại Claude", "", () => resumeSession(pseudoTask));
+      resumeButton.disabled = resumingTaskIds.has(pseudoTask.id);
+      resumeButton.title = "Mở Claude trong worktree này, resume session gần nhất nếu có";
+      row.append(resumeButton);
+    }
+    return row;
+  }
+
+  function buildUnlinkedWorktreesSection() {
+    const element = createElement("section", "unlinked");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", "Worktree chưa gắn task"), createElement("span", "count", String(unlinkedWorktrees.length)));
+    const list = createElement("div", "list");
+    list.append(...unlinkedWorktrees.map(buildUnlinkedWorktreeRow));
+    element.append(heading, list);
+    return element;
+  }
+
+  function buildIssueNumberLink(issueNumber, url) {
+    if (!issueNumber) return createElement("span", "number", "");
+    if (!url) return createElement("span", "number", `#${issueNumber}`);
+    const link = createElement("a", "number", `#${issueNumber}`);
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.title = `Mở issue #${issueNumber} trên GitHub`;
+    return link;
+  }
+
+
+  const MARKDOWN_INLINE_PATTERN = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\([^)\s]+\))|(https?:\/\/[^\s)<]+)/g;
+  const MARKDOWN_TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
+  function appendLink(parent, text, url) {
+    const link = createElement("a", "", text);
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    parent.append(link);
+  }
+
+  function appendDocLink(parent, text, openDoc) {
+    const link = createElement("a", "doc-link", text);
+    link.href = "#";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      openDoc();
+    });
+    parent.append(link);
+  }
+
+  function appendInlineMarkdown(parent, text, resolveDocLink = () => null) {
+    let lastIndex = 0;
+    for (const match of text.matchAll(MARKDOWN_INLINE_PATTERN)) {
+      parent.append(text.slice(lastIndex, match.index));
+      const [token] = match;
+      if (match[1]) parent.append(createElement("code", "", token.slice(1, -1)));
+      else if (match[2]) parent.append(createElement("strong", "", token.slice(2, -2)));
+      else if (match[3]) {
+        const linkMatch = token.match(/^\[([^\]]+)\]\((.+)\)$/);
+        const [, linkText, target] = linkMatch;
+        const openDoc = /^https?:\/\//.test(target) ? null : resolveDocLink(target);
+        if (/^https?:\/\//.test(target)) appendLink(parent, linkText, target);
+        else if (openDoc) appendDocLink(parent, linkText, openDoc);
+        else parent.append(createElement("span", "dead-link", linkText));
+      } else appendLink(parent, token, token);
+      lastIndex = match.index + token.length;
+    }
+    parent.append(text.slice(lastIndex));
+  }
+
+  function splitTableCells(line) {
+    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  }
+
+  function buildMarkdownTable(headerLine, bodyLines, resolveDocLink) {
+    const table = createElement("table");
+    const headRow = createElement("tr");
+    for (const cell of splitTableCells(headerLine)) {
+      const header = createElement("th");
+      appendInlineMarkdown(header, cell, resolveDocLink);
+      headRow.append(header);
+    }
+    const head = createElement("thead");
+    head.append(headRow);
+    table.append(head);
+    const body = createElement("tbody");
+    for (const line of bodyLines) {
+      const row = createElement("tr");
+      for (const cell of splitTableCells(line)) {
+        const data = createElement("td");
+        appendInlineMarkdown(data, cell, resolveDocLink);
+        row.append(data);
+      }
+      body.append(row);
+    }
+    table.append(body);
+    return table;
+  }
+
+  function renderMarkdown(source, resolveDocLink) {
+    const root = createElement("div", "markdown");
+    const lines = source.replace(/\r\n/g, "\n").split("\n");
+    let paragraphLines = [];
+    let activeList = null;
+    const flushParagraph = () => {
+      if (paragraphLines.length === 0) return;
+      const paragraph = createElement("p");
+      appendInlineMarkdown(paragraph, paragraphLines.join(" "), resolveDocLink);
+      root.append(paragraph);
+      paragraphLines = [];
+    };
+    let index = 0;
+    while (index < lines.length) {
+      const line = lines[index];
+      const heading = line.match(/^(#{1,6})\s+(.*)$/);
+      const listItem = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+      if (/^```/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        const codeLines = [];
+        index += 1;
+        while (index < lines.length && !/^```/.test(lines[index])) codeLines.push(lines[index++]);
+        const pre = createElement("pre");
+        pre.append(createElement("code", "", codeLines.join("\n")));
+        root.append(pre);
+      } else if (heading) {
+        flushParagraph();
+        activeList = null;
+        const element = createElement(`h${Math.min(heading[1].length, 4)}`);
+        appendInlineMarkdown(element, heading[2], resolveDocLink);
+        root.append(element);
+      } else if (/^\s*(---+|\*\*\*+)\s*$/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        root.append(createElement("hr"));
+      } else if (line.includes("|") && MARKDOWN_TABLE_SEPARATOR.test(lines[index + 1] ?? "")) {
+        flushParagraph();
+        activeList = null;
+        const bodyLines = [];
+        index += 2;
+        while (index < lines.length && lines[index].includes("|") && lines[index].trim() !== "") bodyLines.push(lines[index++]);
+        root.append(buildMarkdownTable(line, bodyLines, resolveDocLink));
+        continue;
+      } else if (listItem) {
+        flushParagraph();
+        const isOrdered = /\d/.test(listItem[2]);
+        if (!activeList || activeList.isOrdered !== isOrdered) {
+          activeList = { isOrdered, element: createElement(isOrdered ? "ol" : "ul") };
+          root.append(activeList.element);
+        }
+        const item = createElement("li", listItem[1].length >= 2 ? "nested-item" : "");
+        item.style.marginLeft = `${Math.floor(listItem[1].length / 2) * 18}px`;
+        const checkbox = listItem[3].match(/^\[( |x|X)\]\s+(.*)$/);
+        if (checkbox) {
+          const box = createElement("input");
+          box.type = "checkbox";
+          box.disabled = true;
+          box.checked = checkbox[1] !== " ";
+          item.append(box, " ");
+          appendInlineMarkdown(item, checkbox[2], resolveDocLink);
+        } else {
+          appendInlineMarkdown(item, listItem[3], resolveDocLink);
+        }
+        activeList.element.append(item);
+      } else if (/^>\s?/.test(line)) {
+        flushParagraph();
+        activeList = null;
+        const quote = createElement("blockquote");
+        appendInlineMarkdown(quote, line.replace(/^>\s?/, ""), resolveDocLink);
+        root.append(quote);
+      } else if (line.trim() === "") {
+        flushParagraph();
+        activeList = null;
+      } else {
+        activeList = null;
+        paragraphLines.push(line.trim());
+      }
+      index += 1;
+    }
+    flushParagraph();
+    return root;
+  }
+
+  let drawerContext = null;
+  let drawerSourceKey = "spec";
+  let drawerRequestId = 0;
+  let drawerSpecFile = null;
+  let drawerEdit = null;
+  let drawerHistory = [];
+  let showAllIssuesWithoutSpec = false;
+
+  function confirmDiscardEdit() {
+    if (!drawerEdit) return true;
+    const isDirty = drawerEdit.textarea.value !== drawerEdit.original;
+    if (isDirty && !window.confirm("Bỏ các thay đổi chưa lưu?")) return false;
+    drawerEdit = null;
+    return true;
+  }
+
+  function closeDrawer() {
+    if (!confirmDiscardEdit()) return;
+    drawerContext = null;
+    drawerHistory = [];
+    document.getElementById("drawer").classList.remove("open");
+    document.getElementById("drawer-backdrop").classList.remove("open");
+    document.getElementById("drawer").inert = true;
+  }
+
+  function buildDrawerSources({ taskId, issueNumber }) {
+    const sources = [];
+    if (taskId) sources.push({ key: "spec", label: "Spec local", url: `/api/detail?spec=${encodeURIComponent(taskId)}` });
+    if (issueNumber) sources.push({ key: "github", label: `GitHub issue #${issueNumber}`, url: `/api/detail?issue=${issueNumber}` });
+    return sources;
+  }
+
+  function renderIssueDetail(detail) {
+    const wrapper = createElement("div");
+    const meta = createElement("div", "drawer-sub");
+    meta.append(createElement("span", `issue-state ${detail.state === "CLOSED" ? "closed" : ""}`.trim(), detail.state === "CLOSED" ? "Closed" : "Open"));
+    for (const label of detail.labels) meta.append(createElement("span", "label-chip", label));
+    const details = [detail.author && `mở bởi ${detail.author}`, detail.createdAt && new Date(detail.createdAt).toLocaleDateString("vi-VN"), `${detail.commentCount} bình luận`].filter(Boolean);
+    meta.append(createElement("span", "", details.join(" · ")));
+    wrapper.append(meta, detail.body.trim() ? renderMarkdown(detail.body) : createElement("p", "drawer-message", "Issue không có mô tả."));
+    wrapper.firstChild.style.marginBottom = "var(--space-4)";
+    return wrapper;
+  }
+
+  async function saveSpecEdit(detail, source, controls) {
+    controls.save.disabled = true;
+    controls.message.textContent = "Đang lưu…";
+    controls.message.className = "drawer-message";
+    try {
+      await postAction("/api/spec-save", drawerContext.taskId, {
+        fileName: detail.fileName,
+        content: drawerEdit.textarea.value,
+        baseModifiedMs: detail.modifiedMs,
+      });
+      drawerEdit = null;
+      actionMessage = `Đã lưu ${detail.path}`;
+      lastRenderedJson = "";
+      refreshBoard();
+      await loadDrawerSource(source);
+    } catch (error) {
+      controls.save.disabled = false;
+      controls.message.textContent = `Không lưu được: ${error.message}`;
+      controls.message.className = "drawer-message error";
+    }
+  }
+
+  function startSpecEdit(detail, source) {
+    const textarea = createElement("textarea", "spec-textarea");
+    textarea.value = detail.content;
+    textarea.spellcheck = false;
+    drawerEdit = { textarea, original: detail.content };
+    const message = createElement("span", "drawer-message");
+    const controls = { message };
+    controls.save = buildButton("Lưu", "primary", () => saveSpecEdit(detail, source, controls));
+    const cancel = buildButton("Huỷ", "", () => {
+      if (!confirmDiscardEdit()) return;
+      loadDrawerSource(source);
+    });
+    textarea.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+        event.preventDefault();
+        saveSpecEdit(detail, source, controls);
+      }
+    });
+    const actions = createElement("div", "spec-editor-actions");
+    actions.append(controls.save, cancel, message);
+    const editor = createElement("div", "spec-editor");
+    editor.append(createElement("div", "drawer-sub", `Đang sửa ${detail.path} · ⌘S để lưu`), textarea, actions);
+    document.getElementById("drawer-body").replaceChildren(editor);
+    textarea.focus();
+    textarea.setSelectionRange(0, 0);
+    textarea.scrollTop = 0;
+  }
+
+  function normalizeDocPath(docPath) {
+    const parts = [];
+    for (const part of docPath.split("/")) {
+      if (part === "" || part === ".") continue;
+      if (part === "..") parts.pop();
+      else parts.push(part);
+    }
+    return parts.join("/");
+  }
+
+  function findDocTarget(candidatePath) {
+    for (const task of currentTasks) {
+      const folder = task.specPath.endsWith("/issue.md") ? task.specPath.slice(0, -"/issue.md".length) : null;
+      if (candidatePath === task.specPath) return { task, fileName: null };
+      if (folder && candidatePath === folder) return { task, fileName: null };
+      if (folder && candidatePath.startsWith(`${folder}/`) && !candidatePath.slice(folder.length + 1).includes("/")) {
+        return { task, fileName: candidatePath.slice(folder.length + 1) };
+      }
+    }
+    return null;
+  }
+
+  function resolveSpecDocLink(target, detail, source) {
+    const withoutFragment = target.split(/[#?]/)[0];
+    if (!withoutFragment) return null;
+    const currentDir = detail.path.split("/").slice(0, -1).join("/");
+    for (const candidatePath of [normalizeDocPath(`${currentDir}/${withoutFragment}`), normalizeDocPath(withoutFragment)]) {
+      const docTarget = findDocTarget(candidatePath);
+      if (!docTarget) continue;
+      if (docTarget.task.id === detail.id) {
+        const fileName = docTarget.fileName ?? detail.files[0];
+        if (!detail.files.includes(fileName)) continue;
+        return () => {
+          if (!confirmDiscardEdit()) return;
+          drawerHistory.push(snapshotDrawer());
+          drawerSpecFile = fileName;
+          loadDrawerSource(source);
+          renderDrawerBack();
+        };
+      }
+      return () => {
+        if (!confirmDiscardEdit()) return;
+        drawerHistory.push(snapshotDrawer());
+        drawerSourceKey = "spec";
+        openDrawer({ ...taskDrawerContext(docTarget.task), specFile: docTarget.fileName }, { isFollowingLink: true });
+      };
+    }
+    return null;
+  }
+
+  function renderSpecDetail(detail, source) {
+    const wrapper = createElement("div");
+    const header = createElement("div", "drawer-sub spec-toolbar", detail.path);
+    if (detail.canEdit) header.append(buildButton("Sửa", "", () => startSpecEdit(detail, source)));
+    header.style.marginBottom = "var(--space-4)";
+    if (detail.files.length > 1) {
+      const chips = createElement("div", "doc-files");
+      for (const fileName of detail.files) {
+        const chip = createElement("button", fileName === detail.fileName ? "doc-file active" : "doc-file", fileName);
+        chip.addEventListener("click", () => {
+          if (!confirmDiscardEdit()) return;
+          drawerSpecFile = fileName;
+          loadDrawerSource(source);
+        });
+        chips.append(chip);
+      }
+      wrapper.append(chips);
+    }
+    wrapper.append(header, renderMarkdown(detail.content, (target) => resolveSpecDocLink(target, detail, source)));
+    return wrapper;
+  }
+
+  async function loadDrawerSource(source) {
+    const body = document.getElementById("drawer-body");
+    const requestId = ++drawerRequestId;
+    body.replaceChildren(createElement("p", "drawer-message", "Đang tải…"));
+    try {
+      const fileQuery = source.key === "spec" && drawerSpecFile ? `&file=${encodeURIComponent(drawerSpecFile)}` : "";
+      const response = await fetch(`${source.url}${fileQuery}`);
+      const detail = await response.json();
+      if (!response.ok) throw new Error(detail.error);
+      if (requestId !== drawerRequestId) return;
+      body.replaceChildren(source.key === "github" ? renderIssueDetail(detail) : renderSpecDetail(detail, source));
+      body.scrollTop = 0;
+    } catch (error) {
+      if (requestId !== drawerRequestId) return;
+      body.replaceChildren(createElement("p", "drawer-message error", `Không tải được: ${error.message}`));
+    }
+  }
+
+  function showDrawerSource(sourceKey) {
+    if (!confirmDiscardEdit()) return;
+    const sources = buildDrawerSources(drawerContext);
+    const source = sources.find((candidate) => candidate.key === sourceKey) ?? sources[0];
+    drawerSourceKey = source.key;
+    const tabs = document.getElementById("drawer-tabs");
+    tabs.replaceChildren();
+    if (sources.length > 1) {
+      for (const candidate of sources) {
+        const tab = createElement("button", candidate.key === source.key ? "active" : "", candidate.label);
+        tab.addEventListener("click", () => showDrawerSource(candidate.key));
+        tabs.append(tab);
+      }
+    }
+    loadDrawerSource(source);
+  }
+
+  function snapshotDrawer() {
+    return { context: drawerContext, sourceKey: drawerSourceKey, specFile: drawerSpecFile };
+  }
+
+  function describeSnapshot(snapshot) {
+    return snapshot.specFile ? `${snapshot.context.title} · ${snapshot.specFile}` : snapshot.context.title;
+  }
+
+  function renderDrawerBack() {
+    const backButton = document.getElementById("drawer-back");
+    const previous = drawerHistory[drawerHistory.length - 1];
+    backButton.hidden = !previous;
+    backButton.textContent = previous ? `← Quay lại: ${describeSnapshot(previous)}` : "";
+  }
+
+  function setDrawerHeader(context) {
+    document.getElementById("drawer-title").textContent = context.title;
+    const sub = document.getElementById("drawer-sub");
+    sub.replaceChildren();
+    if (context.issueNumber && githubWebUrl) appendLink(sub, `#${context.issueNumber} trên GitHub ↗`, `${githubWebUrl}/issues/${context.issueNumber}`);
+  }
+
+  function goBackInDrawer() {
+    if (!confirmDiscardEdit()) return;
+    const previous = drawerHistory.pop();
+    if (!previous) return;
+    drawerContext = previous.context;
+    drawerSpecFile = previous.specFile;
+    setDrawerHeader(previous.context);
+    showDrawerSource(previous.sourceKey);
+    renderDrawerBack();
+  }
+
+  function openDrawer(context, { isFollowingLink = false } = {}) {
+    if (!confirmDiscardEdit()) return;
+    if (!isFollowingLink) drawerHistory = [];
+    drawerContext = context;
+    drawerSpecFile = context.specFile ?? null;
+    setDrawerHeader(context);
+    const drawer = document.getElementById("drawer");
+    drawer.inert = false;
+    drawer.classList.add("open");
+    document.getElementById("drawer-backdrop").classList.add("open");
+    showDrawerSource(drawerSourceKey);
+    renderDrawerBack();
+    document.getElementById("drawer-close").focus();
+  }
+
+  function buildOpenableTitle(className, text, context) {
+    const title = createElement("div", `${className} openable`, text);
+    title.tabIndex = 0;
+    title.setAttribute("role", "button");
+    const open = (event) => {
+      event.stopPropagation();
+      openDrawer(context);
+    };
+    title.addEventListener("click", open);
+    title.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open(event);
+      }
+    });
+    return title;
+  }
+
+  function taskDrawerContext(task) {
+    return { title: task.title, taskId: task.id, issueNumber: task.githubIssues[0] };
+  }
+
+  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+  document.getElementById("drawer-back").addEventListener("click", goBackInDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.altKey && event.key === "ArrowLeft" && drawerContext && drawerHistory.length > 0) goBackInDrawer();
+  });
+  document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && drawerContext) closeDrawer();
+  });
+
+  function buildGroupToggle(task, descendantCount) {
+    const isExpanded = expandedGroupIds.has(task.id);
+    const toggle = buildButton(isExpanded ? `▾ Ẩn ${descendantCount} task` : `▸ ${descendantCount} task phụ thuộc`, "group-toggle", () => {
+      if (isExpanded) expandedGroupIds.delete(task.id);
+      else expandedGroupIds.add(task.id);
+      render();
+    });
+    toggle.setAttribute("aria-expanded", String(isExpanded));
+    return toggle;
+  }
+
+  function sortDoneByRecency(tasks) {
+    return [...tasks].sort((first, second) => {
+      const firstMerged = first.pullRequest?.mergedAt ?? "";
+      const secondMerged = second.pullRequest?.mergedAt ?? "";
+      if (firstMerged !== secondMerged) return secondMerged.localeCompare(firstMerged);
+      return second.id.localeCompare(first.id);
+    });
+  }
+
+  function readSavedTab() {
+    try {
+      const savedTab = window.localStorage.getItem(SELECTED_TAB_STORAGE_KEY);
+      return TABS.some((tab) => tab.key === savedTab) ? savedTab : TABS[0].key;
+    } catch {
+      return TABS[0].key;
+    }
+  }
+
+  function selectTab(tabKey) {
+    selectedTab = tabKey;
+    try {
+      window.localStorage.setItem(SELECTED_TAB_STORAGE_KEY, tabKey);
+    } catch {
+      console.warn("[board] cannot remember the selected tab");
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function arrangeByDependency(tasks) {
+    const idsInList = new Set(tasks.map((task) => task.id));
+    const parentIdOf = (task) => [...task.dependsOn].reverse().find((id) => idsInList.has(id) && id !== task.id) ?? null;
+    const childrenByParentId = new Map();
+    const roots = [];
+    for (const task of tasks) {
+      const parentId = parentIdOf(task);
+      if (!parentId) roots.push(task);
+      else childrenByParentId.set(parentId, [...(childrenByParentId.get(parentId) ?? []), task]);
+    }
+    const arranged = [];
+    const visitedIds = new Set();
+    const visit = (task, depth, isVisible) => {
+      if (visitedIds.has(task.id)) return 0;
+      visitedIds.add(task.id);
+      const item = { task, depth, descendantCount: 0, isVisible };
+      arranged.push(item);
+      const childrenVisible = isVisible && expandedGroupIds.has(task.id);
+      for (const child of childrenByParentId.get(task.id) ?? []) item.descendantCount += 1 + visit(child, depth + 1, childrenVisible);
+      return item.descendantCount;
+    };
+    roots.forEach((task) => visit(task, 0, true));
+    tasks.forEach((task) => visit(task, 0, true));
+    return arranged.filter((item) => item.isVisible);
+  }
+
+  const creatingIssueTaskIds = new Set();
+
+  async function createIssueForTask(task) {
+    creatingIssueTaskIds.add(task.id);
+    actionMessage = `Đang mở tab Claude để tạo issue cho ${shortName(task.id)}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-issue", task.id, () => `Đã gửi yêu cầu tạo issue cho ${shortName(task.id)} sang Claude, xem và đồng ý trong tab đó.`);
+    creatingIssueTaskIds.delete(task.id);
+    render();
+  }
+
+  function buildCreateIssueButton(task, isPrimary) {
+    const isBusy = creatingIssueTaskIds.has(task.id);
+    const button = buildButton(isBusy ? "Đang mở…" : "Tạo issue", isPrimary ? "primary" : "", () => createIssueForTask(task));
+    button.disabled = isBusy;
+    button.title = "Mở Claude để tạo issue GitHub từ spec này. Claude sẽ cho anh xem nội dung và chờ anh đồng ý trước khi đăng.";
+    return button;
+  }
+
+  const TASK_TABLE_COLUMNS = ["Issue number", "Task", "Claude", "PR", ""];
+
+  function buildTaskRows(task, section, isNext, depth, descendantCount) {
+    const row = createElement("tr", ["task-row", `state-${section.className}`].join(" "));
+    row.dataset.taskId = task.id;
+    const issueNumber = task.githubIssues[0];
+    const numberCell = createElement("td", "cell-number");
+    numberCell.append(buildIssueNumberLink(issueNumber, githubWebUrl && issueNumber ? `${githubWebUrl}/issues/${issueNumber}` : null));
+
+    const titleCell = createElement("td", "cell-title");
+    const titleElement = buildOpenableTitle(depth > 0 ? "title-text nested" : "title-text", task.title, taskDrawerContext(task));
+    titleElement.style.setProperty("--depth", String(depth));
+    titleCell.append(titleElement);
+    const tags = describeTags(task);
+    const { toggle, panel } = buildRowDetails(task.id, [...(tags ? [tags] : []), ...buildWorktreeDetailNodes(task)]);
+    const subLine = createElement("div", depth > 0 ? "cell-sub nested" : "cell-sub");
+    subLine.style.setProperty("--depth", String(depth));
+    const problem = describeStatus(task);
+    for (const reason of problem?.querySelectorAll(".blocked-by") ?? []) subLine.append(createElement("span", "blocked-by", reason.textContent));
+    if (toggle) subLine.append(toggle);
+    if (descendantCount > 0) subLine.append(buildGroupToggle(task, descendantCount));
+    if (subLine.childElementCount > 0) titleCell.append(subLine);
+
+    const claudeCell = createElement("td", "cell-claude");
+    const claudeStatus = describeClaudeStatus(task);
+    if (claudeStatus) claudeCell.append(claudeStatus);
+    const pullRequestCell = createElement("td", "cell-pr");
+    const references = buildReferences(task);
+    if (references) pullRequestCell.append(references);
+    const actionCell = createElement("td", "cell-action");
+    const action = buildAction(task, isNext);
+    if (action) actionCell.append(action);
+
+    row.append(numberCell, titleCell, claudeCell, pullRequestCell, actionCell);
+    row.addEventListener("mouseenter", () => highlightRelated(task, true));
+    row.addEventListener("mouseleave", () => highlightRelated(task, false));
+    if (task.agent) {
+      row.classList.add("clickable");
+      row.addEventListener("click", (event) => {
+        if (!event.target.closest("a, button, summary, [role=button]")) focusTask(task);
+      });
+    }
+    if (!panel) return [row];
+    const detailRow = createElement("tr", "detail-row");
+    const detailCell = createElement("td", "");
+    detailCell.colSpan = TASK_TABLE_COLUMNS.length - 1;
+    detailCell.append(panel);
+    detailRow.append(createElement("td", "cell-number"), detailCell);
+    return [row, detailRow];
+  }
+
+  function buildSection(section, { limit, moreLabel, filter = () => true } = {}) {
+    const allTasks = (section.key === "done" ? sortDoneByRecency(tasksIn("done")) : tasksIn(section.key)).filter(filter);
+    const arrangedTasks = arrangeByDependency(allTasks);
+    const tasks = limit ? arrangedTasks.slice(0, limit) : arrangedTasks;
+    const element = createElement("section", section.className ?? "");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", section.label), createElement("span", "count", String(allTasks.length)));
+    const tableClasses = ["task-table"];
+    if (BACKLOG_COLUMNS.includes(section.key)) tableClasses.push("backlog-table");
+    if (!tasks.some(({ task }) => task.githubIssues.length > 0)) tableClasses.push("no-issue-column");
+    const table = createElement("table", tableClasses.join(" "));
+    const headRow = createElement("tr");
+    for (const label of TASK_TABLE_COLUMNS) headRow.append(createElement("th", "", label));
+    const head = createElement("thead");
+    head.append(headRow);
+    const body = createElement("tbody");
+    tasks.forEach(({ task, depth, descendantCount }, index) => {
+      body.append(...buildTaskRows(task, section, section.key === "ready" && index === 0, depth, descendantCount));
+    });
+    table.append(head, body);
+    const scroller = createElement("div", "table-scroll");
+    scroller.append(table);
+    element.append(heading, scroller);
+    if (limit && allTasks.length > limit) {
+      element.append(buildButton(moreLabel(allTasks.length), "toggle", () => selectTab("backlog")));
+    }
+    return element;
+  }
+
+  const selectedIssueNumbers = new Set();
+  let isCreatingSpecs = false;
+
+  async function createSpecsFromSelection() {
+    const issueNumbers = [...selectedIssueNumbers];
+    if (issueNumbers.length === 0) return;
+    isCreatingSpecs = true;
+    actionMessage = `Đang mở tab Claude cho ${issueNumbers.length} issue…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-spec", `issues:${issueNumbers.join(",")}`, () => {
+      selectedIssueNumbers.clear();
+      return `Đã mở tab [SPEC] cho ${issueNumbers.map((number) => `#${number}`).join(", ")}.`;
+    });
+    isCreatingSpecs = false;
+    render();
+  }
+
+  function buildIssueWithoutSpecRow(issue) {
+    const row = createElement("div", "row selectable");
+    const checkbox = createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedIssueNumbers.has(issue.number);
+    checkbox.setAttribute("aria-label", `Chọn issue #${issue.number}`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedIssueNumbers.add(issue.number);
+      else selectedIssueNumbers.delete(issue.number);
+      render();
+    });
+    const body = createElement("div");
+    body.append(buildOpenableTitle("title", issue.title, { title: issue.title, taskId: null, issueNumber: issue.number }));
+    row.append(checkbox, buildIssueNumberLink(issue.number, issue.url), body);
+    return row;
+  }
+
+  function buildIssueSelectionBar() {
+    const bar = createElement("div", "select-bar");
+    const label = createElement("label", "select-all");
+    const checkbox = createElement("input");
+    checkbox.type = "checkbox";
+    const selectedCount = selectedIssueNumbers.size;
+    checkbox.checked = selectedCount > 0 && selectedCount === issuesWithoutSpec.length;
+    checkbox.indeterminate = selectedCount > 0 && selectedCount < issuesWithoutSpec.length;
+    checkbox.addEventListener("change", () => {
+      selectedIssueNumbers.clear();
+      if (checkbox.checked) issuesWithoutSpec.forEach((issue) => selectedIssueNumbers.add(issue.number));
+      render();
+    });
+    label.append(checkbox, " Chọn tất cả");
+    const createButton = buildButton(isCreatingSpecs ? "Đang mở…" : `Tạo spec (${selectedCount})`, "", createSpecsFromSelection);
+    createButton.disabled = selectedCount === 0 || isCreatingSpecs;
+    createButton.title = "Mở một tab Claude mới để lấy các issue đã chọn về thành file spec trong specs/issues";
+    bar.append(label);
+    if (selectedCount > 0) bar.append(createButton);
+    return bar;
+  }
+
+  function buildIssuesWithoutSpecSection() {
+    for (const number of [...selectedIssueNumbers]) {
+      if (!issuesWithoutSpec.some((issue) => issue.number === number)) selectedIssueNumbers.delete(number);
+    }
+    const element = createElement("section", "without-spec");
+    const heading = createElement("h2");
+    heading.append(
+      createElement("span", "", "Issue GitHub"),
+      createElement("span", "count", String(issuesWithoutSpec.length)),
+    );
+    const list = createElement("div", "list");
+    const visibleIssues = showAllIssuesWithoutSpec ? issuesWithoutSpec : issuesWithoutSpec.slice(0, ISSUES_WITHOUT_SPEC_PREVIEW_COUNT);
+    list.append(...visibleIssues.map(buildIssueWithoutSpecRow));
+    element.append(heading, buildIssueSelectionBar(), list);
+    if (issuesWithoutSpec.length > ISSUES_WITHOUT_SPEC_PREVIEW_COUNT) {
+      const label = showAllIssuesWithoutSpec ? "Thu gọn" : `Xem cả ${issuesWithoutSpec.length} issue`;
+      element.append(buildButton(label, "toggle", () => {
+        showAllIssuesWithoutSpec = !showAllIssuesWithoutSpec;
+        render();
+      }));
+    }
+    return element;
+  }
+
+  const creatingStorySpecSlugs = new Set();
+
+  async function createSpecForStoryTask(storyTask) {
+    creatingStorySpecSlugs.add(storyTask.slug);
+    actionMessage = `Đang mở tab Claude để tạo spec cho ${storyTask.slug}…`;
+    lastRenderedJson = "";
+    render();
+    await runAction("/api/create-story-spec", `story:${storyTask.slug}`, () => `Đã mở tab [SPEC] ${storyTask.slug}, xem và trả lời trong tab đó.`);
+    creatingStorySpecSlugs.delete(storyTask.slug);
+    render();
+  }
+
+  const SPEC_WRITER_LABELS = { working: "Claude đang viết spec", blocked: "Claude đang chờ anh trả lời" };
+
+  function describeSpecWriter(specWriter) {
+    if (!specWriter) return null;
+    return SPEC_WRITER_LABELS[specWriter.agentStatus] ?? "Tab [SPEC] đang mở";
+  }
+
+  function splitStoryTitle(title) {
+    const match = /^(.*?)\s*\((.*)\)\s*$/.exec(title);
+    return match ? { name: match[1], note: match[2] } : { name: title, note: "" };
+  }
+
+  function buildStoryTaskRow(storyTask) {
+    const row = createElement("div", "story-row");
+    const { name, note } = splitStoryTitle(storyTask.title);
+    const text = createElement("div", "story-text");
+    text.append(createElement("div", "story-name", name));
+    if (note) text.append(createElement("div", "story-note", note));
+    const writerLabel = describeSpecWriter(storyTask.specWriter);
+    if (writerLabel) text.append(createElement("div", "sync-label", writerLabel));
+    const isBusy = creatingStorySpecSlugs.has(storyTask.slug) || storyTask.specWriter !== null;
+    const button = buildButton(isBusy ? "Đang chạy…" : "Tạo spec", "", () => createSpecForStoryTask(storyTask));
+    button.disabled = isBusy;
+    button.title = "Mở Claude để viết spec cho task này từ story.md. Claude sẽ hỏi anh trước khi ghi.";
+    row.append(text, button);
+    return row;
+  }
+
+  function buildStoryTasksWithoutSpecSection() {
+    const element = createElement("section", "without-spec");
+    const heading = createElement("h2");
+    heading.append(createElement("span", "", "Task trong story.md"), createElement("span", "count", String(storyTasksWithoutSpec.length)));
+    const list = createElement("div", "story-list");
+    list.append(...storyTasksWithoutSpec.map(buildStoryTaskRow));
+    element.append(heading, list);
+    return element;
+  }
+
+  function buildIdleHint() {
+    const hasNext = tasksIn("ready").length > 0;
+    return createElement(
+      "div",
+      "empty-hint",
+      hasNext ? "Chưa có task nào đang chạy." : "Chưa có task nào đang chạy và không còn task sẵn sàng.",
+    );
+  }
+
+  function findSection(key) {
+    return SECTIONS.find((section) => section.key === key);
+  }
+
+  function appendTaskSections(board, keys, filter) {
+    for (const key of keys) {
+      if (tasksIn(key).some(filter ?? (() => true))) board.append(buildSection(findSection(key), { filter }));
+    }
+  }
+
+  const RUNNING_GROUP_KEYS = ["needsYou", "inProgress", "review", "ready"];
+  let selectedTaskId = null;
+
+  function listRunningGroups() {
+    return RUNNING_GROUP_KEYS.map((key) => {
+      const section = findSection(key);
+      const allTasks = tasksIn(key);
+      const tasks = key === "ready" ? allTasks.slice(0, READY_PREVIEW_COUNT) : allTasks;
+      return { section, tasks, totalCount: allTasks.length };
+    }).filter((group) => group.tasks.length > 0);
+  }
+
+  function describeListNote(task) {
+    if (task.column === "needsYou") return describeNeedsYouReason(task);
+    if (task.column === "inProgress" && task.autoRun) return AUTO_RUN_PHASE_LABELS[normalizePhase(task.autoRun.phase)] ?? task.autoRun.phase;
+    if (task.column === "inProgress") return task.agent ? `Claude: ${task.agent.status}` : "chưa có phiên Claude";
+    if (task.column === "review" && task.pullRequest) return `PR #${task.pullRequest.number}`;
+    return task.priority === "P2" ? "Sẵn sàng bắt đầu" : `Sẵn sàng · ${task.priority}`;
+  }
+
+  function normalizePhase(phase) {
+    return phase.replace(/-/g, "_");
+  }
+
+  function buildInboxItem(task) {
+    const item = createElement("div", task.id === selectedTaskId ? "inbox-item selected" : "inbox-item");
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-pressed", String(task.id === selectedTaskId));
+    const text = createElement("div");
+    const title = createElement("div", "inbox-item-title");
+    const issueNumber = task.githubIssues[0];
+    if (issueNumber) title.append(createElement("span", "inbox-item-number", `#${issueNumber} `));
+    title.append(task.title);
+    text.append(title, createElement("div", "inbox-item-note", describeListNote(task)));
+    item.append(createElement("span", "inbox-dot"), text);
+    const select = () => {
+      selectedTaskId = task.id;
+      render();
+    };
+    item.addEventListener("click", select);
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select();
+      }
+    });
+    return item;
+  }
+
+  function buildInboxGroup({ section, tasks, totalCount }) {
+    const group = createElement("div", `inbox-group ${section.className}`);
+    const title = createElement("div", "inbox-group-title");
+    title.append(createElement("span", "", section.label), createElement("span", "", String(totalCount)));
+    group.append(title, ...tasks.map(buildInboxItem));
+    if (tasks.length < totalCount) {
+      group.append(buildButton(`Xem cả ${totalCount} task sẵn sàng trong Backlog`, "toggle", () => selectTab("backlog")));
+    }
+    return group;
+  }
+
+  function buildPhaseSteps(autoRun) {
+    const currentPhase = normalizePhase(autoRun.phase);
+    const phases = Object.keys(AUTO_RUN_PHASE_LABELS).filter((phase) => phase !== "fix" || phase === currentPhase);
+    const currentIndex = phases.indexOf(currentPhase);
+    if (currentIndex === -1) return null;
+    const steps = createElement("ol", "phase-steps");
+    phases.forEach((phase, index) => {
+      const isWaitingForUser = autoRun.status === "needs_you" || Boolean(autoRun.problem);
+      const stateClass = index < currentIndex ? "done" : index === currentIndex ? `current${isWaitingForUser ? " needs-you" : ""}` : "";
+      const mark = index < currentIndex ? "✓ " : index === currentIndex ? "● " : "";
+      steps.append(createElement("li", `phase-step ${stateClass}`.trim(), `${mark}${AUTO_RUN_PHASE_LABELS[phase]}`));
+    });
+    return steps;
+  }
+
+  function buildTaskDetail(task, section, isNext) {
+    const detail = createElement("div", `inbox-detail ${section.className}`);
+    detail.append(createElement("div", "detail-badge", section.label));
+    const issueNumber = task.githubIssues[0];
+    const heading = createElement("div");
+    heading.append(buildOpenableTitle("detail-title", task.title, taskDrawerContext(task)));
+    const tags = describeTags(task);
+    const meta = createElement("div", "meta");
+    meta.append(buildIssueNumberLink(issueNumber, githubWebUrl && issueNumber ? `${githubWebUrl}/issues/${issueNumber}` : null));
+    if (tags) meta.append(...tags.childNodes);
+    heading.append(meta);
+    detail.append(heading);
+    if (task.column === "needsYou") detail.append(createElement("div", "detail-callout", describeNeedsYouReason(task)));
+    const actions = createElement("div", "detail-actions");
+    const action = buildAction(task, isNext);
+    if (action) actions.append(action);
+    const status = describeStatus(task);
+    if (status) actions.append(status);
+    if (actions.childElementCount > 0) detail.append(actions);
+    const steps = task.autoRun ? buildPhaseSteps(task.autoRun) : null;
+    if (steps) detail.append(steps);
+    const references = buildReferences(task);
+    if (references) detail.append(references);
+    detail.append(...buildWorktreeDetailNodes(task));
+    return detail;
+  }
+
+  function buildRunningTab(board) {
+    const groups = listRunningGroups();
+    if (!currentTasks.some((task) => ["needsYou", "inProgress", "review"].includes(task.column))) board.append(buildIdleHint());
+    const visibleTasks = groups.flatMap((group) => group.tasks);
+    if (visibleTasks.length === 0) return;
+    const selectedTask = visibleTasks.find((task) => task.id === selectedTaskId) ?? visibleTasks[0];
+    selectedTaskId = selectedTask.id;
+    const selectedGroup = groups.find((group) => group.tasks.includes(selectedTask));
+    const isNext = selectedGroup.section.key === "ready" && selectedGroup.tasks[0] === selectedTask;
+    const list = createElement("div", "inbox-list");
+    list.append(...groups.map(buildInboxGroup));
+    const inbox = createElement("div", "inbox");
+    inbox.append(list, buildTaskDetail(selectedTask, selectedGroup.section, isNext));
+    board.append(inbox);
+  }
+
+  const BACKLOG_COLUMNS = ["ready", "todo"];
+  const BACKLOG_FILTERS = [
+    { key: "all", label: "Tất cả", count: () => countTab("backlog") },
+    { key: "missingSpec", label: "Thiếu spec", count: () => issuesWithoutSpec.length + storyTasksWithoutSpec.length, hint: "Task trong story.md hoặc issue GitHub đang mở nhưng chưa có spec local" },
+    { key: "missingIssue", label: "Thiếu issue", count: () => countBacklogTasksWithoutIssue(), hint: "Spec local chưa có issue GitHub" },
+  ];
+  let backlogFilter = "all";
+
+  function isMissingIssue(task) {
+    return task.githubIssues.length === 0;
+  }
+
+  function countBacklogTasksWithoutIssue() {
+    return BACKLOG_COLUMNS.flatMap(tasksIn).filter(isMissingIssue).length;
+  }
+
+  function buildBacklogFilterBar(visibleFilters) {
+    const bar = createElement("div", "filter-bar");
+    for (const filter of visibleFilters) {
+      const button = createElement("button", filter.key === backlogFilter ? "active" : "", filter.label);
+      button.append(createElement("span", "count", String(filter.count())));
+      if (filter.hint) button.title = filter.hint;
+      button.addEventListener("click", () => {
+        backlogFilter = filter.key;
+        render();
+      });
+      bar.append(button);
+    }
+    return bar;
+  }
+
+  function findNarrowingBacklogFilters() {
+    const total = countTab("backlog");
+    return BACKLOG_FILTERS.filter((filter) => filter.key !== "all" && filter.count() > 0 && filter.count() < total);
+  }
+
+  function buildBacklogTab(board) {
+    const narrowingFilters = findNarrowingBacklogFilters();
+    if (!narrowingFilters.some((filter) => filter.key === backlogFilter)) backlogFilter = "all";
+    if (narrowingFilters.length > 0) board.append(buildBacklogFilterBar([BACKLOG_FILTERS[0], ...narrowingFilters]));
+    if (backlogFilter !== "missingSpec") appendTaskSections(board, BACKLOG_COLUMNS, backlogFilter === "missingIssue" ? isMissingIssue : undefined);
+    if (backlogFilter !== "missingIssue" && (issuesWithoutSpec.length > 0 || storyTasksWithoutSpec.length > 0)) {
+      const wrapper = createElement("div", "side-notes");
+      if (storyTasksWithoutSpec.length > 0) wrapper.append(buildStoryTasksWithoutSpecSection());
+      if (issuesWithoutSpec.length > 0) wrapper.append(buildIssuesWithoutSpecSection());
+      board.append(wrapper);
+    }
+    if (board.querySelector("section") === null) board.append(createElement("div", "empty-hint", "Backlog trống."));
+  }
+
+  function buildDoneTab(board) {
+    appendTaskSections(board, ["done"]);
+    if (board.childElementCount === 0) board.append(createElement("div", "empty-hint", "Chưa có task nào xong."));
+  }
+
+  function countTab(tabKey) {
+    if (tabKey === "running") {
+      return ["needsYou", "inProgress", "review"].reduce((total, key) => total + tasksIn(key).length, 0);
+    }
+    if (tabKey === "backlog") return tasksIn("ready").length + tasksIn("todo").length + issuesWithoutSpec.length + storyTasksWithoutSpec.length;
+    if (tabKey === "worktrees") return unlinkedWorktrees.length;
+    return tasksIn("done").length;
+  }
+
+  function renderTabs() {
+    const tabs = document.getElementById("tabs");
+    tabs.replaceChildren();
+    for (const tab of TABS) {
+      if (tab.isExtra && countTab(tab.key) === 0) continue;
+      const className = [tab.key === selectedTab ? "active" : "", tab.isExtra ? "extra" : ""].filter(Boolean).join(" ");
+      const button = createElement("button", className, tab.label);
+      const hasNeedsYou = tab.key === "running" && tasksIn("needsYou").length > 0;
+      button.append(createElement("span", hasNeedsYou ? "count needs-you" : "count", String(countTab(tab.key))));
+      button.addEventListener("click", () => selectTab(tab.key));
+      tabs.append(button);
+    }
+  }
+
+  function buildWorktreesTab(board) {
+    const wrapper = createElement("div", "side-notes");
+    wrapper.append(buildUnlinkedWorktreesSection());
+    board.append(wrapper);
+  }
+
+  const TAB_BUILDERS = { running: buildRunningTab, backlog: buildBacklogTab, done: buildDoneTab, worktrees: buildWorktreesTab };
+
+  function describeNeedsYouReason(task) {
+    if (task.autoRun?.problem) return task.autoRun.problem;
+    if (task.previewLines.length > 0) return task.previewLines[0];
+    return "Claude đang chờ anh trả lời";
+  }
+
+  function buildFocusCard(tone, kicker, headline, detail, actions = []) {
+    const card = createElement("div", `focus ${tone}`);
+    const text = createElement("div", "focus-text");
+    text.append(createElement("div", "focus-kicker", kicker), createElement("div", "focus-headline", headline));
+    if (detail) text.append(createElement("div", "focus-detail", detail));
+    card.append(text);
+    if (actions.length > 0) {
+      const actionGroup = createElement("div", "focus-actions");
+      actionGroup.append(...actions);
+      card.append(actionGroup);
+    }
+    return card;
+  }
+
+  function buildFocus() {
+    const needsYou = tasksIn("needsYou");
+    if (needsYou.length === 0) return null;
+    const task = needsYou[0];
+    const others = needsYou.length > 1 ? ` · còn ${needsYou.length - 1} task khác cũng đang chờ anh` : "";
+    return buildFocusCard("needs-you", "Làm ngay", shortName(task.id), `${describeNeedsYouReason(task)}${others}`, [
+      buildButton("Mở tab để trả lời", "primary", () => focusTask(task)),
+    ]);
+  }
+
+  function renderFocus() {
+    const focusCard = selectedTab === "running" ? buildFocus() : null;
+    document.getElementById("focus").replaceChildren(...(focusCard ? [focusCard] : []));
+  }
+
+  const TOAST_AUTO_HIDE_MS = 5000;
+  const PROMPT_NOT_SENT_MARKER = "chưa gửi được";
+  let toastHideTimer = null;
+  let dismissedWarningsKey = "";
+
+  function isPersistentMessage(message) {
+    return message.startsWith("Lỗi:") || message.includes(PROMPT_NOT_SENT_MARKER);
+  }
+
+  function extractCopyableText(message) {
+    if (!message.includes(PROMPT_NOT_SENT_MARKER)) return "";
+    return message.split("\n").slice(1).join("\n");
+  }
+
+  function buildCopyButton(text) {
+    const button = createElement("button", "", "Sao chép");
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Đã chép";
+      } catch {
+        button.textContent = "Không chép được";
+      }
+    });
+    return button;
+  }
+
+  function updateDocumentTitle(repositoryName, tasks) {
+    const needsYouCount = tasks.filter((task) => task.column === "needsYou").length;
+    const badge = needsYouCount > 0 ? `(${needsYouCount}) ` : "";
+    document.title = `${badge}Board · ${repositoryName}`;
+  }
+
+  function dismissToast() {
+    window.clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    actionMessage = "";
+    lastRenderedJson = "";
+    render();
+  }
+
+  function renderToast() {
+    const toast = document.getElementById("toast");
+    const isSame = toast.dataset.message === actionMessage;
+    if (isSame) return;
+    toast.dataset.message = actionMessage;
+    toast.replaceChildren();
+    toast.classList.remove("error");
+    window.clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    if (!actionMessage) return;
+    const isPersistent = isPersistentMessage(actionMessage);
+    toast.classList.toggle("error", isPersistent);
+    const closeButton = createElement("button", "", "Đóng");
+    closeButton.addEventListener("click", dismissToast);
+    toast.append(createElement("span", "toast-text", actionMessage));
+    const copyableText = extractCopyableText(actionMessage);
+    if (copyableText) toast.append(buildCopyButton(copyableText));
+    toast.append(closeButton);
+    if (!isPersistent && !actionMessage.endsWith("…")) toastHideTimer = window.setTimeout(dismissToast, TOAST_AUTO_HIDE_MS);
+  }
+
+  function renderBanner() {
+    const banner = document.getElementById("banner");
+    banner.replaceChildren();
+    const warningsKey = currentWarnings.join("\n");
+    if (!warningsKey || warningsKey === dismissedWarningsKey) return;
+    const closeButton = createElement("button", "", "Đóng");
+    closeButton.addEventListener("click", () => {
+      dismissedWarningsKey = warningsKey;
+      renderBanner();
+    });
+    banner.append(createElement("div", "banner-text", warningsKey), closeButton);
+  }
+
+  function render() {
+    const board = document.getElementById("board");
+    board.replaceChildren();
+    board.classList.remove(PENDING_UPDATE_CLASS);
+    if (TABS.find((tab) => tab.key === selectedTab)?.isExtra && countTab(selectedTab) === 0) selectedTab = TABS[0].key;
+    TAB_BUILDERS[selectedTab](board);
+    renderTabs();
+    renderFocus();
+    renderBanner();
+    renderToast();
+  }
+
+  function isPointerOverBoard() {
+    return window.matchMedia("(hover: hover)").matches && document.getElementById("board").matches(":hover");
+  }
+
+  async function refreshBoard({ isForced = false } = {}) {
+    try {
+      const response = await fetch("/api/board");
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      document.getElementById("repo-name").textContent = body.repoName.replace(/([_-])/g, "$1\u200b");
+      updateDocumentTitle(body.repoName, body.tasks);
+      const renderedJson = JSON.stringify([body.tasks, body.issuesWithoutSpec, body.storyTasksWithoutSpec, body.unlinkedWorktrees, body.warnings, actionMessage]);
+      const boardElement = document.getElementById("board");
+      if (renderedJson === lastRenderedJson) {
+        boardElement.classList.remove(PENDING_UPDATE_CLASS);
+        return;
+      }
+      if (!isForced && isPointerOverBoard()) {
+        boardElement.classList.add(PENDING_UPDATE_CLASS);
+        return;
+      }
+      lastRenderedJson = renderedJson;
+      currentTasks = body.tasks;
+      currentWarnings = body.warnings;
+      githubWebUrl = body.githubWebUrl;
+      issuesWithoutSpec = body.issuesWithoutSpec;
+      storyTasksWithoutSpec = body.storyTasksWithoutSpec;
+      unlinkedWorktrees = body.unlinkedWorktrees;
+      const needsYouCount = tasksIn("needsYou").length;
+      if (needsYouCount > previousNeedsYouCount) selectedTab = "running";
+      previousNeedsYouCount = needsYouCount;
+      render();
+    } catch (error) {
+      const banner = document.getElementById("banner");
+      banner.replaceChildren(createElement("div", "banner-text", `Không đọc được board: ${error.message}`));
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("details.more-menu")) closeOpenMoreMenus();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeOpenMoreMenus();
+  });
+  window.addEventListener("scroll", closeOpenMoreMenus, { passive: true });
+
+  refreshBoard();
+  setInterval(() => refreshBoard(), BOARD_REFRESH_MS);
+</script>
+</body>
+</html>

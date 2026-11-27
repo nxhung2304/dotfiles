@@ -415,6 +415,11 @@ Benefits:
 * Easier debugging
 * Safer systems
 
+Also:
+
+* Never return an empty or default value to hide a failure
+* When wrapping and rethrowing an error, keep the original error
+
 ---
 
 # Prefer Composition Over Inheritance

@@ -1,0 +1,165 @@
+const { resolveDependencies, resolveConflictingSpecIds, PRIORITY_LEVELS } = require("./specs");
+
+const COLUMN = {
+  ready: "ready",
+  todo: "todo",
+  inProgress: "inProgress",
+  needsYou: "needsYou",
+  review: "review",
+  done: "done",
+};
+
+const AGENT_STATUS_RANK = { blocked: 0, working: 1, done: 2, idle: 3 };
+const PULL_REQUEST_STATE_RANK = { OPEN: 0, MERGED: 1 };
+const LOWEST_RANK = 9;
+
+function findIssueNumberInBranch(branch) {
+  const issueMatch = branch?.match(/(?:\/[A-Za-z]+-#?|#)(\d+)(?:-|$)/);
+  return issueMatch ? Number(issueMatch[1]) : null;
+}
+
+function findSpecIdForBranch(branch, specs) {
+  if (!branch) return null;
+  const issueNumber = findIssueNumberInBranch(branch);
+  if (issueNumber) {
+    const specByIssue = specs.find((spec) => spec.githubIssues.includes(issueNumber));
+    if (specByIssue) return specByIssue.id;
+  }
+  const specBySlug = specs.find(
+    (spec) => branch === spec.slug || branch.endsWith(`-${spec.slug}`) || branch.endsWith(`/${spec.slug}`),
+  );
+  return specBySlug ? specBySlug.id : null;
+}
+
+function pickMostUrgentAgent(agents) {
+  return [...agents].sort(
+    (first, second) => (AGENT_STATUS_RANK[first.status] ?? LOWEST_RANK) - (AGENT_STATUS_RANK[second.status] ?? LOWEST_RANK),
+  )[0] ?? null;
+}
+
+function rankPullRequest(pullRequest) {
+  return PULL_REQUEST_STATE_RANK[pullRequest.state] ?? LOWEST_RANK;
+}
+
+function indexLiveStateBySpec(liveState, specs) {
+  const worktreeBySpecId = new Map();
+  for (const worktree of liveState.worktrees) {
+    const specId = findSpecIdForBranch(worktree.branch, specs);
+    if (specId && !worktreeBySpecId.has(specId)) worktreeBySpecId.set(specId, worktree);
+  }
+  const pullRequestBySpecId = new Map();
+  for (const pullRequest of liveState.pullRequests) {
+    const specId = findSpecIdForBranch(pullRequest.headRefName, specs);
+    const existing = pullRequestBySpecId.get(specId);
+    if (specId && (!existing || rankPullRequest(pullRequest) < rankPullRequest(existing))) {
+      pullRequestBySpecId.set(specId, pullRequest);
+    }
+  }
+  return { worktreeBySpecId, pullRequestBySpecId };
+}
+
+function areAllIssuesClosed(spec, closedIssueNumbers) {
+  return spec.githubIssues.length > 0 && spec.githubIssues.every((number) => closedIssueNumbers.has(number));
+}
+
+function isSpecDone(spec, pullRequest, closedIssueNumbers) {
+  return spec.isMarkedDone || pullRequest?.state === "MERGED" || areAllIssuesClosed(spec, closedIssueNumbers);
+}
+
+function deriveColumn({ isDone, pullRequest, worktree, agent, autoRun, hasOpenDependencies }) {
+  const isWorkStarted = Boolean(worktree || autoRun);
+  if (isDone) return COLUMN.done;
+  if (isWorkStarted && (agent?.status === "blocked" || autoRun?.runStatus === "needs_you" || autoRun?.problem)) return COLUMN.needsYou;
+  if (pullRequest?.state === "OPEN" && !pullRequest.isDraft) return COLUMN.review;
+  if (isWorkStarted) return COLUMN.inProgress;
+  return hasOpenDependencies ? COLUMN.todo : COLUMN.ready;
+}
+
+function compareTasks(first, second) {
+  const priorityOrder = PRIORITY_LEVELS.indexOf(first.priority) - PRIORITY_LEVELS.indexOf(second.priority);
+  return priorityOrder !== 0 ? priorityOrder : first.id.localeCompare(second.id);
+}
+
+function findConflictingSpecIdsBySpecId(specs) {
+  const conflictingSpecIdsBySpecId = new Map(specs.map((spec) => [spec.id, new Set()]));
+  for (const spec of specs) {
+    for (const conflictingSpecId of resolveConflictingSpecIds(spec, specs)) {
+      conflictingSpecIdsBySpecId.get(spec.id).add(conflictingSpecId);
+      conflictingSpecIdsBySpecId.get(conflictingSpecId).add(spec.id);
+    }
+  }
+  return conflictingSpecIdsBySpecId;
+}
+
+function isSpecActive(specId, { liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds }) {
+  if (doneSpecIds.has(specId)) return false;
+  return worktreeBySpecId.has(specId) || Boolean(liveState.autoRunBySpecId?.has(specId)) || pullRequestBySpecId.get(specId)?.state === "OPEN";
+}
+
+function buildTask(spec, context) {
+  const { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds, conflictingSpecIdsBySpecId } = context;
+  const { dependsOn, pullRequestDependencies, unresolvedDependencies } = resolveDependencies(spec, specs);
+  const mergedPullRequestNumbers = new Set(
+    liveState.pullRequests.filter((pullRequest) => pullRequest.state === "MERGED").map((pullRequest) => pullRequest.number),
+  );
+  const activeConflictingSpecIds = [...conflictingSpecIdsBySpecId.get(spec.id)].filter((specId) => isSpecActive(specId, context));
+  const blockedBy = [
+    ...new Set([...dependsOn.filter((specId) => !doneSpecIds.has(specId)), ...activeConflictingSpecIds]),
+    ...pullRequestDependencies.filter((number) => !mergedPullRequestNumbers.has(number)).map((number) => `PR #${number}`),
+  ];
+  const worktree = worktreeBySpecId.get(spec.id) ?? null;
+  const pullRequest = pullRequestBySpecId.get(spec.id) ?? null;
+  const autoRun = liveState.autoRunBySpecId?.get(spec.id) ?? null;
+  const worktreeAgent = worktree ? pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []) : null;
+  const agent = autoRun?.paneId ? { paneId: autoRun.paneId, status: autoRun.agentStatus } : worktreeAgent;
+  const column = deriveColumn({
+    isDone: doneSpecIds.has(spec.id),
+    pullRequest,
+    worktree,
+    agent,
+    autoRun,
+    hasOpenDependencies: blockedBy.length > 0 || unresolvedDependencies.length > 0 || Boolean(spec.onlyInBranch),
+  });
+  const worktreeDetail = worktree ? liveState.worktreeDetailsByPath?.get(worktree.path) ?? null : null;
+  const { id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch } = spec;
+  return {
+    ...{ id, number, title, priority, githubIssues, isApproved, specPath, onlyInBranch: onlyInBranch ?? null },
+    ...{ dependsOn, blockedBy, unresolvedDependencies, column, worktree, agent, pullRequest },
+    autoRun: autoRun ? { phase: autoRun.phase, status: autoRun.runStatus, problem: autoRun.problem } : null,
+    diffStats: worktreeDetail?.diffStats ?? null,
+    previewLines: autoRun?.previewLines ?? worktreeDetail?.previewLines ?? [],
+  };
+}
+
+function buildBoard(specs, liveState) {
+  const { worktreeBySpecId, pullRequestBySpecId } = indexLiveStateBySpec(liveState, specs);
+  const closedIssueNumbers = new Set(liveState.closedIssueNumbers ?? []);
+  const doneSpecIds = new Set(
+    specs.filter((spec) => isSpecDone(spec, pullRequestBySpecId.get(spec.id), closedIssueNumbers)).map((spec) => spec.id),
+  );
+
+  const conflictingSpecIdsBySpecId = findConflictingSpecIdsBySpecId(specs);
+  const context = { specs, liveState, worktreeBySpecId, pullRequestBySpecId, doneSpecIds, conflictingSpecIdsBySpecId };
+  return specs.map((spec) => buildTask(spec, context)).sort(compareTasks);
+}
+
+function findIssuesWithoutSpec(specs, openIssues) {
+  const trackedIssueNumbers = new Set(specs.flatMap((spec) => spec.githubIssues));
+  return openIssues
+    .filter((issue) => !trackedIssueNumbers.has(issue.number))
+    .map((issue) => ({ number: issue.number, title: issue.title, url: issue.url }));
+}
+
+function findUnlinkedWorktrees(specs, liveState) {
+  return liveState.worktrees
+    .filter((worktree) => !worktree.isMain && findIssueNumberInBranch(worktree.branch) && !findSpecIdForBranch(worktree.branch, specs))
+    .map((worktree) => ({
+      ...worktree,
+      issueNumber: findIssueNumberInBranch(worktree.branch),
+      agent: pickMostUrgentAgent(liveState.agentsByWorktreePath.get(worktree.path) ?? []),
+      diffStats: liveState.worktreeDetailsByPath?.get(worktree.path)?.diffStats ?? null,
+      previewLines: liveState.worktreeDetailsByPath?.get(worktree.path)?.previewLines ?? [],
+    }));
+}
+
+module.exports = { COLUMN, findSpecIdForBranch, deriveColumn, buildBoard, findIssuesWithoutSpec, findUnlinkedWorktrees };
