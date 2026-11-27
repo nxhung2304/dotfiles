@@ -1,6 +1,6 @@
 ---
 name: send-to
-description: Send a self-contained message to another Claude Code session running in a different repo on this machine (e.g. dotfiles ↔ a project that tests its rules, mobile ↔ backend, Flutter app ↔ plugin), and reply to one in the same format; `/send-to status` lists requests still waiting for a reply. Uses ListAgents + SendMessage. Use when the user says "/send-to", "nhắn cho session kia", "gửi sang dự án kia", "báo lại cho dotfiles", "hỏi backend", or when a message from another session arrived and the requested work is done and needs a reply.
+description: Send a self-contained message to another Claude Code session running in a different repo on this machine (e.g. dotfiles ↔ a project that tests its rules, mobile ↔ backend, Flutter app ↔ plugin), and reply to one in the same format; `/send-to status` lists requests still waiting for a reply. Uses ListAgents + SendMessage. Use when the user says "/send-to", "nhắn cho session kia", "gửi sang dự án kia", "báo lại cho dotfiles", "hỏi backend", "handoff sang server/app", "giao việc cho session kia", or when a message from another session arrived and the requested work is done and needs a reply.
 allowed-tools: ListAgents, SendMessage, ToolSearch, AskUserQuestion, Bash(git:*), Bash(date:*), Bash(mkdir -p ~/.send-to), Bash(printf:*), Read, Grep, Glob
 ---
 

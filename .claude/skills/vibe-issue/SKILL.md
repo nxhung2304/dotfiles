@@ -9,11 +9,11 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Skill, Agent, ToolSearch, Pu
 
 Purpose: take N tasks, run each through plan → risk check → implement → review in an isolated worktree, keep within a fixed budget, spend expensive models only where a mistake is costly, and keep the user informed without needing them.
 
-**Params (via ARGUMENTS: `<spec-filename>... [max-parallel=3] [max-review-rounds=2] [budget-tokens=<n>] [auto-approve-spec=false] [lang=en]`):**
+**Params (via ARGUMENTS: `<spec-filename>... [max-parallel=3] [max-review-rounds=2] [budget-tokens=<n>] [auto-approve-spec=true] [lang=en]`):**
 - `max-parallel` (default 3): tasks running at the same time. The rest wait in a queue.
 - `max-review-rounds` (default 2): review → fix rounds per task.
 - `budget-tokens` (optional): hard cap for the whole run. See "Budget".
-- `auto-approve-spec` (default `false`): see "Plan phase".
+- `auto-approve-spec` (default `true`): see "Plan phase".
 
 **Language:** all messages to the user are in Vietnamese unless `lang=en`.
 
@@ -59,13 +59,15 @@ Cost rules:
    - has an Implementation Checklist and `Review: Approved` → starts at Prepare
    - otherwise → starts at Plan
 3. If a spec file or folder is untracked by git (`git ls-files --error-unmatch <path>` fails), a worktree will not contain it. Record the absolute main-checkout path for the phase prompts.
-4. Create the run state file `~/.ai-metrics/orchestrator/<run-id>.json` (`run-id` = `YYYYMMDD-HHMM`), listing each task with `phase`, `status` (`queued | running | needs_you | done | failed | blocked`), `model_by_phase`, `worktree`, `branch`, `pr_url`, `review_rounds`, `tokens`. Update it after every change. Print a one-line status after every change too, so the run is readable through remote-control.
+4. Create the run state file `~/.ai-metrics/orchestrator/<run-id>.json` (`run-id` = `YYYYMMDD-HHMM`), listing each task in a JSON array under `tasks` (never an object keyed by spec; the task board reads it as an array), each element with `spec` (the spec filename without `.md`), `pane_id` (the value of `$HERDR_PANE_ID` of this session, or null when unset; the task board uses it to find the session and to detect that it is gone), `phase`, `status` (`queued | running | needs_you | done | failed | blocked`), `model_by_phase`, `worktree`, `branch`, `pr_url`, `review_rounds`, `tokens`. Update it after every change. Print a one-line status after every change too, so the run is readable through remote-control.
 
 ## STEP 1: Dispatch
 
 Run up to `max-parallel` tasks at once. For each task, run its phases one after another as separate `Agent` calls (`run_in_background: true`); independent tasks run side by side. Start the next queued task whenever one finishes. Do not guess or fabricate a result before its notification arrives.
 
 All phases of one task work in the same worktree. The Prepare phase creates it; later phases receive its absolute path and work only inside it (no `isolation: "worktree"` on those calls).
+
+Single-task run (exactly one task): right after Prepare returns, call `EnterWorktree` with `path: <worktree>` (load it via `ToolSearch` first) so the session and its terminal tab show the task's branch. Do not call `ExitWorktree` with `remove`, and stay in the worktree after the final summary. A session in a worktree cannot run git against the main checkout, so when the spec was untracked, copy files back with plain file copies, not git. With two or more tasks, skip this: one session cannot be in several worktrees.
 
 ## STEP 2: Phases
 
@@ -78,7 +80,8 @@ Phase agents have no `Agent` tool, so they cannot launch agents. Anything that n
 **Prepare** (`haiku`):
 1. Create the worktree and branch the way `implement-prepare` names them. If `git checkout develop` fails because `develop` is checked out in another worktree, use `git fetch origin develop` and `git switch -c <branch> origin/develop` (unverified fallback, check on the first run).
 2. If the spec is untracked: copy `specs/issues/<spec>.md` (and its issue folder if any) from the main checkout into the worktree at the same relative path.
-3. Return `{ worktree, branch }`.
+3. If the project generates gitignored source files (code generation, dependency install), run that step in the new worktree so later checks see the same code as the main checkout. Find the command in the project docs or build config. Skip when the project has no such step.
+4. Return `{ worktree, branch }`.
 
 **Risk** (`opus`) — skip when the Plan phase already ran `risk-issue` on this spec in this run: invoke `risk-issue` with the spec path (so it never asks for one) and write its report to `~/.ai-metrics/orchestrator/<run-id>-<spec>-risk.md`. Return `{ missing, possible, risk_report_path }`.
 
@@ -92,7 +95,7 @@ Phase agents have no `Agent` tool, so they cannot launch agents. Anything that n
 
 **Fix** (`sonnet`, escalating): fix only the MUST items from `comment.log` (no SHOULD or NIT), then Stage, then return to Review. Rounds are capped by `max-review-rounds`; stop earlier when a round has no MUST.
 
-**Finalize** (`sonnet`): invoke `implement-finalize` with `thread_ts` null. If MUST items remain, add an "Open review items" section to the PR body listing them. If the risk report has Missing or Possible risks, add a "Risks to test" section listing each one with its test from the report. If the spec was untracked, copy the final `comment.log` back to the main checkout path. Return `{ pr_url, files_committed }`.
+**Finalize** (`sonnet`): invoke `implement-finalize` with `thread_ts` null. The agent writes the PR body by invoking `pr-desc` (pass `lang=en` when the project writes PRs in English), never by hand: short, plain words, no file or class names, no internal codes. Do not add "Open review items" or "Risks to test" sections to the PR body. Keep open review items in `comment.log` and write the risks to test (each with its test from the risk report) into the issue folder. Put into the PR only what the reviewer must decide, at most 3 bullets. If the spec was untracked, copy the final `comment.log` back to the main checkout path. If `gh pr create` fails because the active `gh` account has no access to the repo, and `gh auth status` lists another logged-in account that owns the repo, run `gh auth switch -u <owner>`, create the PR, then switch back to the previously active account in the same command, also when creation fails. Return `{ pr_url, files_committed }`.
 
 A task may redo the Code phase at most once. A second failure → `failed`, stop that task, no PR.
 
@@ -102,9 +105,9 @@ Runs only when a spec lacks an Implementation Checklist or `Review: Approved`.
 
 1. A `opus` agent reads the spec, the relevant code and approved profile rules, and writes or revises the spec and its checklist. It follows `feature-discuss` or `fix-issue` conventions and the `issue-docs` file layout. It does not write code.
 2. A second, independent `opus` agent reviews that plan with `review-specs` and `risk-issue`, without seeing the first agent's reasoning, so a wrong spec is caught instead of confirmed.
-3. Approval is a human gate:
-   - `auto-approve-spec=false` (default): the task becomes `needs_you` with the spec path and the open questions. The orchestrator does not add `Review: Approved`.
-   - `auto-approve-spec=true`: only when the reviewer reports no blocking issue and no open question, add `Review: Approved` and continue. List every spec approved this way, with the reviewer's findings, at the top of the final summary.
+3. Approval:
+   - `auto-approve-spec=true` (default): when the reviewer reports no blocking issue, apply the recommended answer to every open question, write each decision into the spec, add `Review: Approved` and continue. List every auto-decided question with its chosen answer at the top of the PR body under "Decisions made without you". Stop as `needs_you` only for a blocking issue or a question with no recommended answer.
+   - `auto-approve-spec=false`: the task becomes `needs_you` with the spec path and the open questions. The orchestrator does not add `Review: Approved`.
 
 ## Stuck tasks
 
@@ -134,7 +137,7 @@ When no task is `queued` or `running`, report once, concisely, in this order:
 - budget used per model, and any escalation to `opus` with the reason
 - profile rules that were applied, and any case where the profile had nothing to say and an agent chose a default
 
-Write the same data back to the state file as the run's feedback record, so `ai-profile` and `ai-score` can use it later. Leave worktrees in place; the user removes them.
+Write the same data back to the state file as the run's feedback record, so `ai-profile` and `ai-score` can use it later. Leave worktrees in place; never remove one. For every task that reached `done` (draft PR open), add one line suggesting removal once the user has finished testing: `git worktree remove <worktree>` run from the main checkout (no `--force`, so it refuses when the worktree has uncommitted files). Once the PR is merged, `scripts/herdr/clean-merged-worktrees` removes the worktree by itself, so say that no manual step is needed after the merge. Do not suggest removal for `needs_you`, `failed` or `blocked` tasks: their worktree holds the state the user needs.
 
 ## Rules
 

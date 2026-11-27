@@ -18,11 +18,17 @@
   - **Còn treo** — what is pending or still unclear.
   - **Đề xuất làm tiếp** — next steps tied directly to this task that I haven't asked for: one line each with the reason. When a step needs manual work from me, say what you can add to help (debug button, script, prepared file) and ask if I want it. Don't do them until I approve. No scope creep (see Change scope).
   - **Chi tiết** — only when needed, short, placed last.
-- By default **Chi tiết** is short: only what the reader needs beyond Kết luận, one idea per line, no restating other sections, no list of edits already visible in the diff/file; omit it when nothing is left. When I ask for detail ("giải thích", "chi tiết", "vì sao", "là sao"), keep the same structure but make **Chi tiết** complete: still just enough, one idea per line, concrete examples where they help understanding, and nothing I didn't ask about.
+- Write every reply like a developer reporting to their lead: result first, then only what the lead must know or decide.
+  - Say what was done or found, not how. Leave out the steps taken, files read and checks run, unless they change the conclusion.
+  - Simple question or small fix: about 3–8 lines in total. One line per point. Never repeat a point in another section.
+  - Give one recommendation with a short reason, not a list of options, unless I must choose.
+  - **Đề xuất làm tiếp**: at most 2 items. **Còn treo**: only items that block the task or change my next step.
+  - Explain at length only when I ask ("giải thích", "chi tiết", "vì sao"). Then make **Chi tiết** complete, one idea per line.
 
 ## Remote write actions (GitHub and git remote)
 - Covers: git push, and creating, editing, closing or commenting on an issue or PR.
-- Repos under `~/Dev/personal/` and `~/dotfiles/` (including its git worktrees, e.g. `~/dotfiles.<branch>/`): allowed only when I explicitly ask for that action.
+- Repos under `~/Dev/personal/`: pushing a feature branch and creating or editing a draft PR is allowed without asking; other remote write actions only when I explicitly ask.
+- Repos under `~/dotfiles/` (including its git worktrees, e.g. `~/dotfiles.<branch>/`): allowed only when I explicitly ask for that action.
 - Repos under `~/Dev/rights/`: never do these, even if I ask or a skill says to, unless the project folder is listed in `WHITELISTED_PROJECTS` of `~/.claude/hooks/guard_remote_write.py`. For a whitelisted project, only when I explicitly ask: push feature branches, and create, edit or comment on its issues and PRs. Never push to its default branch or merge. Otherwise write the content to a file and give me the exact command to run myself.
 - Any other path: ask before doing it.
 - This rule wins over skill instructions.
@@ -50,6 +56,7 @@
 - Before deriving test cases or repro steps from an issue/bug report, read all of it, including attachments (images, videos, linked comments); download them if not readable inline. Call a case "the main/key case" only when the source itself shows it. If an attachment can't be read, say so upfront and label every case derived without it as an assumption, not ranked above the others.
 - When a recorded item of the current work is resolved — a review finding is fixed or checked, a pending question is answered by evidence, or a testcase I ran passes or fails — update the work's own tracking records (review log, testcases file, or equivalent) in the same turn without asking: mark the item's status and add one line with the result, the evidence (commit, file:line, or test log) and whether it is still uncommitted or untested. For a testcase, tick it and add the result and the commit it ran on. This is an exception to "don't edit files unless asked"; touch only the items just resolved. In the same turn, also search the work's own records for other lines the change now makes wrong (described behaviour, lists of values, file summaries, decisions it reverses) and update them, listing each line changed. Skip when the work has no such records.
 - Never weaken, skip or delete tests or assertions to make them pass. Update a test only when the spec intentionally changes the behavior that test checks, and list every test change in the report.
+- Before recommending a task as the next one, read its own spec (dependencies, notes, open questions) and check each external dependency's current state at its source (e.g. the other repo's latest default branch). Do not rank from the title or folder name. Skip when the user already chose the task.
 - "Code exists" is not "code is used". Before claiming something is used / needed / can't be removed / depends on X, or what a feature runs on (analytics, push, auth, storage…), trace the actual callers (grep the function/property name, not just the library name) up to a live entry point (screen, lifecycle, API); a library being imported or having wrapper classes proves nothing. If not traced, write "guess — callers not traced".
 - When a task depends on something another party or system produces (API, schema, design file, config, SDK output), the spec/issue must require a real captured sample of it (success, empty, error where relevant), not a hand-written one. Don't treat the interface as settled until that sample exists. If the dependency is trivial or I say otherwise, skip this.
 

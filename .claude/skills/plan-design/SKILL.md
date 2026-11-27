@@ -29,9 +29,7 @@ Decides how the whole project looks, once. Later screens (`ui-ux-workflow`) only
    - If the repo has a theme but few or no built screens, read it; one of the 3 directions must be "keep the current look, cleaned up".
 2. **Ask only what is missing**, at most 2–3 questions: the feeling the product should give, existing brand (logo, color, font), display language, light/dark needs, and apps whose look the user likes (to use as references). Then restate the brief in 2–3 sentences and wait for the user to confirm.
 3. **References.** For style direction only. Learn patterns, never copy another product's design.
-   - Ask whether the user uses Mobbin (MCP needs a Pro, Team or Enterprise plan).
-   - Uses Mobbin: check whether Mobbin tools (e.g. `search_screens`, `search_flows`) are in this session's tool list. Connected → 1–2 targeted searches, starting from the apps the user named. Not connected → give the connection steps from the Mobbin section of `~/.claude/skills/ui-ux-workflow/references/sources.md` and say the tools only appear in a new session; ask whether to continue now with the fallback or pause until it is connected.
-   - No Mobbin: use the fallback in that file (web search, screenshots the user sends).
+   - Use the fallback in `~/.claude/skills/ui-ux-workflow/references/sources.md` (web search, screenshots the user sends).
    - For each demo, say in one line what it takes from which reference.
 4. **Build 3 demos** in `specs/designs/explore/style-a.html`, `style-b.html`, `style-c.html`:
    - All 3 show the same content: the screen for the PRD's most important job, with real content in the display language (no lorem ipsum), plus a component strip (primary/secondary/disabled button, input with error, card, list item, empty state, error message).
