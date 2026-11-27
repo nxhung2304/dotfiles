@@ -1,6 +1,6 @@
 const { runCommand } = require("./command");
 
-const GITHUB_REMOTE_PATTERN = /github\.com[:/]([^/]+)\/(.+?)(?:\.git)?\/?$/;
+const GITHUB_REMOTE_PATTERN = /github(?:-[\w-]+)?\.com[:/]([^/]+)\/(.+?)(?:\.git)?\/?$/;
 
 function toGithubWebUrl(remoteUrl) {
   const match = remoteUrl.trim().match(GITHUB_REMOTE_PATTERN);
